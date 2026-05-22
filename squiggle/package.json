@@ -1,5 +1,5 @@
 {
-  "name": "squiggle",
+  "name": "@anton-kochev/squiggle",
   "version": "0.1.0",
   "description": "Quietly polish grammar and spelling in your pi prompts.",
   "keywords": [
@@ -10,6 +10,14 @@
   ],
   "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anton-kochev/pi-extensions.git",
+    "directory": "squiggle"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "peerDependencies": {
     "@earendil-works/pi-ai": "*",
     "@earendil-works/pi-coding-agent": "*"

@@ -1,37 +1,12 @@
 {
-  "name": "@anton-kochev/pi-extensions",
-  "version": "0.3.0",
-  "description": "Pi extensions.",
-  "keywords": [
-    "pi-package"
-  ],
+  "name": "pi-extensions-monorepo",
+  "version": "0.0.0",
+  "description": "Monorepo for @anton-kochev/squiggle and @anton-kochev/echo pi extensions.",
+  "private": true,
   "license": "MIT",
   "type": "module",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/anton-kochev/pi-extensions.git"
-  },
-  "files": [
-    "squiggle",
-    "echo",
-    "README.md"
-  ],
-  "publishConfig": {
-    "access": "public"
-  },
-  "dependencies": {
-    "jiti": "^2.4.2"
-  },
-  "peerDependencies": {
-    "@earendil-works/pi-ai": "*",
-    "@earendil-works/pi-coding-agent": "*",
-    "@earendil-works/pi-tui": "*",
-    "typebox": "*"
-  },
-  "pi": {
-    "extensions": [
-      "./squiggle/extensions",
-      "./echo/extensions"
-    ]
   }
 }

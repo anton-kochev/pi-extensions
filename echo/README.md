@@ -6,9 +6,17 @@ Echo adds a `/ask` command that spawns an isolated pi side-process with only rea
 
 ## Install
 
-This extension ships as part of the [`pi-extensions`](https://github.com/anton-kochev/pi-extensions) repository. The simplest install path is via the root pi-package — see the [repo README](../README.md).
+```bash
+pi install npm:@anton-kochev/echo
+```
 
-For local development from a checkout of `pi-extensions`:
+Pin to a version:
+
+```bash
+pi install npm:@anton-kochev/echo@<version>
+```
+
+For local development from a checkout of [`pi-extensions`](https://github.com/anton-kochev/pi-extensions):
 
 ```bash
 pi install ./echo
@@ -31,15 +39,7 @@ pi -e ./echo
 ```yaml
 pi:
   extensions:
-    echo: "git:https://github.com/anton-kochev/pi-extensions.git#main"
-```
-
-Pin to a tag for reproducibility:
-
-```yaml
-pi:
-  extensions:
-    echo: "git:https://github.com/anton-kochev/pi-extensions.git#v0.1.0"
+    "@anton-kochev/echo": "npm:0.1.0"
 ```
 
 ## Commands

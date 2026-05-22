@@ -1,25 +1,24 @@
 # pi-extensions
 
-[![npm version](https://img.shields.io/npm/v/@anton-kochev/pi-extensions.svg)](https://www.npmjs.com/package/@anton-kochev/pi-extensions)
+A monorepo for personal pi extensions, each published independently to npm.
 
-Pi extensions for personal use.
+## Extensions
+
+- [`squiggle/`](./squiggle) — quietly polish grammar and spelling in user prompts. [![npm version](https://img.shields.io/npm/v/@anton-kochev/squiggle.svg)](https://www.npmjs.com/package/@anton-kochev/squiggle)
+- [`echo/`](./echo) — read-only side-channel question asker for pi sessions and project code. [![npm version](https://img.shields.io/npm/v/@anton-kochev/echo.svg)](https://www.npmjs.com/package/@anton-kochev/echo)
 
 ## Install
 
 ```bash
-pi install npm:@anton-kochev/pi-extensions
+pi install npm:@anton-kochev/squiggle
+pi install npm:@anton-kochev/echo
 ```
 
-Or pin to a specific version:
+Pin to a specific version:
 
 ```bash
-pi install npm:@anton-kochev/pi-extensions@<version>
+pi install npm:@anton-kochev/squiggle@<version>
 ```
-
-## Extensions
-
-- [`squiggle/`](./squiggle) — quietly polish grammar and spelling in user prompts.
-- [`echo/`](./echo) — read-only side-channel question asker for pi sessions and project code.
 
 ## Local development
 
@@ -30,13 +29,22 @@ pi install -l ./squiggle
 pi install -l ./echo
 ```
 
-Each subdirectory has its own `package.json` so individual extensions remain installable in isolation.
+Each subdirectory has its own `package.json` and is published as a standalone npm package.
 
 ## Release
 
+Each extension releases independently via a prefixed tag:
+
 ```bash
-npm version patch       # or minor/major
+cd squiggle
+npm version patch --tag-version-prefix="squiggle-v"   # or minor/major
 git push --follow-tags
 ```
 
-Trusted publishing handles the rest — the workflow at `.github/workflows/publish.yml` fires on tag push and publishes to npm via OIDC.
+```bash
+cd echo
+npm version patch --tag-version-prefix="echo-v"
+git push --follow-tags
+```
+
+Trusted publishing handles the rest — the workflows at `.github/workflows/publish-squiggle.yml` and `.github/workflows/publish-echo.yml` fire on their respective tag prefixes and publish to npm via OIDC.

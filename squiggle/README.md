@@ -6,9 +6,17 @@ The extension intercepts user input, shows a `squiggling...` spinner while proce
 
 ## Install
 
-This extension ships as part of the [`pi-extensions`](https://github.com/anton-kochev/pi-extensions) repository. The simplest install path is via the root pi-package — see the [repo README](../README.md).
+```bash
+pi install npm:@anton-kochev/squiggle
+```
 
-For local development from a checkout of `pi-extensions`:
+Pin to a version:
+
+```bash
+pi install npm:@anton-kochev/squiggle@<version>
+```
+
+For local development from a checkout of [`pi-extensions`](https://github.com/anton-kochev/pi-extensions):
 
 ```bash
 pi install ./squiggle
@@ -31,15 +39,7 @@ pi -e ./squiggle
 ```yaml
 pi:
   extensions:
-    squiggle: "git:https://github.com/anton-kochev/pi-extensions.git#main"
-```
-
-Pin to a tag for reproducibility:
-
-```yaml
-pi:
-  extensions:
-    squiggle: "git:https://github.com/anton-kochev/pi-extensions.git#v0.1.0"
+    "@anton-kochev/squiggle": "npm:0.1.0"
 ```
 
 ## Configuration

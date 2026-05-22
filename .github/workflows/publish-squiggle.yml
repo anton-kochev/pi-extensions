@@ -1,8 +1,8 @@
-name: Publish
+name: Publish squiggle
 
 on:
   push:
-    tags: ["v*"]
+    tags: ["squiggle-v*"]
 
 permissions:
   contents: read
@@ -11,6 +11,9 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: squiggle
 
     steps:
       - name: Checkout
@@ -27,7 +30,7 @@ jobs:
 
       - name: Validate version matches package.json
         run: |
-          TAG=${GITHUB_REF#refs/tags/v}
+          TAG=${GITHUB_REF#refs/tags/squiggle-v}
           PKG_VERSION=$(node -p "require('./package.json').version")
           if [ "$PKG_VERSION" != "$TAG" ]; then
             echo "Tag version ($TAG) != package.json ($PKG_VERSION)"

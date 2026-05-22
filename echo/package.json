@@ -1,5 +1,5 @@
 {
-  "name": "echo",
+  "name": "@anton-kochev/echo",
   "version": "0.1.0",
   "description": "Echo: a read-only side-channel question asker for pi sessions and project code.",
   "keywords": [
@@ -11,6 +11,14 @@
   ],
   "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anton-kochev/pi-extensions.git",
+    "directory": "echo"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "jiti": "^2.4.2"
   },
