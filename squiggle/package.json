@@ -1,0 +1,27 @@
+{
+  "name": "squiggle",
+  "version": "0.1.0",
+  "description": "Quietly polish grammar and spelling in your pi prompts.",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "grammar",
+    "writing"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions"
+    ]
+  },
+  "files": [
+    "index.ts",
+    "extensions",
+    "README.md"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "pi-extensions",
+  "version": "0.1.0",
+  "description": "Pi extensions.",
+  "keywords": ["pi-package"],
+  "license": "MIT",
+  "type": "module",
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "pi": {
+    "extensions": ["./squiggle/extensions"]
+  }
+}
