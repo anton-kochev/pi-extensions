@@ -20,7 +20,8 @@ export default function squiggle(pi: ExtensionAPI) {
 		if (config.mode === "off") return { action: "continue" };
 		if (!event.text.trim()) return { action: "continue" };
 
-		const corrected = await correctWithModel(event.text, ctx, config);
+		const stopIndicator = startSquiggleIndicator(ctx);
+		const corrected = await correctWithModel(event.text, ctx, config).finally(stopIndicator);
 		if (!corrected || corrected === event.text) return { action: "continue" };
 
 		if (ctx.hasUI) ctx.ui.notify(formatColoredDiff(event.text, corrected), "info");
@@ -143,27 +144,46 @@ function formatModel(model: ReturnType<typeof selectCorrectionModel>): string {
 	return model ? `${model.provider}/${model.id}` : "no model";
 }
 
+function startSquiggleIndicator(ctx: ExtensionContext): () => void {
+	if (!ctx.hasUI) return () => {};
+
+	const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+	let frame = 0;
+	let timer: ReturnType<typeof setInterval> | undefined;
+
+	const render = () => {
+		const theme = ctx.ui.theme;
+		ctx.ui.setStatus("squiggle", theme.fg("accent", frames[frame]!) + theme.fg("dim", " squiggling..."));
+		frame = (frame + 1) % frames.length;
+	};
+
+	render();
+	timer = setInterval(render, 120);
+
+	return () => {
+		if (timer) clearInterval(timer);
+		ctx.ui.setStatus("squiggle", undefined);
+	};
+}
+
 type DiffOp = {
 	type: "same" | "add" | "remove";
 	text: string;
 };
 
 function formatColoredDiff(before: string, after: string): string {
-	const dim = "\x1b[90;3m";
 	const same = "\x1b[90;3m";
 	const added = "\x1b[32;3m";
 	const removed = "\x1b[31;3m";
 	const reset = "\x1b[0m";
 
-	const rendered = diffChars(before.trim(), after.trim())
+	return diffChars(before.trim(), after.trim())
 		.map((op) => {
 			if (op.type === "add") return `${added}${op.text}${reset}`;
 			if (op.type === "remove") return `${removed}${op.text}${reset}`;
 			return `${same}${op.text}${reset}`;
 		})
 		.join("");
-
-	return `${dim}squiggle:${reset}\n${rendered}`;
 }
 
 function diffChars(before: string, after: string): DiffOp[] {

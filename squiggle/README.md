@@ -2,7 +2,7 @@
 
 Quietly polish grammar and spelling in your pi prompts.
 
-The extension intercepts user input, corrects spelling and grammar using a configured model, shows a colored diff, and submits the corrected prompt automatically without confirmation. Named after the red squiggle from your favorite spell-checker.
+The extension intercepts user input, shows a `squiggling...` spinner while processing, corrects spelling and grammar using a configured model, shows a colored diff, and submits the corrected prompt automatically without confirmation. Named after the red squiggle from your favorite spell-checker.
 
 ## Install
 
