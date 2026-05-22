@@ -68,13 +68,16 @@ SQUIGGLE_MODEL=openai-codex/gpt-5.4-mini pi
 SQUIGGLE_MAX_CHARS=1000 pi
 ```
 
-## Status
+## Commands
 
 Inside pi:
 
 ```text
-/squiggle-status
+/squiggle toggle      # switch between on/off
+/squiggle-status      # show status
 ```
+
+The toggle state is saved in the current pi session and overrides `.pi/squiggle.json` and environment configuration for that session.
 
 ## Notes
 

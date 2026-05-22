@@ -4,19 +4,39 @@ import { complete, type UserMessage } from "@earendil-works/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 
 export default function squiggle(pi: ExtensionAPI) {
+	let runtimeMode: SquiggleConfig["mode"] | undefined;
+
+	pi.on("session_start", async (_event, ctx) => {
+		runtimeMode = restoreRuntimeMode(ctx);
+	});
+
+	pi.registerCommand("squiggle", {
+		description: "Toggle squiggle on/off",
+		handler: async (args, ctx) => {
+			const command = args.trim().toLowerCase();
+			if (command !== "toggle") {
+				ctx.ui.notify("Usage: /squiggle toggle", "warning");
+				return;
+			}
+
+			const config = loadEffectiveConfig(ctx.cwd, runtimeMode);
+			runtimeMode = config.mode === "on" ? "off" : "on";
+			persistRuntimeMode(pi, runtimeMode);
+			ctx.ui.notify(formatStatus(ctx, loadEffectiveConfig(ctx.cwd, runtimeMode)), "info");
+		},
+	});
+
 	pi.registerCommand("squiggle-status", {
 		description: "Show whether squiggle is loaded",
 		handler: async (_args, ctx) => {
-			const config = loadConfig(ctx.cwd);
-			const model = selectCorrectionModel(ctx, config);
-			ctx.ui.notify(`squiggle is loaded (${config.mode}, ${formatModel(model)}).`, "info");
+			ctx.ui.notify(formatStatus(ctx, loadEffectiveConfig(ctx.cwd, runtimeMode)), "info");
 		},
 	});
 
 	pi.on("input", async (event, ctx) => {
 		if (event.source === "extension") return { action: "continue" };
 
-		const config = loadConfig(ctx.cwd);
+		const config = loadEffectiveConfig(ctx.cwd, runtimeMode);
 		if (config.mode === "off") return { action: "continue" };
 		if (!event.text.trim()) return { action: "continue" };
 
@@ -99,6 +119,28 @@ function loadConfig(cwd: string): SquiggleConfig {
 		model: process.env.SQUIGGLE_MODEL ?? fileConfig.model ?? DEFAULT_CORRECTION_MODEL,
 		maxInputChars: normalizePositiveInt(process.env.SQUIGGLE_MAX_CHARS ?? fileConfig.maxInputChars) ?? DEFAULT_MAX_LLM_INPUT_CHARS,
 	};
+}
+
+function loadEffectiveConfig(cwd: string, runtimeMode: SquiggleConfig["mode"] | undefined): SquiggleConfig {
+	const config = loadConfig(cwd);
+	return { ...config, mode: runtimeMode ?? config.mode };
+}
+
+function restoreRuntimeMode(ctx: ExtensionContext): SquiggleConfig["mode"] | undefined {
+	for (const entry of [...ctx.sessionManager.getEntries()].reverse()) {
+		if (entry.type !== "custom" || entry.customType !== "squiggle-mode") continue;
+		const data = (entry as { data?: { mode?: unknown } }).data;
+		return normalizeMode(data?.mode);
+	}
+	return undefined;
+}
+
+function persistRuntimeMode(pi: ExtensionAPI, mode: SquiggleConfig["mode"]): void {
+	pi.appendEntry("squiggle-mode", { mode });
+}
+
+function formatStatus(ctx: ExtensionContext, config: SquiggleConfig): string {
+	return `squiggle is ${config.mode} (${formatModel(selectCorrectionModel(ctx, config))}).`;
 }
 
 function readConfigFile(cwd: string): Partial<SquiggleConfig> {
