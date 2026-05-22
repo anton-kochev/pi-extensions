@@ -1,10 +1,14 @@
 {
-  "name": "pi-extensions",
+  "name": "@anton-kochev/pi-extensions",
   "version": "0.1.0",
   "description": "Pi extensions.",
   "keywords": ["pi-package"],
   "license": "MIT",
   "type": "module",
+  "files": ["squiggle", "README.md"],
+  "publishConfig": {
+    "access": "public"
+  },
   "peerDependencies": {
     "@earendil-works/pi-ai": "*",
     "@earendil-works/pi-coding-agent": "*"
