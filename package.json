@@ -7,6 +7,10 @@
   ],
   "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anton-kochev/pi-extensions.git"
+  },
   "files": [
     "squiggle",
     "README.md"
