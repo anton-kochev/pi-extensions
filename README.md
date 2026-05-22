@@ -19,6 +19,7 @@ pi install npm:@anton-kochev/pi-extensions@<version>
 ## Extensions
 
 - [`squiggle/`](./squiggle) — quietly polish grammar and spelling in user prompts.
+- [`echo/`](./echo) — read-only side-channel question asker for pi sessions and project code.
 
 ## Local development
 
@@ -26,6 +27,7 @@ From a checkout of this repo:
 
 ```bash
 pi install -l ./squiggle
+pi install -l ./echo
 ```
 
 Each subdirectory has its own `package.json` so individual extensions remain installable in isolation.
