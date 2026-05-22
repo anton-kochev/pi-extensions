@@ -1,32 +1,22 @@
 # pi-extensions
 
-Pi extensions for personal use, installed as a single pi-package from this repository.
+[![npm version](https://img.shields.io/npm/v/@anton-kochev/pi-extensions.svg)](https://www.npmjs.com/package/@anton-kochev/pi-extensions)
 
-## Install via pithos
+Pi extensions for personal use.
 
-In your project's `.pithos`:
-
-```yaml
-pi:
-  extensions:
-    squiggle: "git:https://github.com/anton-kochev/pi-extensions.git#main"
-```
-
-Pithos's entrypoint passes this to `pi install`, which clones the repo, runs `npm install`, and registers the extensions declared in the root `pi.extensions` manifest.
-
-## Install directly with pi
+## Install
 
 ```bash
-pi install git:github.com/anton-kochev/pi-extensions
+pi install npm:@anton-kochev/pi-extensions
 ```
 
-Pin to a tag for reproducibility:
+Or pin to a specific version:
 
 ```bash
-pi install git:github.com/anton-kochev/pi-extensions@v0.1.0
+pi install npm:@anton-kochev/pi-extensions@<version>
 ```
 
-## Extensions in this repo
+## Extensions
 
 - [`squiggle/`](./squiggle) — quietly polish grammar and spelling in user prompts.
 
@@ -39,3 +29,12 @@ pi install -l ./squiggle
 ```
 
 Each subdirectory has its own `package.json` so individual extensions remain installable in isolation.
+
+## Release
+
+```bash
+npm version patch       # or minor/major
+git push --follow-tags
+```
+
+Trusted publishing handles the rest — the workflow at `.github/workflows/publish.yml` fires on tag push and publishes to npm via OIDC.
