@@ -1,10 +1,12 @@
 # @anton-kochev/pi-skills
 
+[![npm version](https://img.shields.io/npm/v/@anton-kochev/pi-skills)](https://www.npmjs.com/package/@anton-kochev/pi-skills)
+
 Anton Kochev's pi skills and prompt commands.
 
 Use `/plan` when you want the agent to explore before asking questions, reach explicit shared understanding, write a `PLAN.md`, and only then implement.
 
-Use `/commit` to generate a git commit from staged changes using Conventional Commits 1.0.0.
+Use `/commit` to generate a Conventional Commits 1.0.0 message from staged changes — problem-framed subjects, subject-only by default, with a body only when it earns its place.
 
 Use the `tdd` skill when you want the agent to build or change non-trivial logic test-first with the red-green-refactor loop.
 
@@ -36,3 +38,13 @@ The TDD workflow is packaged as a skill. Pi can load it proactively for matching
 ```text
 /skill:tdd <your task>
 ```
+
+## Changelog
+
+### 0.1.1
+
+- `/commit`: reconcile the subject-mood rule with the problem-framed examples (declarative when stating a problem, imperative when describing value), default to subject-only bodies, and fix an over-length breaking-change example.
+
+### 0.1.0
+
+- Initial release: `/plan` and `/commit` prompt commands plus the `tdd` skill.
