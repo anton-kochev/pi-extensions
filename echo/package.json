@@ -1,6 +1,6 @@
 {
   "name": "@anton-kochev/echo",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Echo: a read-only side-channel question asker for pi sessions and project code.",
   "keywords": [
     "pi-package",
