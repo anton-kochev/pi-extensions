@@ -3,15 +3,15 @@ name: tdd
 description: >-
   A test-first workflow for writing or changing code: list the behaviors you
   want, drive each one into existence through the red-green-refactor loop, and
-  let the tests shape the design. Use this skill whenever the user wants to build
-  a feature, fix a bug, or change behavior test-first — triggers include "TDD",
-  "test-driven", "test first", "write tests first", "red-green-refactor",
-  "drive this with tests", or any request to implement well-tested logic
-  (parsers, algorithms, business rules, state machines, API handlers) where
-  jumping straight to implementation would risk untested or over-built code. Use
-  it proactively for non-trivial logic even when the user doesn't say "TDD",
-  and apply it in ANY language — the loop is identical whether the runner is
-  pytest, JUnit, Jest, RSpec, Go test, or anything else.
+  let the tests shape the design. Use this skill when the user wants to build a
+  feature, fix a bug, or change non-trivial behavior test-first — triggers
+  include "TDD", "test-driven", "test first", "write tests first",
+  "red-green-refactor", "drive this with tests", or a request to implement
+  well-tested logic (parsers, algorithms, business rules, state machines, API
+  handlers) where jumping straight to code would risk untested or over-built
+  work. This is the tech-agnostic methodology layer — the loop is identical
+  whether the runner is pytest, JUnit, Jest, RSpec, or `go test`; pair it with a
+  stack-specific skill or agent for tooling and conventions.
 ---
 
 # Test-Driven Development
