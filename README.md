@@ -6,12 +6,14 @@ A monorepo for personal pi extensions, each published independently to npm.
 
 - [`squiggle/`](./squiggle) — quietly polish grammar and spelling in user prompts. [![npm version](https://img.shields.io/npm/v/@anton-kochev/squiggle.svg)](https://www.npmjs.com/package/@anton-kochev/squiggle)
 - [`echo/`](./echo) — read-only side-channel question asker for pi sessions and project code. [![npm version](https://img.shields.io/npm/v/@anton-kochev/echo.svg)](https://www.npmjs.com/package/@anton-kochev/echo)
+- [`pi-skills/`](./pi-skills) — pi skills and prompt commands, including `/plan`. [![npm version](https://img.shields.io/npm/v/@anton-kochev/pi-skills.svg)](https://www.npmjs.com/package/@anton-kochev/pi-skills)
 
 ## Install
 
 ```bash
 pi install npm:@anton-kochev/squiggle
 pi install npm:@anton-kochev/echo
+pi install npm:@anton-kochev/pi-skills
 ```
 
 Pin to a specific version:
@@ -27,6 +29,7 @@ From a checkout of this repo:
 ```bash
 pi install -l ./squiggle
 pi install -l ./echo
+pi install -l ./pi-skills
 ```
 
 Each subdirectory has its own `package.json` and is published as a standalone npm package.
@@ -47,4 +50,10 @@ npm version patch --tag-version-prefix="echo-v"
 git push --follow-tags
 ```
 
-Trusted publishing handles the rest — the workflows at `.github/workflows/publish-squiggle.yml` and `.github/workflows/publish-echo.yml` fire on their respective tag prefixes and publish to npm via OIDC.
+```bash
+cd pi-skills
+npm version patch --tag-version-prefix="pi-skills-v"
+git push --follow-tags
+```
+
+Trusted publishing handles the rest — the workflows at `.github/workflows/publish-squiggle.yml`, `.github/workflows/publish-echo.yml`, and `.github/workflows/publish-pi-skills.yml` fire on their respective tag prefixes and publish to npm via OIDC.

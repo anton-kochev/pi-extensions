@@ -1,0 +1,30 @@
+{
+  "name": "@anton-kochev/pi-skills",
+  "version": "0.1.0",
+  "description": "Anton Kochev's pi skills and prompt commands.",
+  "keywords": [
+    "pi-package",
+    "pi-prompt-template",
+    "plan-mode",
+    "planning"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anton-kochev/pi-extensions.git",
+    "directory": "pi-skills"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "pi": {
+    "prompts": [
+      "./prompts"
+    ]
+  },
+  "files": [
+    "prompts",
+    "README.md"
+  ]
+}
