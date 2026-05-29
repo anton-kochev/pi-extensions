@@ -19,9 +19,11 @@ Generate git commit messages following the [Conventional Commits 1.0.0](https://
 [optional footer(s)]
 ```
 
+**Default to a subject line only.** Add a description paragraph or bullets only when they carry something the subject and diff don't already make obvious. Most commits need just the subject — reach for a body, don't default to one.
+
 ### Subject (mandatory)
 
-One sentence. Imperative mood, lowercase, no period, ≤72 chars.
+One sentence. Lowercase, no period, ≤72 chars. Declarative when stating a problem ("users locked out after reset"); imperative when describing added value ("add date-range filter").
 
 **Primary goal: answer "what problem does this change solve?"**
 
@@ -120,12 +122,13 @@ Only document changes with semantic meaning or technical impact. For pure format
 ## Rules
 
 - Subject answers "what problem does this solve?" when possible
-- Subject must be lowercase, imperative mood ("add feature" not "added feature")
+- Subject must be lowercase; declarative when problem-framed ("users locked out after reset"), imperative when value-framed ("add feature" not "added feature")
 - No period at end of subject
 - Keep subject under 72 characters
 - Scope is optional but recommended for larger codebases
 - Description paragraph: only include when there's a clear, non-obvious answer to "what value does this add?"
 - Bullet points: technical details / implementation notes that explain why each change was made, one point per logical change
+- Default to subject-only; add a body only when it earns its place
 - Be concise — avoid redundant or verbose language
 - **Never** use `--no-verify` unless explicitly requested
 - **Never** amend commits that have been pushed to remote
@@ -172,7 +175,7 @@ Now validates and rejects rows with empty required fields with a clear error.
 **Breaking change:**
 
 ```plain
-feat(api)!: clients can't distinguish enrichment errors from empty results
+feat(api)!: clients can't tell enrichment errors from empty results
 
 BREAKING CHANGE: Response now returns JSON wrapper with metadata
 instead of raw CSV. Clients must update parsing logic.
