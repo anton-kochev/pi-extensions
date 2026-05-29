@@ -5,8 +5,11 @@
   "keywords": [
     "pi-package",
     "pi-prompt-template",
+    "pi-skill",
     "plan-mode",
-    "planning"
+    "planning",
+    "tdd",
+    "test-driven-development"
   ],
   "license": "MIT",
   "type": "module",
@@ -21,10 +24,14 @@
   "pi": {
     "prompts": [
       "./prompts"
+    ],
+    "skills": [
+      "./skills"
     ]
   },
   "files": [
     "prompts",
+    "skills",
     "README.md"
   ]
 }
