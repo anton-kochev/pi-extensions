@@ -44,7 +44,7 @@ The TDD workflow is packaged as a skill. Pi can load it proactively for matching
 
 ## Changelog
 
-### Unreleased
+### 0.1.2
 
 - Add `/srs` prompt command for ISO/IEC/IEEE 29148:2018 SRS generation with EARS requirements and traceability.
 
