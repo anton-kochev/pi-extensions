@@ -1,0 +1,37 @@
+{
+  "name": "@anton-kochev/answer",
+  "version": "0.1.0",
+  "description": "Interactive Q&A extraction and answer submission for pi assistant responses.",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "questions",
+    "answers",
+    "prompt-generator"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anton-kochev/pi-extensions.git",
+    "directory": "answer"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions"
+    ]
+  },
+  "files": [
+    "extensions",
+    "README.md"
+  ]
+}

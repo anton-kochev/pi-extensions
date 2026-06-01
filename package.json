@@ -1,7 +1,7 @@
 {
   "name": "pi-extensions-monorepo",
   "version": "0.0.0",
-  "description": "Monorepo for @anton-kochev/squiggle and @anton-kochev/echo pi extensions.",
+  "description": "Monorepo for @anton-kochev pi extensions and skills.",
   "private": true,
   "license": "MIT",
   "type": "module",
