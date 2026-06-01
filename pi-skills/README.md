@@ -8,6 +8,8 @@ Use `/plan` when you want the agent to explore before asking questions, reach ex
 
 Use `/commit` to generate a Conventional Commits 1.0.0 message from staged changes — problem-framed subjects, subject-only by default, with a body only when it earns its place.
 
+Use `/srs` to create an ISO/IEC/IEEE 29148:2018 Software Requirements Specification with EARS requirements, explicit approval gating, and a traceability matrix.
+
 Use the `tdd` skill when you want the agent to build or change non-trivial logic test-first with the red-green-refactor loop.
 
 ## Install
@@ -29,6 +31,7 @@ Invoke prompt commands directly:
 ```text
 /plan <your task>
 /commit [instructions]
+/srs <product or change description>
 ```
 
 These are prompt templates, so they are manual-only: they appear as slash commands rather than being auto-selected as skills.
@@ -40,6 +43,10 @@ The TDD workflow is packaged as a skill. Pi can load it proactively for matching
 ```
 
 ## Changelog
+
+### Unreleased
+
+- Add `/srs` prompt command for ISO/IEC/IEEE 29148:2018 SRS generation with EARS requirements and traceability.
 
 ### 0.1.1
 

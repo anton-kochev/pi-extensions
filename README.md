@@ -6,7 +6,7 @@ A monorepo for personal pi extensions, each published independently to npm.
 
 - [`squiggle/`](./squiggle) — quietly polish grammar and spelling in user prompts. [![npm version](https://img.shields.io/npm/v/@anton-kochev/squiggle.svg)](https://www.npmjs.com/package/@anton-kochev/squiggle)
 - [`echo/`](./echo) — read-only side-channel question asker for pi sessions and project code. [![npm version](https://img.shields.io/npm/v/@anton-kochev/echo.svg)](https://www.npmjs.com/package/@anton-kochev/echo)
-- [`pi-skills/`](./pi-skills) — pi skills and prompt commands, including `/plan`. [![npm version](https://img.shields.io/npm/v/@anton-kochev/pi-skills.svg)](https://www.npmjs.com/package/@anton-kochev/pi-skills)
+- [`pi-skills/`](./pi-skills) — pi skills and prompt commands, including `/plan`, `/commit`, and `/srs`. [![npm version](https://img.shields.io/npm/v/@anton-kochev/pi-skills.svg)](https://www.npmjs.com/package/@anton-kochev/pi-skills)
 
 ## Install
 

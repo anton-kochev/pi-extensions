@@ -9,7 +9,11 @@
     "plan-mode",
     "planning",
     "tdd",
-    "test-driven-development"
+    "test-driven-development",
+    "srs",
+    "requirements",
+    "iso-29148",
+    "ears"
   ],
   "license": "MIT",
   "type": "module",
