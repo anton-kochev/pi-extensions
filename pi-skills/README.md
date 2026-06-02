@@ -44,6 +44,10 @@ The TDD workflow is packaged as a skill. Pi can load it proactively for matching
 
 ## Changelog
 
+### 0.1.3
+
+- Fix `/plan` prompt command discovery by quoting its YAML frontmatter description.
+
 ### 0.1.2
 
 - Add `/srs` prompt command for ISO/IEC/IEEE 29148:2018 SRS generation with EARS requirements and traceability.

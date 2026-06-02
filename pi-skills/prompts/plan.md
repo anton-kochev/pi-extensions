@@ -1,5 +1,5 @@
 ---
-description: Plan-first workflow: explore, reach shared understanding, write PLAN.md, then implement.
+description: "Plan-first workflow: explore, reach shared understanding, write PLAN.md, then implement."
 argument-hint: "<task>"
 ---
 
