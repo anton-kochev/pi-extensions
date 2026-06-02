@@ -17,6 +17,8 @@ It demonstrates the prompt-generator pattern with custom TUI:
 pi install npm:@anton-kochev/answer
 ```
 
+Inside a [pithos](https://github.com/anton-kochev/pithos) container this extension is preinstalled — `/answer` works out of the box with no install step.
+
 For local development from this repository:
 
 ```bash
