@@ -1,0 +1,47 @@
+{
+  "name": "@anton-kochev/telos",
+  "version": "0.1.0",
+  "description": "Telos: repo-scoped structured task tracking for pi.",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "tasks",
+    "todo",
+    "project-management"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anton-kochev/pi-extensions.git",
+    "directory": "telos"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.4"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions"
+    ]
+  },
+  "files": [
+    "extensions",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --import tsx --test test/*.test.ts"
+  }
+}

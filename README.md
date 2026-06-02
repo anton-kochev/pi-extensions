@@ -7,6 +7,7 @@ A monorepo for personal pi extensions, each published independently to npm.
 - [`squiggle/`](./squiggle) — quietly polish grammar and spelling in user prompts. [![npm version](https://img.shields.io/npm/v/@anton-kochev/squiggle.svg)](https://www.npmjs.com/package/@anton-kochev/squiggle)
 - [`echo/`](./echo) — read-only side-channel question asker for pi sessions and project code. [![npm version](https://img.shields.io/npm/v/@anton-kochev/echo.svg)](https://www.npmjs.com/package/@anton-kochev/echo)
 - [`answer/`](./answer) — extract questions from the last assistant response, answer them in an interactive TUI, and submit the answers. [![npm version](https://img.shields.io/npm/v/@anton-kochev/answer.svg)](https://www.npmjs.com/package/@anton-kochev/answer)
+- [`telos/`](./telos) — repo-scoped structured task tracking through `/tasks`, an agent tool, and `TASKS.md`. [![npm version](https://img.shields.io/npm/v/@anton-kochev/telos.svg)](https://www.npmjs.com/package/@anton-kochev/telos)
 - [`pi-skills/`](./pi-skills) — pi skills and prompt commands, including `/plan`, `/commit`, and `/srs`. [![npm version](https://img.shields.io/npm/v/@anton-kochev/pi-skills.svg)](https://www.npmjs.com/package/@anton-kochev/pi-skills)
 
 ## Install
@@ -15,6 +16,7 @@ A monorepo for personal pi extensions, each published independently to npm.
 pi install npm:@anton-kochev/squiggle
 pi install npm:@anton-kochev/echo
 pi install npm:@anton-kochev/answer
+pi install npm:@anton-kochev/telos
 pi install npm:@anton-kochev/pi-skills
 ```
 
@@ -32,6 +34,7 @@ From a checkout of this repo:
 pi install -l ./squiggle
 pi install -l ./echo
 pi install -l ./answer
+pi install -l ./telos
 pi install -l ./pi-skills
 ```
 
@@ -60,9 +63,15 @@ git push --follow-tags
 ```
 
 ```bash
+cd telos
+npm version patch --tag-version-prefix="telos-v"
+git push --follow-tags
+```
+
+```bash
 cd pi-skills
 npm version patch --tag-version-prefix="pi-skills-v"
 git push --follow-tags
 ```
 
-Trusted publishing handles the rest — the workflows at `.github/workflows/publish-squiggle.yml`, `.github/workflows/publish-echo.yml`, and `.github/workflows/publish-pi-skills.yml` fire on their respective tag prefixes and publish to npm via OIDC.
+Trusted publishing handles the rest — the workflows at `.github/workflows/publish-squiggle.yml`, `.github/workflows/publish-echo.yml`, `.github/workflows/publish-answer.yml`, `.github/workflows/publish-telos.yml`, and `.github/workflows/publish-pi-skills.yml` fire on their respective tag prefixes and publish to npm via OIDC.
