@@ -10,6 +10,7 @@ import {
 	validateArtifact,
 	type Task,
 	type TaskArtifact,
+	type TaskIdHashGenerator,
 	type TaskOperation,
 	type TaskOperationResult,
 } from "./tasks";
@@ -93,10 +94,11 @@ export async function mutateTaskArtifact(
 	filePath: string,
 	operation: TaskOperation,
 	now: () => Date = () => new Date(),
+	generateIdHash?: TaskIdHashGenerator,
 ): Promise<TaskOperationResult> {
 	return withFileMutationQueue(filePath, async () => {
 		const before = await loadTaskArtifact(filePath);
-		const result = applyTaskOperation(before.artifact, operation, now);
+		const result = applyTaskOperation(before.artifact, operation, now, generateIdHash);
 
 		if (result.artifact.tasks.length < before.artifact.tasks.length) {
 			throw new Error("Task operation would remove an existing task record; refusing to write TASKS.md");
@@ -124,10 +126,11 @@ function appendTaskTable(lines: string[], tasks: Task[], emptyText: string): voi
 		return;
 	}
 
-	lines.push("| ID | Status | Priority | Title | Updated |", "| --- | --- | --- | --- | --- |");
+	lines.push("| ID | Status | Priority | Depends on | Title | Updated |", "| --- | --- | --- | --- | --- | --- |");
 	for (const task of tasks) {
+		const dependencies = task.dependencies.length > 0 ? task.dependencies.join(", ") : "—";
 		lines.push(
-			`| ${escapeTable(task.id)} | ${escapeTable(task.status)} | ${escapeTable(task.priority)} | ${escapeTable(task.title)} | ${escapeTable(task.updated)} |`,
+			`| ${escapeTable(task.id)} | ${escapeTable(task.status)} | ${escapeTable(task.priority)} | ${escapeTable(dependencies)} | ${escapeTable(task.title)} | ${escapeTable(task.updated)} |`,
 		);
 	}
 }

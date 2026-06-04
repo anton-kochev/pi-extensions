@@ -12,7 +12,7 @@ Subcommands:
   list [--archived|--all]                 List active tasks by default
   create [options] <title>                Create a task
   show <id>                               Show one task
-  update <id> [options]                   Update title, status, priority, or notes
+  update <id> [options]                   Update title, status, priority, notes, or dependencies
   status <id> <status>                    Set status: todo, in_progress, blocked, done, archived
   complete <id>                           Set status to done
   reopen <id>                             Set status to todo
@@ -25,13 +25,14 @@ Options:
   --status <status>                       todo, in_progress, blocked, done, archived
   --priority <priority>                   low, medium, high, urgent
   --notes <notes>                         Task notes; empty string is allowed
+  --depends <id[,id...]>                  Task dependencies; use an empty value to clear
   --help, -h                              Show this help
 
 Examples:
   /tasks create --priority high "Implement Telos"
   /tasks list --all
-  /tasks update TSK-0001 --notes "Blocked on review"
-  /tasks complete TSK-0001`;
+  /tasks update TSK-abc123ef --notes "Blocked on review"
+  /tasks complete TSK-abc123ef`;
 
 export function parseTasksCommand(rawArgs: string): ParsedTasksCommand {
 	const tokens = tokenizeArgs(rawArgs.trim());
@@ -124,32 +125,36 @@ function parseList(tokens: string[]): TaskOperation {
 }
 
 function parseCreate(tokens: string[]): TaskOperation {
-	const options = parseOptions(tokens, new Set(["--status", "--priority", "--notes"]));
+	const options = parseOptions(tokens, new Set(["--status", "--priority", "--notes", "--depends", "--dependencies"]));
 	if (options.positionals.length === 0) throw new Error("create requires a title");
 	const operation: TaskOperation = { action: "create", title: options.positionals.join(" ") };
 	const status = options.values.get("--status");
 	const priority = options.values.get("--priority");
 	const notes = options.values.get("--notes");
+	const dependencies = options.values.get("--depends") ?? options.values.get("--dependencies");
 	if (status !== undefined) operation.status = status as TaskStatus;
 	if (priority !== undefined) operation.priority = priority as TaskPriority;
 	if (notes !== undefined) operation.notes = notes;
+	if (dependencies !== undefined) operation.dependencies = parseDependencies(dependencies);
 	return operation;
 }
 
 function parseUpdate(tokens: string[]): TaskOperation {
 	if (tokens.length === 0) throw new Error("update requires an id");
 	const [id, ...rest] = tokens;
-	const options = parseOptions(rest, new Set(["--title", "--status", "--priority", "--notes"]));
+	const options = parseOptions(rest, new Set(["--title", "--status", "--priority", "--notes", "--depends", "--dependencies"]));
 	if (options.positionals.length > 0) throw new Error(`Unexpected update argument: ${options.positionals[0]}`);
 	const operation: TaskOperation = { action: "update", id };
 	const title = options.values.get("--title");
 	const status = options.values.get("--status");
 	const priority = options.values.get("--priority");
 	const notes = options.values.get("--notes");
+	const dependencies = options.values.get("--depends") ?? options.values.get("--dependencies");
 	if (title !== undefined) operation.title = title;
 	if (status !== undefined) operation.status = status as TaskStatus;
 	if (priority !== undefined) operation.priority = priority as TaskPriority;
 	if (notes !== undefined) operation.notes = notes;
+	if (dependencies !== undefined) operation.dependencies = parseDependencies(dependencies);
 	return operation;
 }
 
@@ -171,6 +176,13 @@ function onlyPositional(tokens: string[], usage: string): string[] {
 		if (token.startsWith("-")) throw new Error(`${usage} does not accept option ${token}`);
 	}
 	return tokens;
+}
+
+function parseDependencies(value: string): string[] {
+	return value
+		.split(",")
+		.map((entry) => entry.trim())
+		.filter(Boolean);
 }
 
 function parseOptions(tokens: string[], allowed: Set<string>): { values: Map<string, string>; positionals: string[] } {

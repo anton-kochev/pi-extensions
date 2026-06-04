@@ -22,11 +22,12 @@ const TaskToolParams = Type.Object({
 	action: StringEnum(["create", "list", "show", "update", "status", "complete", "reopen", "block", "archive", "delete"] as const, {
 		description: "Task operation to perform",
 	}),
-	id: Type.Optional(Type.String({ description: "Task ID, e.g. TSK-0001" })),
+	id: Type.Optional(Type.String({ description: "Task ID, e.g. TSK-abc123ef" })),
 	title: Type.Optional(Type.String({ description: "Task title for create or update" })),
 	status: Type.Optional(StringEnum(TASK_STATUSES, { description: "Task status" })),
 	priority: Type.Optional(StringEnum(TASK_PRIORITIES, { description: "Task priority" })),
 	notes: Type.Optional(Type.String({ description: "Task notes; empty string is allowed" })),
+	dependencies: Type.Optional(Type.Array(Type.String(), { description: "Task IDs this task depends on" })),
 	scope: Type.Optional(StringEnum(["active", "archived", "all"] as const, { description: "List scope; defaults to active" })),
 });
 
@@ -37,6 +38,7 @@ type TaskToolParams = {
 	status?: TaskStatus;
 	priority?: TaskPriority;
 	notes?: string;
+	dependencies?: string[];
 	scope?: ListScope;
 };
 
@@ -121,6 +123,7 @@ function operationFromToolParams(params: TaskToolParams): TaskOperation {
 				status: params.status,
 				priority: params.priority,
 				notes: params.notes,
+				dependencies: params.dependencies,
 			}) as TaskOperation;
 		case "list":
 			return pruneUndefined({ action: "list", scope: params.scope }) as TaskOperation;
@@ -134,6 +137,7 @@ function operationFromToolParams(params: TaskToolParams): TaskOperation {
 				status: params.status,
 				priority: params.priority,
 				notes: params.notes,
+				dependencies: params.dependencies,
 			}) as TaskOperation;
 		case "status":
 			return { action: "status", id: params.id, status: params.status };

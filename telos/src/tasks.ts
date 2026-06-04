@@ -1,3 +1,5 @@
+import { randomBytes } from "node:crypto";
+
 export const TASK_STATUSES = ["todo", "in_progress", "blocked", "done", "archived"] as const;
 export const TASK_PRIORITIES = ["low", "medium", "high", "urgent"] as const;
 export const LIST_SCOPES = ["active", "archived", "all"] as const;
@@ -12,6 +14,7 @@ export type Task = {
 	status: TaskStatus;
 	priority: TaskPriority;
 	notes: string;
+	dependencies: string[];
 	created: string;
 	updated: string;
 };
@@ -28,6 +31,7 @@ export type TaskOperation =
 			status?: TaskStatus;
 			priority?: TaskPriority;
 			notes?: string;
+			dependencies?: string[];
 	  }
 	| { action: "list"; scope?: ListScope; includeArchived?: boolean }
 	| { action: "show"; id?: string }
@@ -38,6 +42,7 @@ export type TaskOperation =
 			status?: TaskStatus;
 			priority?: TaskPriority;
 			notes?: string;
+			dependencies?: string[];
 	  }
 	| { action: "status"; id?: string; status?: TaskStatus }
 	| { action: "complete"; id?: string }
@@ -54,6 +59,8 @@ export type TaskOperationResult = {
 	rejected?: boolean;
 };
 
+export type TaskIdHashGenerator = () => string;
+
 export function createEmptyArtifact(): TaskArtifact {
 	return { telos_version: 1, tasks: [] };
 }
@@ -69,6 +76,7 @@ export function validateArtifact(value: unknown): TaskArtifact {
 		if (ids.has(task.id)) throw new Error(`Duplicate task ID: ${task.id}`);
 		ids.add(task.id);
 	}
+	validateDependencies(tasks);
 
 	return { telos_version: 1, tasks };
 }
@@ -81,20 +89,22 @@ export function validateTask(value: unknown, index = 0): Task {
 	const status = validateStatus(value.status, `tasks[${index}].status`);
 	const priority = validatePriority(value.priority, `tasks[${index}].priority`);
 	const notes = stringField(value.notes, `tasks[${index}].notes`);
+	const dependencies = stringArrayField(value.dependencies, `tasks[${index}].dependencies`);
 	const created = validateIsoTimestamp(value.created, `tasks[${index}].created`);
 	const updated = validateIsoTimestamp(value.updated, `tasks[${index}].updated`);
 
 	if (!title.trim()) throw new Error(`tasks[${index}].title must not be empty`);
-	return { id, title, status, priority, notes, created, updated };
+	return { id, title, status, priority, notes, dependencies, created, updated };
 }
 
 export function applyTaskOperation(
 	artifact: TaskArtifact,
 	operation: TaskOperation,
 	now: () => Date = () => new Date(),
+	generateIdHash: TaskIdHashGenerator = randomTaskIdHash,
 ): TaskOperationResult {
 	const current = validateArtifact(artifact);
-	const tasks = current.tasks.map((task) => ({ ...task }));
+	const tasks = current.tasks.map((task) => ({ ...task, dependencies: [...task.dependencies] }));
 	const nextArtifact: TaskArtifact = { telos_version: 1, tasks };
 
 	switch (operation.action) {
@@ -103,17 +113,20 @@ export function applyTaskOperation(
 			const status = operation.status === undefined ? "todo" : validateStatus(operation.status, "status");
 			const priority = operation.priority === undefined ? "medium" : validatePriority(operation.priority, "priority");
 			const notes = operation.notes === undefined ? "" : stringField(operation.notes, "notes");
+			const dependencies = operation.dependencies === undefined ? [] : stringArrayField(operation.dependencies, "dependencies");
 			const timestamp = now().toISOString();
 			const task: Task = {
-				id: nextTaskId(tasks),
+				id: nextTaskId(tasks, generateIdHash),
 				title,
 				status,
 				priority,
 				notes,
+				dependencies,
 				created: timestamp,
 				updated: timestamp,
 			};
 			tasks.push(task);
+			validateDependencies(tasks);
 			return { artifact: nextArtifact, text: `Created ${task.id}: ${task.title}`, task };
 		}
 
@@ -150,8 +163,13 @@ export function applyTaskOperation(
 				task.notes = stringField(operation.notes, "notes");
 				changed = true;
 			}
+			if (operation.dependencies !== undefined) {
+				task.dependencies = stringArrayField(operation.dependencies, "dependencies");
+				changed = true;
+			}
 
-			if (!changed) throw new Error("Update requires at least one of title, status, priority, or notes");
+			if (!changed) throw new Error("Update requires at least one of title, status, priority, notes, or dependencies");
+			validateDependencies(tasks);
 			task.updated = now().toISOString();
 			return { artifact: nextArtifact, text: `Updated ${task.id}: ${task.title}`, task };
 		}
@@ -196,6 +214,7 @@ export function formatTaskDetails(task: Task): string {
 		`Priority: ${task.priority}`,
 		`Created: ${task.created}`,
 		`Updated: ${task.updated}`,
+		`Dependencies: ${task.dependencies.length ? task.dependencies.join(", ") : "(none)"}`,
 		`Notes: ${task.notes || "(empty)"}`,
 	].join("\n");
 }
@@ -203,7 +222,19 @@ export function formatTaskDetails(task: Task): string {
 export function filterTasks(tasks: Task[], scope: ListScope): Task[] {
 	if (scope === "archived") return tasks.filter((task) => task.status === "archived");
 	if (scope === "all") return [...tasks];
-	return tasks.filter((task) => task.status !== "archived");
+	return sortCompletedLast(tasks.filter((task) => task.status !== "archived"));
+}
+
+function sortCompletedLast(tasks: Task[]): Task[] {
+	return tasks
+		.map((task, index) => ({ task, index }))
+		.sort((a, b) => {
+			const aDone = a.task.status === "done";
+			const bDone = b.task.status === "done";
+			if (aDone !== bDone) return aDone ? 1 : -1;
+			return a.index - b.index;
+		})
+		.map(({ task }) => task);
 }
 
 function setStatus(artifact: TaskArtifact, id: string | undefined, status: TaskStatus, now: () => Date): TaskOperationResult {
@@ -214,13 +245,26 @@ function setStatus(artifact: TaskArtifact, id: string | undefined, status: TaskS
 	return { artifact, text: `Set ${task.id} status to ${status}`, task };
 }
 
-function nextTaskId(tasks: Task[]): string {
-	let max = 0;
-	for (const task of tasks) {
-		const match = /^TSK-(\d+)$/.exec(task.id);
-		if (match) max = Math.max(max, Number(match[1]));
+function nextTaskId(tasks: Task[], generateIdHash: TaskIdHashGenerator): string {
+	const existing = new Set(tasks.map((task) => task.id));
+	for (let attempt = 0; attempt < 100; attempt++) {
+		const hash = normalizeShortHash(generateIdHash());
+		const id = `TSK-${hash}`;
+		if (!existing.has(id)) return id;
 	}
-	return `TSK-${String(max + 1).padStart(4, "0")}`;
+	throw new Error("Unable to generate a unique task ID after 100 attempts");
+}
+
+function randomTaskIdHash(): string {
+	return randomBytes(4).toString("hex");
+}
+
+function normalizeShortHash(hash: string): string {
+	const normalized = hash.trim().replace(/^TSK-/i, "").toLowerCase();
+	if (!/^[0-9a-f]{8}$/.test(normalized)) {
+		throw new Error(`Generated task ID hash must be 8 hexadecimal characters: ${hash}`);
+	}
+	return normalized;
 }
 
 function findRequired(tasks: Task[], id: string | undefined): Task {
@@ -277,6 +321,24 @@ function requiredString(value: unknown, field: string): string {
 function stringField(value: unknown, field: string): string {
 	if (typeof value !== "string") throw new Error(`${field} must be a string`);
 	return value;
+}
+
+function stringArrayField(value: unknown, field: string): string[] {
+	if (!Array.isArray(value)) throw new Error(`${field} must be an array of task IDs`);
+	return value.map((entry, index) => requireNonEmpty(entry, `${field}[${index}]`));
+}
+
+function validateDependencies(tasks: Task[]): void {
+	const ids = new Set(tasks.map((task) => task.id));
+	for (const task of tasks) {
+		const seen = new Set<string>();
+		for (const dependencyId of task.dependencies) {
+			if (dependencyId === task.id) throw new Error(`Task ${task.id} cannot depend on itself`);
+			if (!ids.has(dependencyId)) throw new Error(`Dependency ${dependencyId} for task ${task.id} does not exist`);
+			if (seen.has(dependencyId)) throw new Error(`Task ${task.id} lists duplicate dependency ${dependencyId}`);
+			seen.add(dependencyId);
+		}
+	}
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

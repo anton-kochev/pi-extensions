@@ -1,5 +1,5 @@
 import type { ExtensionCommandContext, Theme } from "@earendil-works/pi-coding-agent";
-import { Key, matchesKey, truncateToWidth } from "@earendil-works/pi-tui";
+import { Key, matchesKey, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { formatArtifactList, loadTaskArtifact, taskFilePath } from "./artifact";
 import { filterTasks, type Task } from "./tasks";
 
@@ -52,10 +52,16 @@ class TaskListComponent {
 			add(`  ${th.fg("dim", "No active tasks. Create one with /tasks create \"Task title\".")}`);
 		} else {
 			for (const task of this.tasks) {
-				const status = statusGlyph(task.status);
-				const priority = priorityColor(task.priority, th);
-				add(`  ${status} ${th.fg("accent", task.id)} ${priority} ${th.fg("text", task.title)}`);
-				if (task.notes) add(`      ${th.fg("dim", task.notes)}`);
+				const isDone = task.status === "done";
+				const status = isDone ? th.fg("dim", statusGlyph(task.status)) : statusGlyph(task.status);
+				const id = isDone ? th.fg("dim", task.id) : th.fg("accent", task.id);
+				const priority = isDone ? th.fg("dim", priorityGlyph(task.priority)) : priorityColor(task.priority, th);
+				const title = isDone ? th.fg("dim", task.title) : th.fg("text", task.title);
+				const dependency = dependencyIndicator(task, th);
+				const prefix = `  ${status} ${id} ${priority} `;
+				const suffix = dependency ? `  ${dependency}` : "";
+				const titleWidth = Math.max(0, width - visibleWidth(prefix) - visibleWidth(suffix));
+				add(`${prefix}${truncateToWidth(title, titleWidth, "…")}${suffix}`);
 			}
 		}
 
@@ -76,23 +82,47 @@ class TaskListComponent {
 
 function statusGlyph(status: Task["status"]): string {
 	switch (status) {
-		case "done":
-			return "✓";
-		case "blocked":
-			return "■";
-		case "in_progress":
-			return "◐";
-		case "archived":
-			return "◇";
 		case "todo":
-			return "○";
+			return "□";
+		case "in_progress":
+			return "▣";
+		case "blocked":
+			return "▧";
+		case "done":
+			return "■";
+		case "archived":
+			return "▫";
 	}
 }
 
+function dependencyIndicator(task: Task, theme: Theme): string {
+	if (task.dependencies.length === 0) return "";
+	return theme.fg("dim", `◂${task.dependencies.length}`);
+}
+
 function priorityColor(priority: Task["priority"], theme: Theme): string {
-	const text = `(${priority})`;
-	if (priority === "urgent") return theme.fg("error", text);
-	if (priority === "high") return theme.fg("warning", text);
-	if (priority === "low") return theme.fg("dim", text);
-	return theme.fg("muted", text);
+	const glyph = priorityGlyph(priority);
+	switch (priority) {
+		case "urgent":
+			return theme.fg("error", glyph);
+		case "high":
+			return theme.fg("warning", glyph);
+		case "medium":
+			return theme.fg("muted", glyph);
+		case "low":
+			return theme.fg("dim", glyph);
+	}
+}
+
+function priorityGlyph(priority: Task["priority"]): string {
+	switch (priority) {
+		case "urgent":
+			return "●●●";
+		case "high":
+			return "●●○";
+		case "medium":
+			return "●○○";
+		case "low":
+			return "○○○";
+	}
 }

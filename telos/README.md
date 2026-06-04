@@ -36,9 +36,9 @@ Inside pi:
 ```text
 /tasks
 /tasks list [--archived|--all]
-/tasks create [--priority low|medium|high|urgent] [--status todo|in_progress|blocked|done|archived] [--notes <notes>] <title>
+/tasks create [--priority low|medium|high|urgent] [--status todo|in_progress|blocked|done|archived] [--notes <notes>] [--depends <id[,id...]>] <title>
 /tasks show <id>
-/tasks update <id> [--title <title>] [--priority low|medium|high|urgent] [--status todo|in_progress|blocked|done|archived] [--notes <notes>]
+/tasks update <id> [--title <title>] [--priority low|medium|high|urgent] [--status todo|in_progress|blocked|done|archived] [--notes <notes>] [--depends <id[,id...]>]
 /tasks status <id> <todo|in_progress|blocked|done|archived>
 /tasks complete <id>
 /tasks reopen <id>
@@ -53,9 +53,10 @@ Examples:
 ```text
 /tasks create --priority high "Implement Telos MVP"
 /tasks list --all
-/tasks update TSK-0001 --notes "Waiting on review"
-/tasks complete TSK-0001
-/tasks archive TSK-0001
+/tasks update TSK-abc123ef --notes "Waiting on review"
+/tasks create --depends TSK-abc123ef "Build on existing task"
+/tasks complete TSK-abc123ef
+/tasks archive TSK-abc123ef
 ```
 
 `/tasks` with no arguments opens a read-only interactive task list when pi has an interactive UI. Press `Esc`, `Ctrl+C`, or `q` to exit without modifying tasks. In non-interactive modes it prints the active task list as text.
@@ -74,11 +75,12 @@ Telos stores canonical task data in YAML frontmatter at the repository root:
 ---
 telos_version: 1
 tasks:
-  - id: TSK-0001
+  - id: TSK-abc123ef
     title: Implement Telos MVP
     status: todo
     priority: high
     notes: ""
+    dependencies: []
     created: "2026-06-02T12:00:00.000Z"
     updated: "2026-06-02T12:00:00.000Z"
 ---
@@ -92,11 +94,12 @@ The YAML frontmatter is the source of truth. The Markdown body is regenerated af
 
 Task fields:
 
-- `id` — stable task ID, generated as `TSK-0001`, `TSK-0002`, ...
+- `id` — stable task ID, generated as `TSK-{short_hash}`, for example `TSK-abc123ef`
 - `title` — non-empty task title
 - `status` — `todo`, `in_progress`, `blocked`, `done`, or `archived`
 - `priority` — `low`, `medium`, `high`, or `urgent`
 - `notes` — string, may be empty
+- `dependencies` — task IDs this task depends on; use `[]` when there are none
 - `created` — ISO 8601 timestamp
 - `updated` — ISO 8601 timestamp
 

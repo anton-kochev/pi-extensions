@@ -4,9 +4,15 @@ import { parseTasksCommand } from "../src/commands";
 
 describe("/tasks command parser", () => {
 	it("parses create with options and quoted title", () => {
-		assert.deepEqual(parseTasksCommand('create --priority high --notes "Needs care" "Build Telos"'), {
+		assert.deepEqual(parseTasksCommand('create --priority high --notes "Needs care" --depends TSK-abc123ef,TSK-fed456ba "Build Telos"'), {
 			type: "operation",
-			operation: { action: "create", title: "Build Telos", priority: "high", notes: "Needs care" },
+			operation: {
+				action: "create",
+				title: "Build Telos",
+				priority: "high",
+				notes: "Needs care",
+				dependencies: ["TSK-abc123ef", "TSK-fed456ba"],
+			},
 		});
 	});
 
@@ -22,14 +28,14 @@ describe("/tasks command parser", () => {
 	});
 
 	it("parses lifecycle shortcuts", () => {
-		assert.deepEqual(parseTasksCommand("complete TSK-0001"), {
+		assert.deepEqual(parseTasksCommand("complete TSK-abc123ef"), {
 			type: "operation",
-			operation: { action: "complete", id: "TSK-0001" },
+			operation: { action: "complete", id: "TSK-abc123ef" },
 		});
 	});
 
 	it("reports invalid command arguments", () => {
-		const parsed = parseTasksCommand("update TSK-0001 --unknown value");
+		const parsed = parseTasksCommand("update TSK-abc123ef --unknown value");
 		assert.equal(parsed.type, "error");
 		assert.match(parsed.message, /Unknown/);
 	});

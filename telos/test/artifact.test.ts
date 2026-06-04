@@ -31,11 +31,12 @@ describe("TASKS.md artifact", () => {
 			...artifact,
 			tasks: [
 				{
-					id: "TSK-0001",
+					id: "TSK-abc123ef",
 					title: "Write tests",
 					status: "todo" as const,
 					priority: "medium" as const,
 					notes: "",
+					dependencies: [],
 					created: "2026-06-02T12:00:00.000Z",
 					updated: "2026-06-02T12:00:00.000Z",
 				},
@@ -55,12 +56,13 @@ describe("TASKS.md artifact", () => {
 
 	it("creates a missing TASKS.md on successful mutation", async () => {
 		const file = await tempFile();
-		const result = await mutateTaskArtifact(file, { action: "create", title: "Write tests" }, now);
+		const result = await mutateTaskArtifact(file, { action: "create", title: "Write tests" }, now, () => "abc123ef");
 		const written = await readFile(file, "utf8");
 
-		assert.equal(result.task?.id, "TSK-0001");
+		assert.equal(result.task?.id, "TSK-abc123ef");
 		assert.match(written, /telos_version: 1/);
 		assert.match(written, /title: Write tests/);
+		assert.match(written, /dependencies:\s*\[\]/);
 	});
 
 	it("leaves malformed artifacts unchanged when mutation validation fails", async () => {
