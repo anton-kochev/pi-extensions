@@ -59,7 +59,7 @@ Examples:
 /tasks archive TSK-abc123ef
 ```
 
-`/tasks` with no arguments opens a read-only interactive task list when pi has an interactive UI. Use `↑`/`↓` to move the chevron pointer between tasks, and press `Esc`, `Ctrl+C`, or `q` to exit without modifying tasks. In non-interactive modes it prints the active task list as text.
+`/tasks` with no arguments opens a read-only interactive task list when pi has an interactive UI. Use `↑`/`↓` to move the chevron pointer between tasks, press `Enter` or `Space` to open/close details for the selected task, and press `Esc`, `Ctrl+C`, or `q` to exit without modifying tasks. In non-interactive modes it prints the active task list as text.
 
 ### Interactive list legend
 
@@ -97,9 +97,24 @@ Example row:
 › □ TSK-9d6a63e4  ●○○  Dependent test task  ◂1
 ```
 
-The `›` chevron marks the selected task.
+The `›` chevron marks the selected task. Press `Enter` or `Space` to switch to a details view for that task:
 
-Completed tasks are dimmed and sorted after incomplete active tasks. Dependency IDs are not expanded in the list; use `/tasks show <id>` for full details.
+```text
+─── TSK-9d6a63e4 ─────────────────────────
+
+  Dependent test task
+  □ todo · ●○○ medium
+
+  Dependencies
+  □ TSK-e1fe6249  ●○○  Change the directory used for TASKS.md
+
+  Created  2026-06-04 11:08 UTC
+  Updated  2026-06-04 11:08 UTC
+```
+
+The details view shows the description and dependencies only when they are present. Long descriptions wrap instead of truncating.
+
+Completed tasks are dimmed and sorted after incomplete active tasks. Dependency IDs are not expanded in the list; use the details view or `/tasks show <id>` for full details.
 
 ## Agent tool
 
