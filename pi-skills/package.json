@@ -1,6 +1,6 @@
 {
   "name": "@anton-kochev/pi-skills",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Anton Kochev's pi skills and prompt commands.",
   "keywords": [
     "pi-package",

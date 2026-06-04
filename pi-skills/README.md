@@ -44,7 +44,7 @@ The TDD workflow is packaged as a skill. Pi can load it proactively for matching
 
 ## Changelog
 
-### Next
+### 0.2.0
 
 - `/commit`: infer and stage relevant files when commit intent is clear, while preserving staged-only commits and avoiding local artifacts.
 
