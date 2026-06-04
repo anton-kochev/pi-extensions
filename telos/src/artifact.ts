@@ -15,6 +15,7 @@ import {
 	type TaskOperationResult,
 } from "./tasks";
 
+export const TASKS_DIR = ".pi";
 export const TASKS_FILE = "TASKS.md";
 
 export type ArtifactLoad = {
@@ -23,7 +24,7 @@ export type ArtifactLoad = {
 };
 
 export function taskFilePath(cwd: string): string {
-	return join(cwd, TASKS_FILE);
+	return join(cwd, TASKS_DIR, TASKS_FILE);
 }
 
 export function parseArtifactText(text: string): TaskArtifact {

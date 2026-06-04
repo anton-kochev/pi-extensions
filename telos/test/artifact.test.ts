@@ -8,6 +8,7 @@ import {
 	mutateTaskArtifact,
 	parseArtifactText,
 	serializeArtifact,
+	taskFilePath,
 } from "../src/artifact";
 import { createEmptyArtifact } from "../src/tasks";
 
@@ -25,6 +26,10 @@ after(async () => {
 });
 
 describe("TASKS.md artifact", () => {
+	it("stores the task artifact under the .pi directory", () => {
+		assert.equal(taskFilePath("/repo"), join("/repo", ".pi", "TASKS.md"));
+	});
+
 	it("serializes and parses YAML frontmatter as the canonical task data", () => {
 		const artifact = createEmptyArtifact();
 		const created = {

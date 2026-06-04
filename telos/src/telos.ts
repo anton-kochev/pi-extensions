@@ -47,8 +47,8 @@ export default function telos(pi: ExtensionAPI) {
 		name: TOOL_NAME,
 		label: "Telos Tasks",
 		description:
-			"Manage repo-scoped project tasks in TASKS.md when the user wants task tracking. Supports create, list, show, update, status changes, complete, reopen, block, archive, and delete rejection.",
-		promptSnippet: "Manage repo-scoped project tasks in TASKS.md when the user asks to track work.",
+			"Manage repo-scoped project tasks in .pi/TASKS.md when the user wants task tracking. Supports create, list, show, update, status changes, complete, reopen, block, archive, and delete rejection.",
+		promptSnippet: "Manage repo-scoped project tasks in .pi/TASKS.md when the user asks to track work.",
 		promptGuidelines: [
 			"Use telos_tasks only when the user asks to manage, track, inspect, or update project tasks; do not create or update tasks proactively without that intent.",
 			"Use telos_tasks archive instead of physical deletion when a task should be removed from active work.",

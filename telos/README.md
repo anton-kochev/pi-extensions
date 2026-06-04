@@ -2,7 +2,7 @@
 
 Repo-scoped structured task tracking for pi.
 
-Telos adds a `/tasks` command and an agent-callable `telos_tasks` tool. Tasks persist in the current repository's `TASKS.md`, so they survive pi sessions and remain inspectable outside pi.
+Telos adds a `/tasks` command and an agent-callable `telos_tasks` tool. Tasks persist in the current repository's `.pi/TASKS.md`, so they survive pi sessions and remain inspectable outside pi.
 
 ## Install
 
@@ -122,9 +122,9 @@ Telos registers one LLM-callable tool: `telos_tasks`.
 
 The tool supports the same task operations as `/tasks`: create, list, show, update, status, complete, reopen, block, archive, and delete rejection. It also accepts `dependencies: string[]` for create and update operations. It is described neutrally so the agent can use it when the user asks to manage or track tasks; Telos does not add any automatic per-turn task creation or tracking hook.
 
-## `TASKS.md` artifact
+## `.pi/TASKS.md` artifact
 
-Telos stores canonical task data in YAML frontmatter at the repository root:
+Telos stores canonical task data in YAML frontmatter under the repository's `.pi` directory:
 
 ```md
 ---
@@ -158,7 +158,7 @@ Task fields:
 - `created` — ISO 8601 timestamp
 - `updated` — ISO 8601 timestamp
 
-Archive is the MVP soft-delete mechanism. Physical deletion is rejected and leaves `TASKS.md` unchanged.
+Archive is the MVP soft-delete mechanism. Physical deletion is rejected and leaves `.pi/TASKS.md` unchanged.
 
 ## Local development
 
