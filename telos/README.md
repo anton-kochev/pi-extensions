@@ -61,11 +61,49 @@ Examples:
 
 `/tasks` with no arguments opens a read-only interactive task list when pi has an interactive UI. Press `Esc`, `Ctrl+C`, or `q` to exit without modifying tasks. In non-interactive modes it prints the active task list as text.
 
+### Interactive list legend
+
+The interactive list uses compact glyphs so task rows stay scannable:
+
+Statuses:
+
+```text
+□ todo
+▣ in_progress
+▧ blocked
+■ done
+▫ archived
+```
+
+Priorities:
+
+```text
+●●● urgent
+●●○ high
+●○○ medium
+○○○ low
+```
+
+Dependency indicator:
+
+```text
+◂1   depends on one task
+◂2   depends on two tasks
+```
+
+Example row:
+
+```text
+□ TSK-9d6a63e4  ●○○  Dependent test task  ◂1
+```
+
+Completed tasks are dimmed and sorted after incomplete active tasks. Dependency IDs are not expanded in the list; use `/tasks show <id>` for full details.
+
 ## Agent tool
 
 Telos registers one LLM-callable tool: `telos_tasks`.
 
-The tool supports the same task operations as `/tasks`: create, list, show, update, status, complete, reopen, block, archive, and delete rejection. It is described neutrally so the agent can use it when the user asks to manage or track tasks; Telos does not add any automatic per-turn task creation or tracking hook.
+The tool supports the same task operations as `/tasks`: create, list, show, update, status, complete, reopen, block, archive, and delete rejection. It also accepts `dependencies: string[]` for create and update operations. It is described neutrally so the agent can use it when the user asks to manage or track tasks; Telos does not add any automatic per-turn task creation or tracking hook.
 
 ## `TASKS.md` artifact
 
@@ -99,7 +137,7 @@ Task fields:
 - `status` — `todo`, `in_progress`, `blocked`, `done`, or `archived`
 - `priority` — `low`, `medium`, `high`, or `urgent`
 - `notes` — string, may be empty
-- `dependencies` — task IDs this task depends on; use `[]` when there are none
+- `dependencies` — task IDs this task depends on; use `[]` when there are none. Dependencies must reference existing tasks, cannot reference the task itself, and cannot contain duplicates.
 - `created` — ISO 8601 timestamp
 - `updated` — ISO 8601 timestamp
 
