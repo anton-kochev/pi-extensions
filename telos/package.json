@@ -1,6 +1,6 @@
 {
   "name": "@anton-kochev/telos",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Telos: repo-scoped structured task tracking for pi.",
   "keywords": [
     "pi-package",
