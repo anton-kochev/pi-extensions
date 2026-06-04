@@ -16,7 +16,7 @@ import {
 } from "./tasks";
 
 export const TASKS_DIR = ".pi";
-export const TASKS_FILE = "TASKS.md";
+export const TASKS_FILE = "telos-tasks.md";
 
 export type ArtifactLoad = {
 	artifact: TaskArtifact;
@@ -29,7 +29,7 @@ export function taskFilePath(cwd: string): string {
 
 export function parseArtifactText(text: string): TaskArtifact {
 	const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(text);
-	if (!match) throw new Error("TASKS.md must start with Telos YAML frontmatter delimited by ---");
+	if (!match) throw new Error("telos-tasks.md must start with Telos YAML frontmatter delimited by ---");
 
 	let raw: unknown;
 	try {
@@ -102,7 +102,7 @@ export async function mutateTaskArtifact(
 		const result = applyTaskOperation(before.artifact, operation, now, generateIdHash);
 
 		if (result.artifact.tasks.length < before.artifact.tasks.length) {
-			throw new Error("Task operation would remove an existing task record; refusing to write TASKS.md");
+			throw new Error("Task operation would remove an existing task record; refusing to write telos-tasks.md");
 		}
 
 		if (!result.rejected && isMutatingOperation(operation)) {

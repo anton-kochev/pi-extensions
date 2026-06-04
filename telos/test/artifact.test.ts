@@ -18,16 +18,16 @@ const now = () => new Date("2026-06-02T12:00:00.000Z");
 async function tempFile() {
 	const dir = await mkdtemp(join(tmpdir(), "telos-test-"));
 	tempDirs.push(dir);
-	return join(dir, "TASKS.md");
+	return join(dir, "telos-tasks.md");
 }
 
 after(async () => {
 	for (const dir of tempDirs) await rm(dir, { recursive: true, force: true });
 });
 
-describe("TASKS.md artifact", () => {
+describe("Telos task artifact", () => {
 	it("stores the task artifact under the .pi directory", () => {
-		assert.equal(taskFilePath("/repo"), join("/repo", ".pi", "TASKS.md"));
+		assert.equal(taskFilePath("/repo"), join("/repo", ".pi", "telos-tasks.md"));
 	});
 
 	it("serializes and parses YAML frontmatter as the canonical task data", () => {
@@ -59,7 +59,7 @@ describe("TASKS.md artifact", () => {
 		assert.throws(() => parseArtifactText("# Tasks\n\nNo frontmatter"), /Telos YAML frontmatter/);
 	});
 
-	it("creates a missing TASKS.md on successful mutation", async () => {
+	it("creates a missing task artifact on successful mutation", async () => {
 		const file = await tempFile();
 		const result = await mutateTaskArtifact(file, { action: "create", title: "Write tests" }, now, () => "abc123ef");
 		const written = await readFile(file, "utf8");
