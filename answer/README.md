@@ -46,6 +46,8 @@ Keys in the TUI:
 - `Shift+Tab`: go to previous question
 - `Up` / `Down`: focus and navigate options when a question has them
 - `Space` / `Enter`: select the focused option (`single` or `multiple`, depending on the question)
+- Long free-text answers wrap across multiple lines
+- `Shift+Enter` / `Alt+Enter`: insert a newline in the free-text answer
 - `Left` / `Right`: move within the free-text answer
 - `Enter`: save and go next when options are not focused; on the last question, submit if complete
 - `Ctrl+S`: submit when all questions are answered or have selected options

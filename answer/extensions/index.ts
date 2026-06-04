@@ -250,6 +250,7 @@ async function collectAnswers(ctx: ExtensionCommandContext, questions: Extracted
 		let optionFocus = false;
 		let focused = false;
 		let cachedLines: string[] | undefined;
+		let cachedWidth: number | undefined;
 		const answers = Array.from({ length: questions.length }, () => "");
 		const selectedOptions = questions.map((): number[] => []);
 
@@ -263,6 +264,7 @@ async function collectAnswers(ctx: ExtensionCommandContext, questions: Extracted
 
 		function refresh() {
 			cachedLines = undefined;
+			cachedWidth = undefined;
 			tui.requestRender();
 		}
 
@@ -326,6 +328,11 @@ async function collectAnswers(ctx: ExtensionCommandContext, questions: Extracted
 			}
 			if (matchesKey(data, Key.ctrl("s"))) {
 				submitIfReady();
+				return;
+			}
+			if (matchesKey(data, Key.shift("enter")) || matchesKey(data, Key.alt("enter"))) {
+				optionFocus = false;
+				insertText("\n");
 				return;
 			}
 			if (matchesKey(data, Key.enter)) {
@@ -399,10 +406,10 @@ async function collectAnswers(ctx: ExtensionCommandContext, questions: Extracted
 
 			if (!data.startsWith("\x1b") && data.length > 0) {
 				optionFocus = false;
-				const printable = Array.from(data)
+				const printable = Array.from(data.replace(/\r\n/g, "\n").replace(/\r/g, "\n"))
 					.filter((char) => {
 						const code = char.codePointAt(0) ?? 0;
-						return code >= 32 && code !== 127;
+						return char === "\n" || (code >= 32 && code !== 127);
 					})
 					.join("");
 				if (printable) insertText(printable);
@@ -410,7 +417,7 @@ async function collectAnswers(ctx: ExtensionCommandContext, questions: Extracted
 		}
 
 		function render(width: number): string[] {
-			if (cachedLines) return cachedLines;
+			if (cachedLines && cachedWidth === width) return cachedLines;
 
 			const innerWidth = Math.max(28, Math.min(width - 6, 92));
 			const lines: string[] = [];
@@ -456,18 +463,21 @@ async function collectAnswers(ctx: ExtensionCommandContext, questions: Extracted
 			}
 
 			lines.push(centerCardLine(width, cardLine("", innerWidth, theme)));
-			lines.push(centerCardLine(width, cardLine(renderAnswerLine(answers[current], cursor, focused && !optionFocus, theme), innerWidth, theme)));
+			for (const line of renderAnswerLines(answers[current], cursor, focused && !optionFocus, innerWidth, theme)) {
+				lines.push(centerCardLine(width, cardLine(line, innerWidth, theme)));
+			}
 			lines.push(centerCardLine(width, cardBorder("separator", innerWidth, theme)));
 
 			const help = q.options.length > 0
-				? "Type anytime • ↑↓ options • Space/Enter select • Tab next • Ctrl+S submit • Esc cancel"
-				: "Type answer • Tab next • Shift+Tab previous • Enter next/submit • Esc cancel";
+				? "Type anytime • ↑↓ options • Space/Enter select • Shift+Enter/Alt+Enter newline • Tab next • Ctrl+S submit • Esc cancel"
+				: "Type answer • Shift+Enter/Alt+Enter newline • Tab next • Shift+Tab previous • Enter next/submit • Esc cancel";
 			for (const line of wrapTextWithAnsi(theme.fg("dim", help), innerWidth)) {
 				lines.push(centerCardLine(width, cardLine(line, innerWidth, theme)));
 			}
 			lines.push(centerCardLine(width, cardBorder("bottom", innerWidth, theme)));
 
 			cachedLines = lines;
+			cachedWidth = width;
 			return lines;
 		}
 
@@ -481,6 +491,7 @@ async function collectAnswers(ctx: ExtensionCommandContext, questions: Extracted
 			render,
 			invalidate: () => {
 				cachedLines = undefined;
+				cachedWidth = undefined;
 			},
 			handleInput,
 		};
@@ -511,12 +522,14 @@ function renderOptionLines(option: ExtractedOption, selection: SelectionMode, se
 	return lines;
 }
 
-function renderAnswerLine(answer: string, cursor: number, focused: boolean, theme: any): string {
+function renderAnswerLines(answer: string, cursor: number, focused: boolean, innerWidth: number, theme: any): string[] {
+	const prefix = `${theme.fg("accent", theme.bold("A:"))} `;
+	if (!answer && !focused) return wrapTextWithAnsi(`${prefix}${theme.fg("dim", "type your answer…")}`, innerWidth);
+
 	const before = answer.slice(0, cursor);
 	const after = answer.slice(cursor);
-	if (!answer && !focused) return `${theme.fg("accent", theme.bold("A:"))} ${theme.fg("dim", "type your answer…")}`;
 	const cursorText = focused ? `${CURSOR_MARKER}${theme.fg("accent", "_")}` : "";
-	return `${theme.fg("accent", theme.bold("A:"))} ${theme.fg("text", before)}${cursorText}${theme.fg("text", after)}`;
+	return wrapTextWithAnsi(`${prefix}${theme.fg("text", before)}${cursorText}${theme.fg("text", after)}`, innerWidth);
 }
 
 function cardBorder(kind: "top" | "separator" | "bottom", innerWidth: number, theme: any): string {
