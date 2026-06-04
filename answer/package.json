@@ -1,6 +1,6 @@
 {
   "name": "@anton-kochev/answer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Interactive Q&A extraction and answer submission for pi assistant responses.",
   "keywords": [
     "pi-package",
