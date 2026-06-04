@@ -59,7 +59,7 @@ Examples:
 /tasks archive TSK-abc123ef
 ```
 
-`/tasks` with no arguments opens a read-only interactive task list when pi has an interactive UI. Press `Esc`, `Ctrl+C`, or `q` to exit without modifying tasks. In non-interactive modes it prints the active task list as text.
+`/tasks` with no arguments opens a read-only interactive task list when pi has an interactive UI. Use `↑`/`↓` to move the chevron pointer between tasks, and press `Esc`, `Ctrl+C`, or `q` to exit without modifying tasks. In non-interactive modes it prints the active task list as text.
 
 ### Interactive list legend
 
@@ -94,8 +94,10 @@ Dependency indicator:
 Example row:
 
 ```text
-□ TSK-9d6a63e4  ●○○  Dependent test task  ◂1
+› □ TSK-9d6a63e4  ●○○  Dependent test task  ◂1
 ```
+
+The `›` chevron marks the selected task.
 
 Completed tasks are dimmed and sorted after incomplete active tasks. Dependency IDs are not expanded in the list; use `/tasks show <id>` for full details.
 

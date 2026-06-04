@@ -7,8 +7,8 @@ export async function showTaskList(ctx: ExtensionCommandContext): Promise<void> 
 	const loaded = await loadTaskArtifact(taskFilePath(ctx.cwd));
 	const tasks = filterTasks(loaded.artifact.tasks, "active");
 
-	await ctx.ui.custom<void>((_tui, theme, _kb, done) => {
-		return new TaskListComponent(tasks, theme, () => done());
+	await ctx.ui.custom<void>((tui, theme, _kb, done) => {
+		return new TaskListComponent(tasks, theme, () => done(), () => tui.requestRender());
 	});
 }
 
@@ -17,19 +17,31 @@ export async function activeTaskListText(cwd: string): Promise<string> {
 	return formatArtifactList(loaded.artifact, "active");
 }
 
-class TaskListComponent {
+export class TaskListComponent {
 	private cachedWidth?: number;
 	private cachedLines?: string[];
+	private selectedIndex = 0;
 
 	constructor(
 		private readonly tasks: Task[],
 		private readonly theme: Theme,
 		private readonly onClose: () => void,
+		private readonly requestRender: () => void = () => {},
 	) {}
 
 	handleInput(data: string): void {
 		if (matchesKey(data, Key.escape) || matchesKey(data, Key.ctrl("c")) || matchesKey(data, "q")) {
 			this.onClose();
+			return;
+		}
+
+		if (matchesKey(data, Key.up)) {
+			this.moveSelection(-1);
+			return;
+		}
+
+		if (matchesKey(data, Key.down)) {
+			this.moveSelection(1);
 		}
 	}
 
@@ -51,14 +63,17 @@ class TaskListComponent {
 		if (this.tasks.length === 0) {
 			add(`  ${th.fg("dim", "No active tasks. Create one with /tasks create \"Task title\".")}`);
 		} else {
-			for (const task of this.tasks) {
+			for (let index = 0; index < this.tasks.length; index++) {
+				const task = this.tasks[index];
+				const selected = index === this.selectedIndex;
 				const isDone = task.status === "done";
+				const pointer = selected ? th.fg("accent", "›") : " ";
 				const status = isDone ? th.fg("dim", statusGlyph(task.status)) : statusGlyph(task.status);
 				const id = isDone ? th.fg("dim", task.id) : th.fg("accent", task.id);
 				const priority = isDone ? th.fg("dim", priorityGlyph(task.priority)) : priorityColor(task.priority, th);
 				const title = isDone ? th.fg("dim", task.title) : th.fg("text", task.title);
 				const dependency = dependencyIndicator(task, th);
-				const prefix = `  ${status} ${id} ${priority} `;
+				const prefix = `${pointer} ${status} ${id} ${priority} `;
 				const suffix = dependency ? `  ${dependency}` : "";
 				const titleWidth = Math.max(0, width - visibleWidth(prefix) - visibleWidth(suffix));
 				add(`${prefix}${truncateToWidth(title, titleWidth, "…")}${suffix}`);
@@ -66,7 +81,7 @@ class TaskListComponent {
 		}
 
 		add("");
-		add(`  ${th.fg("dim", "Press Esc, Ctrl+C, or q to close. Use /tasks --help for commands.")}`);
+		add(`  ${th.fg("dim", "Use ↑/↓ to navigate. Press Esc, Ctrl+C, or q to close.")}`);
 		add("");
 
 		this.cachedWidth = width;
@@ -77,6 +92,17 @@ class TaskListComponent {
 	invalidate(): void {
 		this.cachedWidth = undefined;
 		this.cachedLines = undefined;
+	}
+
+	private moveSelection(delta: number): void {
+		if (this.tasks.length === 0) return;
+
+		const nextIndex = Math.max(0, Math.min(this.tasks.length - 1, this.selectedIndex + delta));
+		if (nextIndex === this.selectedIndex) return;
+
+		this.selectedIndex = nextIndex;
+		this.invalidate();
+		this.requestRender();
 	}
 }
 

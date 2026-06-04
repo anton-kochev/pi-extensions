@@ -8,6 +8,8 @@ export type ParsedTasksCommand =
 
 export const TASKS_HELP = `Usage: /tasks [subcommand] [options]
 
+Run /tasks without a subcommand to open the interactive task navigator.
+
 Subcommands:
   list [--archived|--all]                 List active tasks by default
   create [options] <title>                Create a task
