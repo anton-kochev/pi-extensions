@@ -6,7 +6,7 @@ Anton Kochev's pi skills and prompt commands.
 
 Use `/plan` when you want the agent to explore before asking questions, reach explicit shared understanding, write a `PLAN.md`, and only then implement.
 
-Use `/commit` to generate a Conventional Commits 1.0.0 message from staged changes — problem-framed subjects, subject-only by default, with a body only when it earns its place.
+Use `/commit` to stage relevant files when intent is clear and generate a Conventional Commits 1.0.0 message — problem-framed subjects, subject-only by default, with a body only when it earns its place.
 
 Use `/srs` to create an ISO/IEC/IEEE 29148:2018 Software Requirements Specification with EARS requirements, explicit approval gating, and a traceability matrix.
 
@@ -43,6 +43,10 @@ The TDD workflow is packaged as a skill. Pi can load it proactively for matching
 ```
 
 ## Changelog
+
+### Next
+
+- `/commit`: infer and stage relevant files when commit intent is clear, while preserving staged-only commits and avoiding local artifacts.
 
 ### 0.1.3
 

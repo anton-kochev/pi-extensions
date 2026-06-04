@@ -72,21 +72,36 @@ Breaking changes correlate with MAJOR in SemVer.
 
 When the user invokes `/commit`:
 
-1. **Check staged changes**:
+1. **Inspect repository state**:
 
    ```bash
-   git status
+   git status --short
+   git diff
    git diff --cached
    ```
 
-2. **Analyze changes** and determine:
+2. **Determine commit scope**:
+   - If files are already staged, commit only staged files.
+   - If nothing is staged and the user provided a clear scope, stage only files matching that scope.
+     - Example: “changes to the /answer extension” means stage modified files under `answer/`.
+   - If nothing is staged and the scope is obvious from the working tree, stage the relevant modified tracked files.
+   - Do not stage unrelated untracked files, generated files, editor metadata, session logs, or local config unless explicitly requested.
+   - If the intended files are ambiguous, suggest the files to stage and ask for confirmation.
+
+3. **Stage selected files when appropriate**:
+
+   ```bash
+   git add <relevant-files>
+   ```
+
+4. **Analyze staged changes** and determine:
    - Filter out trivial changes (see below)
    - Ask: **"what problem does this solve?"** — use that as the subject
    - Primary type (feat, fix, docs, etc.)
    - Scope if applicable (component, module, or file area)
    - Whether description paragraph or bullet points add value
 
-3. **Generate commit** using HEREDOC for proper formatting:
+5. **Generate commit** using HEREDOC for proper formatting:
 
    ```bash
    git commit -m "$(cat <<'EOF'
@@ -100,13 +115,21 @@ When the user invokes `/commit`:
    )"
    ```
 
-4. **Verify** the commit was created:
+6. **Verify** the commit was created:
 
    ```bash
    git log -1
    ```
 
-If no staged changes exist, do not commit. Tell the user there is nothing staged and show the relevant `git status` summary. Do not stage files unless the user explicitly asks.
+If no staged changes exist, infer and stage relevant files when the user’s intent is clear. If intent is unclear, show the proposed staging set and ask for confirmation.
+
+## Staging Rules
+
+- Prefer staged files when present; never add extra files to an already staged commit unless explicitly asked.
+- When auto-staging, stage only files relevant to the user’s stated scope.
+- Modified tracked files may be staged automatically when relevant.
+- Untracked files require stronger evidence before staging.
+- Never stage obvious local/session artifacts unless explicitly requested.
 
 ## Filtering Trivial Changes
 
