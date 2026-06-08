@@ -1,0 +1,34 @@
+{
+  "name": "@anton-kochev/command-guard",
+  "version": "0.1.0",
+  "description": "Guard Pi agent shell commands and file mutations with configurable block and confirmation rules.",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "command-guard",
+    "permissions",
+    "shell"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anton-kochev/pi-extensions.git",
+    "directory": "command-guard"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions"
+    ]
+  },
+  "files": [
+    "extensions",
+    "README.md"
+  ]
+}
