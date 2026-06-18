@@ -43,6 +43,16 @@ pi install -l ./pi-skills
 
 Each subdirectory has its own `package.json` and is published as a standalone npm package.
 
+## Local Pi patches
+
+Repo-local helper scripts for local Pi install patches live in [`scripts/pi-patches/`](./scripts/pi-patches).
+These are for changes that survive restarts but may be overwritten by a Pi package update.
+Run them after updating or reinstalling Pi.
+
+```bash
+scripts/pi-patches/suppress-prompt-template-display.mjs
+```
+
 ## Release
 
 Each extension releases independently via a prefixed tag:
