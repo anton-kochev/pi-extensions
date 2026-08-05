@@ -3,7 +3,13 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
-import { generatePlanPath, preparePlanMutation } from "../extensions/plan-files.ts";
+import {
+	buildPlanCancellationMessage,
+	buildPlanSystemPrompt,
+	generatePlanPath,
+	preparePlanMutation,
+	resolvePlanCancellation,
+} from "../extensions/plan-files.ts";
 
 async function withTempDirectory(run: (directory: string) => Promise<void>): Promise<void> {
 	const directory = await mkdtemp(join(tmpdir(), "pi-plan-files-"));
@@ -46,6 +52,53 @@ describe("generatePlanPath", () => {
 
 			assert.equal(path, ".pi/plans/2026-06-29-231508-improve-auth.md");
 		});
+	});
+});
+
+describe("resolvePlanCancellation", () => {
+	it("recognizes a legacy cancellation when its generated plan was never saved", async () => {
+		await withTempDirectory(async (cwd) => {
+			const cancelled = await resolvePlanCancellation(cwd, [
+				{ active: true, planPath: ".pi/plans/example.md" },
+				{ active: false },
+			]);
+
+			assert.equal(cancelled, true);
+		});
+	});
+});
+
+describe("buildPlanCancellationMessage", () => {
+	it("makes the hidden command state explicit to the next model turn", () => {
+		const message = buildPlanCancellationMessage();
+
+		assert.match(message, /^\[PLAN MODE CANCELLED\]/);
+		assert.match(message, /Plan mode is now inactive/);
+		assert.match(message, /Ignore any earlier Plan Mode workflow instructions/);
+	});
+});
+
+describe("buildPlanSystemPrompt", () => {
+	it("overrides stale planning instructions after cancellation", () => {
+		const prompt = buildPlanSystemPrompt("base prompt", {
+			active: false,
+			cancelled: true,
+		});
+
+		assert.match(prompt ?? "", /^base prompt/);
+		assert.match(prompt ?? "", /Plan mode is inactive because the user cancelled it/);
+		assert.match(prompt ?? "", /Ignore any earlier Plan Mode workflow instructions/);
+	});
+
+	it("supplies the generated plan path while planning remains active", () => {
+		const prompt = buildPlanSystemPrompt("base prompt", {
+			active: true,
+			cancelled: false,
+			planPath: ".pi/plans/example.md",
+		});
+
+		assert.match(prompt ?? "", /save it at exactly `.pi\/plans\/example.md`/);
+		assert.doesNotMatch(prompt ?? "", /Plan mode is inactive/);
 	});
 });
 
