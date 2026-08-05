@@ -1,5 +1,5 @@
 ---
-description: "Plan-first workflow: explore, reach shared understanding, write PLAN.md, then implement."
+description: "Plan-first workflow: explore, agree, save a named plan under .pi/plans, then implement."
 argument-hint: "<task>"
 ---
 
@@ -22,7 +22,7 @@ done the work. Read, grep, and run read-only commands until the code has told yo
 everything it can.
 
 **Rule 2 — Don't implement until there is shared understanding.** Do not write
-`PLAN.md` or change any code until the user has *explicitly* confirmed your
+the plan file or change any code until the user has *explicitly* confirmed your
 understanding of the goal, approach, and scope. "Yes, that's right" / "go ahead"
 is confirmation; silence or a vague "sounds good" to a wall of text is not.
 
@@ -33,7 +33,8 @@ planning (Phases 1–3) you may only read files, search the codebase (grep / fin
 ripgrep), and run non-mutating commands (`git log`, `git diff`, `ls`, `cat`,
 dependency listing, dry-runs). Do NOT edit, create, or delete source files, run
 migrations, install packages, or run anything with side effects. The one file you
-may create is `PLAN.md`, and only at Phase 4, after approval.
+may create is the generated plan file under `.pi/plans/`, and only at Phase 4,
+after approval.
 
 ---
 
@@ -93,10 +94,14 @@ until the user confirms every aspect. Favor real back-and-forth with explanation
 over a checkbox interrogation. **Do not advance to Phase 4 without an explicit
 go-ahead.**
 
-### Phase 4 — Write PLAN.md
+### Phase 4 — Save the plan
 
-Only after approval, write `PLAN.md` in the project root (or where the user
-prefers), keeping it tight and skimmable:
+Only after approval, write the plan to the exact generated path supplied by the
+plan extension under `.pi/plans/`, keeping it tight and skimmable. If no path was
+supplied, generate a sortable UTC timestamp-prefixed kebab-case Markdown name
+there (for example, `2026-08-05-132751-save-plan-storage.md`). Preserve the
+readable name and advance the timestamp on collision; never overwrite an existing
+plan or add a numeric suffix:
 
 ```markdown
 # Plan: <short title>
@@ -134,19 +139,19 @@ Show it to the user and get a final nod before implementing.
 
 ### Phase 5 — Implement
 
-Work through `PLAN.md` step by step. Keep it honest: if reality diverges, update
-the file. If a divergence is *material* — it changes the approach, scope, or a
-tradeoff the user weighed in on — stop and check before proceeding; small
-mechanical adjustments don't need a check-in. Run the project's own verification
-commands (found in Phase 1) before declaring a step done.
+Work through the saved plan file step by step. Keep it honest: if reality
+diverges, update that same file. If a divergence is *material* — it changes the
+approach, scope, or a tradeoff the user weighed in on — stop and check before
+proceeding; small mechanical adjustments don't need a check-in. Run the project's
+own verification commands (found in Phase 1) before declaring a step done.
 
 ---
 
 ## Anti-patterns to avoid
 
 - **Interviewing the user about facts that are in the code.** Explore first, always.
-- **Racing to PLAN.md.** A plan written before shared understanding just formalizes a misunderstanding.
-- **Editing "just a little" during planning.** Planning is read-only; the only exception is `PLAN.md` at Phase 4.
+- **Racing to the plan file.** A plan written before shared understanding just formalizes a misunderstanding.
+- **Editing "just a little" during planning.** Planning is read-only; the only exception is the generated plan file at Phase 4.
 - **Hiding the fork.** Choosing between two real designs without telling the user makes a decision that was theirs.
 - **Treating a vague "ok" as agreement.** Confirm the aspects that actually carry risk.
 

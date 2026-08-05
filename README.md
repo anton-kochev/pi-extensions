@@ -10,7 +10,7 @@ A monorepo for personal pi extensions, each published independently to npm.
 - [`telos/`](./telos) — repo-scoped structured task tracking through `/tasks`, an agent tool, and `TASKS.md`. [![npm version](https://img.shields.io/npm/v/@anton-kochev/telos.svg)](https://www.npmjs.com/package/@anton-kochev/telos)
 - [`command-guard/`](./command-guard) — guard Pi agent shell commands and file mutations with configurable rules. [![npm version](https://img.shields.io/npm/v/@anton-kochev/command-guard.svg)](https://www.npmjs.com/package/@anton-kochev/command-guard)
 - [`guild/`](./guild) — isolated .NET and Angular architecture and implementation Guild members. [![npm version](https://img.shields.io/npm/v/@anton-kochev/guild.svg)](https://www.npmjs.com/package/@anton-kochev/guild)
-- [`pi-skills/`](./pi-skills) — pi skills and prompt commands, including `/plan`, `/commit`, and `/srs`. [![npm version](https://img.shields.io/npm/v/@anton-kochev/pi-skills.svg)](https://www.npmjs.com/package/@anton-kochev/pi-skills)
+- [`pi-skills/`](./pi-skills) — pi skills and prompt commands, including `/plan`, `/commit`, and `/srs`, plus the automatic `/plan` theme. [![npm version](https://img.shields.io/npm/v/@anton-kochev/pi-skills.svg)](https://www.npmjs.com/package/@anton-kochev/pi-skills)
 
 ## Install
 

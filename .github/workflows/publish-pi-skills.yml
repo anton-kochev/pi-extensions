@@ -37,5 +37,8 @@ jobs:
             exit 1
           fi
 
+      - name: Test
+        run: npm test
+
       - name: Publish
         run: npm publish --provenance --access public

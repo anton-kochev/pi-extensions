@@ -4,7 +4,7 @@
 
 Anton Kochev's pi skills and prompt commands.
 
-Use `/plan` when you want the agent to explore before asking questions, reach explicit shared understanding, write a `PLAN.md`, and only then implement.
+Use `/plan` when you want the agent to explore before asking questions, reach explicit shared understanding, save a plan under `.pi/plans/`, and only then implement. The extension preserves a readable task-derived name behind a sortable UTC timestamp, such as `2026-08-05-132751-save-plan-storage.md`. If that path already exists, it advances the timestamp instead of adding a numeric suffix. The bundled `plan` theme is enabled automatically while `/plan` is active and restored after the generated plan is written. Run `/plan` again before the plan is written to cancel planning and restore the previous theme.
 
 Use `/commit` to stage relevant files when intent is clear and generate a Conventional Commits 1.0.0 message — problem-framed subjects, subject-only by default, with a body only when it earns its place.
 
@@ -43,6 +43,11 @@ The TDD workflow is packaged as a skill. Pi can load it proactively for matching
 ```
 
 ## Changelog
+
+### Unreleased
+
+- Add an automatic temporary `plan` theme for `/plan`, restored after the generated plan is written.
+- Save plans under `.pi/plans/` with unique, timestamp-prefixed readable names instead of overwriting a root `PLAN.md` or adding numeric suffixes.
 
 ### 0.2.0
 

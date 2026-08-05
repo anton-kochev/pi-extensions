@@ -17,6 +17,12 @@
   ],
   "license": "MIT",
   "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.ts"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/anton-kochev/pi-extensions.git",
@@ -26,16 +32,24 @@
     "access": "public"
   },
   "pi": {
+    "extensions": [
+      "./extensions/plan-theme.ts"
+    ],
     "prompts": [
       "./prompts"
     ],
     "skills": [
       "./skills"
+    ],
+    "themes": [
+      "./themes"
     ]
   },
   "files": [
+    "extensions",
     "prompts",
     "skills",
+    "themes",
     "README.md"
   ]
 }
