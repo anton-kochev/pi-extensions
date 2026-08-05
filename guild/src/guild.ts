@@ -3,7 +3,6 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { StringEnum } from "@earendil-works/pi-ai";
 import {
-	BorderedLoader,
 	CONFIG_DIR_NAME,
 	getAgentDir,
 	type ExtensionAPI,
@@ -25,7 +24,13 @@ import {
 	type RunGuildMemberOptions,
 	type GuildRunResult,
 } from "./runner";
-import { createGuildPanel, renderGuildCall, renderGuildLifecycleMessage, renderGuildResult } from "./ui";
+import {
+	createGuildHandoverProgress,
+	createGuildPanel,
+	renderGuildCall,
+	renderGuildLifecycleMessage,
+	renderGuildResult,
+} from "./ui";
 import { GuildRunTracker } from "./visibility";
 
 const BUILTIN_AGENTS_DIR = fileURLToPath(new URL("../agents", import.meta.url));
@@ -107,6 +112,8 @@ function resultDetails(
 		stderr: result.stderr,
 		warnings,
 		output: result.output,
+		activity: result.activity,
+		activityTool: result.activityTool,
 	};
 }
 
@@ -205,22 +212,25 @@ export function registerGuild(pi: ExtensionAPI, dependencies: GuildDependencies 
 		onUpdate: ((update: HandoverExecutionResult) => void) | undefined,
 		ctx: ExtensionContext,
 		startedAt = Date.now(),
+		visibility: "dashboard" | "focused" = "dashboard",
 	): Promise<HandoverExecutionResult> => {
 		const { discovery, member, task } = prepared;
 		const inheritedModel = modelName(ctx) ?? "default model";
 		const thinkingLevel = ctx.thinkingLevel ?? "off";
-		activeRuns.start({
-			id: runId,
-			member: member.name,
-			source: member.source,
-			role: GUILD_MEMBER_POLICIES[member.name].role,
-			task,
-			model: inheritedModel,
-			thinkingLevel,
-			tools: member.tools,
-			startedAt,
-		});
-		ensureTicker(ctx);
+		if (visibility === "dashboard") {
+			activeRuns.start({
+				id: runId,
+				member: member.name,
+				source: member.source,
+				role: GUILD_MEMBER_POLICIES[member.name].role,
+				task,
+				model: inheritedModel,
+				thinkingLevel,
+				tools: member.tools,
+				startedAt,
+			});
+			ensureTicker(ctx);
+		}
 
 		try {
 			const result = await dependencies.run({
@@ -232,8 +242,10 @@ export function registerGuild(pi: ExtensionAPI, dependencies: GuildDependencies 
 				projectTrusted: ctx.isProjectTrusted(),
 				signal,
 				onUpdate: (partial) => {
-					activeRuns.update(runId, { turns: partial.usage.turns });
-					refreshVisibility(ctx);
+					if (visibility === "dashboard") {
+						activeRuns.update(runId, { turns: partial.usage.turns });
+						refreshVisibility(ctx);
+					}
 					onUpdate?.({
 						content: [{ type: "text", text: truncateUtf8(partial.output || `Running ${member.name}…`, MAX_MODEL_OUTPUT_BYTES) }],
 						details: resultDetails(
@@ -266,7 +278,7 @@ export function registerGuild(pi: ExtensionAPI, dependencies: GuildDependencies 
 				),
 			};
 		} finally {
-			finishVisibleRun(runId, ctx);
+			if (visibility === "dashboard") finishVisibleRun(runId, ctx);
 		}
 	};
 
@@ -378,10 +390,14 @@ export function registerGuild(pi: ExtensionAPI, dependencies: GuildDependencies 
 					warnings: prepared.discovery.warnings,
 				};
 				type LoaderResult = HandoverExecutionResult | { error: string } | { cancelled: true };
-				const loaderResult = await ctx.ui.custom<LoaderResult>((tui, theme, _keybindings, done) => {
-					const loader = new BorderedLoader(tui, theme, `Running ${prepared.member.name}…`, {
-						cancellable: true,
-					});
+				const loaderResult = await ctx.ui.custom<LoaderResult>((tui, theme, keybindings, done) => {
+					const progress = createGuildHandoverProgress({
+						member: prepared.member.name,
+						memberSource: prepared.member.source,
+						role: GUILD_MEMBER_POLICIES[prepared.member.name].role,
+						task: prepared.task,
+						startedAt,
+					}, tui, theme, keybindings);
 					let finished = false;
 					const finish = (value: LoaderResult) => {
 						if (finished) return;
@@ -403,18 +419,29 @@ export function registerGuild(pi: ExtensionAPI, dependencies: GuildDependencies 
 							`Thinking: ${thinkingLevel}`,
 							`Task: ${prepared.task}`,
 						].join("\n"),
-						display: true,
+						display: false,
 						details: { ...lifecycleBase, status: "started" },
 					}, { triggerTurn: false });
 
-					loader.onAbort = () => undefined;
-					executeHandover(runId, prepared, loader.signal, undefined, ctx, startedAt)
+					executeHandover(
+						runId,
+						prepared,
+						progress.signal,
+						(update) => progress.update({
+							activity: update.details.activity,
+							activityTool: update.details.activityTool,
+							turns: update.details.usage.turns,
+						}),
+						ctx,
+						startedAt,
+						"focused",
+					)
 						.then(finish)
 						.catch((error) => {
-							if (loader.signal.aborted) finish({ cancelled: true });
+							if (progress.signal.aborted) finish({ cancelled: true });
 							else finish({ error: error instanceof Error ? error.message : String(error) });
 						});
-					return loader;
+					return progress;
 				});
 
 				if (loaderResult === undefined || "cancelled" in loaderResult) {

@@ -1,6 +1,16 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createGuildPanel, renderGuildCall, renderGuildLifecycleMessage, renderGuildResult } from "../src/ui";
+import { initTheme } from "@earendil-works/pi-coding-agent";
+import { visibleWidth } from "@earendil-works/pi-tui";
+import {
+  createGuildHandoverProgress,
+  createGuildPanel,
+  renderGuildCall,
+  renderGuildLifecycleMessage,
+  renderGuildResult,
+} from "../src/ui";
+
+initTheme();
 
 const theme = {
   fg: (_color: string, text: string) => text,
@@ -29,44 +39,58 @@ describe("Guild visual presentation", () => {
     assert.match(rendered, /─/);
   });
 
-  it("renders started, completed, failed, and cancelled direct-handover lifecycle cards", () => {
+  it("renders a fancy, width-capped lifecycle card with real Markdown", () => {
+    const details = {
+      runId: "guild-command-123",
+      initiatedBy: "user",
+      member: "dotnet-architect",
+      memberSource: "builtin",
+      role: "architect",
+      task: "Explore the repository and report any .NET artifacts",
+      inheritedModel: "openai-codex/gpt-5.6-sol",
+      thinkingLevel: "xhigh",
+      elapsedMs: 40_800,
+      usage: { turns: 4, cost: 0.1121 },
+      status: "completed",
+      output: "### Summary\n\nI found **no actual .NET artifacts**.",
+    };
+
+    const lines = renderGuildLifecycleMessage(
+      { content: "lifecycle", details },
+      { expanded: false },
+      theme,
+    ).render(180);
+    const rendered = lines.join("\n");
+
+    assert.ok(lines.every((line) => visibleWidth(line) <= 110));
+    assert.match(rendered, /╭─.*Guild Relay.*\[✓ Completed\].*─╮/);
+    assert.match(rendered, /dotnet-architect.*built-in.*read-only/i);
+    assert.match(rendered, /Request.*Explore the repository/);
+    assert.doesNotMatch(rendered, /USER|MISSION|built-in.*architect.*read-only/i);
+    assert.match(rendered, /REPORT/);
+    assert.match(rendered, /Summary/);
+    assert.match(rendered, /no actual \.NET artifacts/);
+    assert.match(rendered, /expand report/);
+    assert.doesNotMatch(rendered, /###|\*\*|◇|◆/);
+  });
+
+  it("uses compact framed treatments for failed and cancelled handovers", () => {
     const base = {
       runId: "guild-command-123",
       initiatedBy: "user",
       member: "csharp-coder",
       memberSource: "builtin",
       role: "coder",
-      task: "Implement order validation",
-      inheritedModel: "openai-codex/gpt-5.6-sol",
-      thinkingLevel: "xhigh",
+      task: "Implement validation",
       elapsedMs: 2500,
     };
-
-    const started = renderGuildLifecycleMessage(
-      { content: "lifecycle", details: { ...base, status: "started" } },
-      { expanded: false },
-      theme,
-    ).render(100).join("\n");
-    assert.match(started, /✦ Guild Handover/);
-    assert.match(started, /Started.*csharp-coder/);
-    assert.match(started, /USER INITIATED/);
-    assert.match(started, /Implement order validation/);
-
-    const completed = renderGuildLifecycleMessage(
-      { content: "lifecycle", details: { ...base, status: "completed", output: "## Status\nCompleted successfully." } },
-      { expanded: true },
-      theme,
-    ).render(100).join("\n");
-    assert.match(completed, /Completed.*csharp-coder/);
-    assert.match(completed, /Completed successfully/);
-    assert.match(completed, /guild-command-123/);
-
     const failed = renderGuildLifecycleMessage(
       { content: "lifecycle", details: { ...base, status: "failed", error: "Provider failed" } },
       { expanded: false },
       theme,
     ).render(100).join("\n");
-    assert.match(failed, /Failed.*csharp-coder/);
+    assert.match(failed, /\[✗ Failed\]/);
+    assert.match(failed, /DIAGNOSTICS/);
     assert.match(failed, /Provider failed/);
 
     const cancelled = renderGuildLifecycleMessage(
@@ -74,7 +98,84 @@ describe("Guild visual presentation", () => {
       { expanded: false },
       theme,
     ).render(100).join("\n");
-    assert.match(cancelled, /Cancelled.*csharp-coder/);
+    assert.match(cancelled, /\[■ Cancelled\]/);
+    assert.match(cancelled, /Request.*Implement validation/);
+    assert.ok(cancelled.split("\n").length <= 5);
+  });
+
+  it("renders animated live activity and exposes cancellable progress", () => {
+    let renders = 0;
+    const progress = createGuildHandoverProgress({
+      member: "dotnet-architect",
+      memberSource: "builtin",
+      role: "architect",
+      task: "Explore the repository and report any .NET artifacts",
+      startedAt: Date.now(),
+    }, {
+      requestRender: () => { renders += 1; },
+    } as any, theme, {
+      matches: (data: string, binding: string) => data === "escape" && binding === "tui.select.cancel",
+    } as any);
+
+    try {
+      const initial = progress.render(180);
+      assert.ok(initial.every((line) => visibleWidth(line) <= 110));
+      assert.match(initial.join("\n"), /Guild Relay.*\[● Running\s+00:00\]/);
+      assert.match(initial.join("\n"), /dotnet-architect.*built-in.*read-only/i);
+      assert.match(initial.join("\n"), /Request.*Explore the repository/);
+      assert.match(initial.join("\n"), /Starting handover.*cancel/);
+      assert.ok(initial.length <= 5);
+      assert.doesNotMatch(initial.join("\n"), /USER|MISSION|◇|◆|openai-codex/);
+
+      progress.update({ activity: "Scanning repository", activityTool: "find", turns: 2 });
+      const active = progress.render(100).join("\n");
+      assert.match(active, /Scanning repository/);
+      assert.match(active, /find · 2 turns/);
+      assert.ok(renders > 0);
+
+      progress.handleInput("escape");
+      assert.equal(progress.signal.aborted, true);
+      assert.match(progress.render(100).join("\n"), /Cancelling/);
+    } finally {
+      progress.dispose();
+    }
+  });
+
+  it("uses color and spacing instead of bold direct-handover chrome", () => {
+    const lightweightTheme = {
+      ...theme,
+      bold: (_text: string) => {
+        throw new Error("direct handover chrome should not request bold text");
+      },
+    } as any;
+    const details = {
+      status: "completed",
+      member: "dotnet-architect",
+      memberSource: "builtin",
+      role: "architect",
+      task: "Inspect repository",
+      elapsedMs: 1000,
+      output: "Inspection complete.",
+    };
+
+    assert.doesNotThrow(() => renderGuildLifecycleMessage(
+      { content: "lifecycle", details },
+      { expanded: false },
+      lightweightTheme,
+    ).render(90));
+
+    const progress = createGuildHandoverProgress({
+      member: "dotnet-architect",
+      memberSource: "builtin",
+      role: "architect",
+      task: "Inspect repository",
+      startedAt: Date.now(),
+    }, { requestRender: () => undefined } as any, lightweightTheme, { matches: () => false } as any);
+    try {
+      assert.doesNotThrow(() => progress.render(90));
+    } finally {
+      progress.dispose();
+    }
   });
 
   it("renders polished call and expandable completion cards", () => {

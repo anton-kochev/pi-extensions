@@ -64,6 +64,22 @@ describe("child pi invocation", () => {
 });
 
 describe("child JSON event aggregation", () => {
+  it("reports truthful live activity from child tool events", () => {
+    const result = createEmptyRunResult(coder, "Inspect repository");
+    assert.equal(result.activity, "Starting handover");
+
+    applyJsonEvent(result, { type: "tool_execution_start", toolName: "find" });
+    assert.equal(result.activity, "Scanning repository");
+    assert.equal(result.activityTool, "find");
+
+    applyJsonEvent(result, { type: "tool_execution_end", toolName: "find" });
+    assert.equal(result.activity, "Thinking");
+    assert.equal(result.activityTool, undefined);
+
+    applyJsonEvent(result, { type: "message_update", assistantMessageEvent: { type: "text_delta", delta: "Done" } });
+    assert.equal(result.activity, "Preparing report");
+  });
+
   it("streams text deltas and records final usage without duplicating final text", () => {
     const result = createEmptyRunResult(coder, "Do work");
     applyJsonEvent(result, { type: "message_update", assistantMessageEvent: { type: "text_delta", delta: "Done" } });

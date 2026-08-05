@@ -24,6 +24,8 @@ export interface GuildRunResult {
 	model?: string;
 	stopReason?: string;
 	errorMessage?: string;
+	activity: string;
+	activityTool?: string;
 	usage: RunUsage;
 }
 
@@ -73,6 +75,7 @@ export function createEmptyRunResult(member: GuildMember, task: string): GuildRu
 		output: "",
 		exitCode: 0,
 		stderr: "",
+		activity: "Starting handover",
 		usage: {
 			input: 0,
 			output: 0,
@@ -93,14 +96,41 @@ function finalizedText(message: any): string {
 		.join("\n");
 }
 
+function toolActivity(toolName: string): string {
+	switch (toolName) {
+		case "read": return "Reading file";
+		case "grep": return "Searching code";
+		case "find": return "Scanning repository";
+		case "ls": return "Listing directory";
+		case "edit":
+		case "write": return "Editing files";
+		case "bash": return "Running verification";
+		default: return toolName ? `Using ${toolName}` : "Working";
+	}
+}
+
 export function applyJsonEvent(result: GuildRunResult, event: any): void {
+	if (event?.type === "tool_execution_start") {
+		result.activityTool = typeof event.toolName === "string" ? event.toolName : undefined;
+		result.activity = toolActivity(result.activityTool ?? "");
+		return;
+	}
+
+	if (event?.type === "tool_execution_end") {
+		result.activityTool = undefined;
+		result.activity = "Thinking";
+		return;
+	}
+
 	if (event?.type === "message_start" && event.message?.role === "assistant") {
 		result.output = "";
+		result.activity = "Thinking";
 		return;
 	}
 
 	if (event?.type === "message_update" && event.assistantMessageEvent?.type === "text_delta") {
 		result.output += event.assistantMessageEvent.delta ?? "";
+		result.activity = "Preparing report";
 		return;
 	}
 

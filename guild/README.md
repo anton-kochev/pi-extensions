@@ -59,7 +59,7 @@ Delegate directly from the interactive TUI without asking the main agent to invo
 /guild-handover csharp-coder Implement validation and run the tests
 ```
 
-With no member, the command opens a roster picker. With no task, it opens a multiline task editor. The command waits for the main agent to become idle, applies the same member discovery and project-override approval as the tool, and then runs synchronously in a cancellable loader. Direct command execution is intentionally TUI-only.
+With no member, the command opens a roster picker. With no task, it opens a multiline task editor. The command waits for the main agent to become idle, applies the same member discovery and project-override approval as the tool, and then runs synchronously in a cancellable live handover card. Direct command execution is intentionally TUI-only.
 
 List the active roster and definition sources without executing a member:
 
@@ -88,11 +88,23 @@ While Guild members are executing, the extension shows a themed, framed operatio
 ────────────────────────────────────────────────────────
 ```
 
-Colors follow the active Pi theme: accent framing, amber running states, and muted metadata. `guild_handover` also has a custom tool-call card and a compact completion card whose full output is available through normal tool expansion. Direct `/guild-handover` runs add correlated, themed lifecycle cards for started, completed, failed, and cancelled states.
+Colors follow the active Pi theme: accent framing, amber running states, and muted metadata. `guild_handover` also has a custom tool-call card and a compact completion card whose full output is available through normal tool expansion.
 
-While work is running, the footer reports the active count and the panel updates elapsed time and turns for simultaneous invocations. Each stopped Guild member is removed from the live panel immediately. When the final active run stops, the `guild-dashboard` panel and footer status clear. Completed output and metadata remain on the corresponding tool result or direct-handover lifecycle message in the transcript.
+Agent-invoked handovers use the aggregate dashboard shown above. A direct `/guild-handover` instead uses a compact, width-capped live card with a spinner, elapsed time, turns, current child-tool activity, and the configured cancellation hint:
 
-A direct handover records a user-initiated `started` event and exactly one correlated terminal event. These custom messages are available to the main agent on its next turn, but they use `triggerTurn: false`, so completion never causes an automatic main-agent response. Member reports and failure diagnostics are explicitly delimited as task data rather than new instructions. Selection/editor cancellation creates no event; cancellation after execution starts records a terminal `cancelled` event.
+```text
+╭─ ✦ Guild Relay ───────────────────────────────────────────────────────── [● Running  00:12] ─╮
+│  dotnet-architect · built-in · read-only                                                     │
+│  Request  Explore the repository for .NET artifacts                                          │
+│  ⠋  Scanning repository · find · 2 turns                               escape/ctrl+c cancel  │
+╰──────────────────────────────────────────────────────────────────────────────────────────────╯
+```
+
+The activity label is derived from actual child tool events rather than an invented progress percentage. Completed reports render as Markdown in a neutral framed card; failed runs receive a diagnostics section, and cancellations use a compact terminal treatment.
+
+While agent-invoked work is running, the footer reports the active count and the aggregate panel updates elapsed time and turns. Each stopped Guild member is removed from that live panel immediately. When the final active run stops, the `guild-dashboard` panel and footer status clear. Completed output and metadata remain on the corresponding tool result or direct-handover lifecycle message in the transcript.
+
+A direct handover records a user-initiated `started` event and exactly one correlated terminal event. The started event is hidden visually because the live card already communicates progress, but both events remain available to the main agent on its next turn. They use `triggerTurn: false`, so completion never causes an automatic main-agent response. Member reports and failure diagnostics are explicitly delimited as task data rather than new instructions. Selection/editor cancellation creates no event; cancellation after execution starts records a terminal `cancelled` event.
 
 Guild is independent of Pi's native specialist facility and does not observe its tool lifecycle or messages.
 

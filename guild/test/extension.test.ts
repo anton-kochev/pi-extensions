@@ -16,6 +16,7 @@ function successfulResult(source: "builtin" | "user" | "project" = "builtin"): G
     stderr: "",
     model: "gpt-5.6-sol",
     stopReason: "stop",
+    activity: "Completed",
     usage: { input: 1, output: 2, cacheRead: 0, cacheWrite: 0, cost: 0, contextTokens: 3, turns: 1 },
   };
 }
@@ -61,7 +62,7 @@ async function runCustom<T>(factory: (tui: any, theme: any, keybindings: any, do
       component = factory(
         { requestRender: () => undefined },
         { fg: (_color: string, text: string) => text, bold: (text: string) => text },
-        {},
+        { matches: () => false },
         resolve,
       );
     });
@@ -243,7 +244,7 @@ describe("guild extension", () => {
     assert.equal(pi.messages.length, 2);
     const [started, completed] = pi.messages;
     assert.equal(started.message.customType, "guild-handover");
-    assert.equal(started.message.display, true);
+    assert.equal(started.message.display, false);
     assert.equal(started.message.details.initiatedBy, "user");
     assert.equal(started.message.details.member, "csharp-coder");
     assert.equal(started.message.details.task, "Implement validation");
@@ -328,7 +329,7 @@ describe("guild extension", () => {
           component = factory(
             { requestRender: () => undefined },
             { fg: (_color: string, text: string) => text, bold: (text: string) => text },
-            {},
+            { matches: (data: string, binding: string) => data === "\u001b" && binding === "tui.select.cancel" },
             resolve,
           );
           queueMicrotask(() => component.handleInput("\u001b"));
@@ -351,6 +352,8 @@ describe("guild extension", () => {
   it("runs a direct handover through cancellable custom UI", async () => {
     const pi = fakePi();
     let customCalls = 0;
+    let componentSupportsLiveUpdates = false;
+    let widgetUpdates = 0;
     let receivedSignal: AbortSignal | undefined;
     const member = {
       name: "csharp-coder" as const,
@@ -368,14 +371,30 @@ describe("guild extension", () => {
       },
     });
     const ctx: any = context();
+    ctx.ui.setWidget = () => { widgetUpdates += 1; };
     ctx.ui.custom = async (factory: any) => {
       customCalls += 1;
-      return runCustom(factory);
+      let component: any;
+      try {
+        return await new Promise((resolve) => {
+          component = factory(
+            { requestRender: () => undefined },
+            { fg: (_color: string, text: string) => text, bg: (_color: string, text: string) => text, bold: (text: string) => text },
+            { matches: () => false },
+            resolve,
+          );
+          componentSupportsLiveUpdates = typeof component.update === "function";
+        });
+      } finally {
+        component?.dispose?.();
+      }
     };
 
     await pi.commands.get("guild-handover").handler("csharp-coder Implement validation", ctx);
 
     assert.equal(customCalls, 1);
+    assert.equal(componentSupportsLiveUpdates, true);
+    assert.equal(widgetUpdates, 0);
     assert.ok(receivedSignal instanceof AbortSignal);
     assert.equal(receivedSignal?.aborted, false);
   });
