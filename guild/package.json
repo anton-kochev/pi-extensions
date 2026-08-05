@@ -1,0 +1,51 @@
+{
+  "name": "@anton-kochev/guild",
+  "version": "0.1.0",
+  "description": "Standalone .NET and Angular Guild members for pi.",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "guild",
+    "delegation",
+    "dotnet",
+    "angular"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anton-kochev/pi-extensions.git",
+    "directory": "guild"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.4",
+    "typescript": "^5.9.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions"
+    ]
+  },
+  "files": [
+    "agents",
+    "extensions",
+    "src",
+    "LICENSE",
+    "NOTICE.md",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --import tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  }
+}
