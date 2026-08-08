@@ -78,7 +78,7 @@ describe("createContextBarComponent", () => {
         + "<mdHeading>▀</mdHeading>"
         + "<muted>▀</muted>"
         + "<editorBorder>─</editorBorder>"
-        + "<text>86%</text>",
+        + "<dim>86%</dim>",
     ]);
   });
 

@@ -148,7 +148,7 @@ export function createContextBarComponent(
         }
         return theme.fg(CONTEXT_CATEGORY_COLORS[category], text);
       }).join("");
-      return [`${bar}${theme.fg("text", visiblePercentage)}`];
+      return [`${bar}${theme.fg("dim", visiblePercentage)}`];
     },
     invalidate: () => {},
   };

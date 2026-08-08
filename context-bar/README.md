@@ -45,7 +45,7 @@ Segments always appear in this order:
 | **Other** | Provider framing, serialization differences, extension rewrites, and estimation residual | Gray (`muted`) |
 | **Free** | Remaining context capacity | Thin line matching the current editor border (`borderMuted` fallback) |
 
-The violet → blue → teal → green → amber progression adapts to Pi's dark, light, and custom themes. Free capacity follows the editor border as its mode/thinking color changes. The percentage uses the theme's neutral text color; it does not change color at thresholds.
+The violet → blue → teal → green → amber progression adapts to Pi's dark, light, and custom themes. Free capacity follows the editor border as its mode/thinking color changes. The percentage uses the same dim theme color as Pi's footer path; it does not change color at thresholds.
 
 ## Accuracy
 
