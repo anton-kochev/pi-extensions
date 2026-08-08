@@ -10,6 +10,7 @@ A monorepo for personal pi extensions, each published independently to npm.
 - [`telos/`](./telos) — repo-scoped structured task tracking through `/tasks`, an agent tool, and `TASKS.md`. [![npm version](https://img.shields.io/npm/v/@anton-kochev/telos.svg)](https://www.npmjs.com/package/@anton-kochev/telos)
 - [`command-guard/`](./command-guard) — guard Pi agent shell commands and file mutations with configurable rules. [![npm version](https://img.shields.io/npm/v/@anton-kochev/command-guard.svg)](https://www.npmjs.com/package/@anton-kochev/command-guard)
 - [`guild/`](./guild) — isolated .NET and Angular architecture and implementation Guild members. [![npm version](https://img.shields.io/npm/v/@anton-kochev/guild.svg)](https://www.npmjs.com/package/@anton-kochev/guild)
+- [`context-bar/`](./context-bar) — a thin, stacked context-window composition bar above the editor. [![npm version](https://img.shields.io/npm/v/@anton-kochev/context-bar.svg)](https://www.npmjs.com/package/@anton-kochev/context-bar)
 - [`pi-skills/`](./pi-skills) — pi skills and prompt commands, including `/plan`, `/commit`, and `/srs`, plus the automatic `/plan` theme. [![npm version](https://img.shields.io/npm/v/@anton-kochev/pi-skills.svg)](https://www.npmjs.com/package/@anton-kochev/pi-skills)
 
 ## Install
@@ -21,6 +22,7 @@ pi install npm:@anton-kochev/answer
 pi install npm:@anton-kochev/telos
 pi install npm:@anton-kochev/command-guard
 pi install npm:@anton-kochev/guild
+pi install npm:@anton-kochev/context-bar
 pi install npm:@anton-kochev/pi-skills
 ```
 
@@ -41,6 +43,7 @@ pi install -l ./answer
 pi install -l ./telos
 pi install -l ./command-guard
 pi install -l ./guild
+pi install -l ./context-bar
 pi install -l ./pi-skills
 ```
 
@@ -97,9 +100,15 @@ git push --follow-tags
 ```
 
 ```bash
+cd context-bar
+npm version patch --tag-version-prefix="context-bar-v"
+git push --follow-tags
+```
+
+```bash
 cd pi-skills
 npm version patch --tag-version-prefix="pi-skills-v"
 git push --follow-tags
 ```
 
-Trusted publishing handles the rest — the workflows at `.github/workflows/publish-squiggle.yml`, `.github/workflows/publish-echo.yml`, `.github/workflows/publish-answer.yml`, `.github/workflows/publish-telos.yml`, `.github/workflows/publish-command-guard.yml`, `.github/workflows/publish-guild.yml`, and `.github/workflows/publish-pi-skills.yml` fire on their respective tag prefixes and publish to npm via OIDC.
+Trusted publishing handles the rest — the workflows at `.github/workflows/publish-squiggle.yml`, `.github/workflows/publish-echo.yml`, `.github/workflows/publish-answer.yml`, `.github/workflows/publish-telos.yml`, `.github/workflows/publish-command-guard.yml`, `.github/workflows/publish-guild.yml`, `.github/workflows/publish-context-bar.yml`, and `.github/workflows/publish-pi-skills.yml` fire on their respective tag prefixes and publish to npm via OIDC.
