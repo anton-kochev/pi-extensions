@@ -11,7 +11,7 @@ A monorepo for personal pi extensions, each published independently to npm.
 - [`command-guard/`](./command-guard) — guard Pi agent shell commands and file mutations with configurable rules. [![npm version](https://img.shields.io/npm/v/@anton-kochev/command-guard.svg)](https://www.npmjs.com/package/@anton-kochev/command-guard)
 - [`guild/`](./guild) — isolated .NET and Angular architecture and implementation Guild members. [![npm version](https://img.shields.io/npm/v/@anton-kochev/guild.svg)](https://www.npmjs.com/package/@anton-kochev/guild)
 - [`context-bar/`](./context-bar) — a thin, stacked context-window composition bar above the editor. [![npm version](https://img.shields.io/npm/v/@anton-kochev/context-bar.svg)](https://www.npmjs.com/package/@anton-kochev/context-bar)
-- [`pi-skills/`](./pi-skills) — pi skills and prompt commands, including `/plan`, `/commit`, and `/srs`, plus the automatic `/plan` theme. [![npm version](https://img.shields.io/npm/v/@anton-kochev/pi-skills.svg)](https://www.npmjs.com/package/@anton-kochev/pi-skills)
+- [`pi-skills/`](./pi-skills) — pi skills and prompt commands, including an enforced read-only `/plan` workflow with an interactive implementation gate, plus `/commit`, `/srs`, and TDD guidance. [![npm version](https://img.shields.io/npm/v/@anton-kochev/pi-skills.svg)](https://www.npmjs.com/package/@anton-kochev/pi-skills)
 
 ## Install
 

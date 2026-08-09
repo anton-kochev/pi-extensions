@@ -1,5 +1,5 @@
-import { access } from "node:fs/promises";
-import { basename, join, normalize, resolve } from "node:path";
+import { access, mkdir, writeFile } from "node:fs/promises";
+import { basename, dirname, join, normalize, resolve } from "node:path";
 
 const MAX_PLAN_NAME_LENGTH = 64;
 
@@ -45,6 +45,32 @@ export async function generatePlanPath(
 	}
 }
 
+function advanceGeneratedPlanPath(planPath: string): string {
+	const match = /^(\d{4}-\d{2}-\d{2})-(\d{2})(\d{2})(\d{2})-(.+)\.md$/.exec(basename(planPath));
+	if (!match) throw new Error(`Cannot advance non-generated plan path: ${planPath}`);
+
+	const [, date, hours, minutes, seconds, readableName] = match;
+	const timestamp = new Date(`${date}T${hours}:${minutes}:${seconds}Z`);
+	if (Number.isNaN(timestamp.getTime())) throw new Error(`Cannot advance invalid plan timestamp: ${planPath}`);
+	timestamp.setUTCSeconds(timestamp.getUTCSeconds() + 1);
+	return join(dirname(planPath), `${formatTimestamp(timestamp)}-${readableName}.md`);
+}
+
+export async function createPlanFile(cwd: string, generatedPlanPath: string, content: string): Promise<string> {
+	let candidatePath = generatedPlanPath;
+	await mkdir(dirname(resolve(cwd, candidatePath)), { recursive: true });
+
+	while (true) {
+		try {
+			await writeFile(resolve(cwd, candidatePath), content, { encoding: "utf8", flag: "wx" });
+			return candidatePath;
+		} catch (error) {
+			if (!(typeof error === "object" && error !== null && "code" in error && error.code === "EEXIST")) throw error;
+			candidatePath = advanceGeneratedPlanPath(candidatePath);
+		}
+	}
+}
+
 export type PersistedPlanState = {
 	active: boolean;
 	cancelled?: boolean;
@@ -74,7 +100,7 @@ export type PlanPromptState = {
 
 export function buildPlanSystemPrompt(systemPrompt: string, state: PlanPromptState): string | undefined {
 	if (state.active && state.planPath) {
-		return `${systemPrompt}\n\nRead-only Plan mode is enforced. Use only the trusted read, grep, find, and ls tools while exploring. Do not modify project files, run shell commands, or invoke custom tools. When the plan is ready, attempt to save it at exactly \`${state.planPath}\`; Pi will request interactive approval before creating it. If the user chooses to continue planning, keep Plan mode active and do not create the file. Approval to create the plan authorizes exiting Plan mode and implementing it after the write succeeds.`;
+		return `${systemPrompt}\n\nRead-only Plan mode is enforced. Use only the trusted read, grep, find, and ls tools while exploring. Do not modify project files, run shell commands, or invoke custom tools. When the plan is ready, call create_plan with its complete Markdown content; Pi will request interactive approval before atomically creating it at \`${state.planPath}\` without overwriting an existing plan. If the user chooses to continue planning, keep Plan mode active and do not create the file. Approval to create the plan authorizes exiting Plan mode and implementing it after creation succeeds.`;
 	}
 	if (state.cancelled) {
 		return `${systemPrompt}\n\nPlan mode is inactive because the user cancelled it. Ignore any earlier Plan Mode workflow instructions in the conversation history. Respond normally unless the user invokes /plan again.`;

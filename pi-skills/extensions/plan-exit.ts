@@ -19,7 +19,7 @@ export async function confirmPlanCreation(ui: PlanCreationUI, planPath: string):
 
 	return {
 		action: "create",
-		instruction: `Finalize the current plan and write it to exactly \`${planPath}\`. Once the write succeeds, then implement the saved plan.`,
+		instruction: `Finalize the current plan and call create_plan with its complete Markdown content for \`${planPath}\`. Once creation succeeds, implement the saved plan.`,
 	};
 }
 

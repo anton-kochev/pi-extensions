@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import {
 	buildPlanCancellationMessage,
 	buildPlanSystemPrompt,
+	createPlanFile,
 	generatePlanPath,
 	preparePlanMutation,
 	resolvePlanCancellation,
@@ -51,6 +52,22 @@ describe("generatePlanPath", () => {
 			const path = await generatePlanPath(cwd, ".pi", "Improve auth", new Date("2026-06-29T23:15:07Z"));
 
 			assert.equal(path, ".pi/plans/2026-06-29-231508-improve-auth.md");
+		});
+	});
+});
+
+describe("createPlanFile", () => {
+	it("advances the timestamp instead of overwriting a plan created after path generation", async () => {
+		await withTempDirectory(async (cwd) => {
+			const originalPath = ".pi/plans/2026-06-29-231507-improve-auth.md";
+			await mkdir(join(cwd, ".pi", "plans"), { recursive: true });
+			await writeFile(join(cwd, originalPath), "existing plan");
+
+			const createdPath = await createPlanFile(cwd, originalPath, "new plan");
+
+			assert.equal(createdPath, ".pi/plans/2026-06-29-231508-improve-auth.md");
+			assert.equal(await readFile(join(cwd, originalPath), "utf8"), "existing plan");
+			assert.equal(await readFile(join(cwd, createdPath), "utf8"), "new plan");
 		});
 	});
 });
@@ -110,7 +127,9 @@ describe("buildPlanSystemPrompt", () => {
 			planPath: ".pi/plans/example.md",
 		});
 
-		assert.match(prompt ?? "", /save it at exactly `.pi\/plans\/example.md`/);
+		assert.match(prompt ?? "", /call create_plan/i);
+		assert.match(prompt ?? "", /at `.pi\/plans\/example.md`/);
+		assert.match(prompt ?? "", /without overwriting/i);
 		assert.doesNotMatch(prompt ?? "", /Plan mode is inactive/);
 	});
 });

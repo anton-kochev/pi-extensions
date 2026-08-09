@@ -1,3 +1,5 @@
+import { resolve } from "node:path";
+
 export type PlanToolInfo = {
 	name: string;
 	sourceInfo: {
@@ -6,8 +8,9 @@ export type PlanToolInfo = {
 	};
 };
 
+export const PLAN_CREATE_TOOL_NAME = "create_plan";
+
 const PLAN_READ_TOOL_NAMES: readonly string[] = ["read", "grep", "find", "ls"];
-const PLAN_MODE_TOOL_NAMES = [...PLAN_READ_TOOL_NAMES, "write"];
 
 export function isTrustedBuiltinTool(tools: PlanToolInfo[], name: string): boolean {
 	return tools.some(
@@ -20,6 +23,23 @@ export function isTrustedPlanReadTool(tools: PlanToolInfo[], name: string): bool
 	return PLAN_READ_TOOL_NAMES.includes(name) && isTrustedBuiltinTool(tools, name);
 }
 
-export function selectPlanModeTools(tools: PlanToolInfo[]): string[] {
-	return PLAN_MODE_TOOL_NAMES.filter((name) => isTrustedBuiltinTool(tools, name));
+export function isTrustedPlanCreationTool(
+	tools: PlanToolInfo[],
+	name: string,
+	planExtensionPath: string,
+): boolean {
+	return (
+		name === PLAN_CREATE_TOOL_NAME &&
+		tools.some(
+			(tool) => tool.name === name && resolve(tool.sourceInfo.path) === resolve(planExtensionPath),
+		)
+	);
+}
+
+export function selectPlanModeTools(tools: PlanToolInfo[], planExtensionPath: string): string[] {
+	const selected = PLAN_READ_TOOL_NAMES.filter((name) => isTrustedBuiltinTool(tools, name));
+	if (isTrustedPlanCreationTool(tools, PLAN_CREATE_TOOL_NAME, planExtensionPath)) {
+		selected.push(PLAN_CREATE_TOOL_NAME);
+	}
+	return selected;
 }

@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 import planTheme from "../extensions/plan-theme.ts";
+
+const PLAN_THEME_PATH = fileURLToPath(new URL("../extensions/plan-theme.ts", import.meta.url));
 
 function builtin(name: string) {
 	return {
@@ -19,6 +25,7 @@ function createHarness(
 		isIdle?: boolean;
 		branchEntries?: any[];
 		hasUI?: boolean;
+		cwd?: string;
 	} = {},
 ) {
 	const handlers = new Map<string, (event: any, ctx: any) => Promise<any>>();
@@ -26,6 +33,7 @@ function createHarness(
 	const allTools = ["read", "grep", "find", "ls", "write", "edit", "bash"].map(builtin);
 	let activeTools = allTools.map((tool) => tool.name);
 	const entries: Array<{ customType: string; data: any }> = [];
+	const registeredTools = new Map<string, any>();
 	const pi = {
 		on(name: string, handler: (event: any, ctx: any) => Promise<any>) {
 			handlers.set(name, handler);
@@ -39,9 +47,16 @@ function createHarness(
 		setActiveTools(toolNames: string[]) {
 			activeTools = [...toolNames];
 		},
+		registerTool(tool: any) {
+			registeredTools.set(tool.name, tool);
+			allTools.push({
+				...tool,
+				sourceInfo: { source: "package", path: PLAN_THEME_PATH, scope: "user", origin: "package" },
+			});
+		},
 	};
 	const ctx = {
-		cwd: "/tmp/pi-plan-theme-test-project",
+		cwd: options.cwd ?? "/tmp/pi-plan-theme-test-project",
 		mode: "tui",
 		hasUI: options.hasUI ?? true,
 		isIdle: () => options.isIdle ?? true,
@@ -60,7 +75,16 @@ function createHarness(
 		},
 	};
 	planTheme(pi as never);
-	return { handlers, ctx, entries, branchEntries, allTools, getActiveTools: () => activeTools };
+	return {
+		handlers,
+		ctx,
+		entries,
+		branchEntries,
+		allTools,
+		registeredTools,
+		getActiveTools: () => activeTools,
+		setActiveTools: (toolNames: string[]) => pi.setActiveTools(toolNames),
+	};
 }
 
 async function activatePlan(harness: ReturnType<typeof createHarness>) {
@@ -101,6 +125,15 @@ describe("plan mode enforcement", () => {
 		assert.equal(harness.entries.some((entry) => entry.data.active), false);
 	});
 
+	it("keeps the internal plan creator hidden outside Plan mode", async () => {
+		const harness = createHarness();
+		harness.setActiveTools([...harness.getActiveTools(), "create_plan"]);
+
+		await harness.handlers.get("session_start")?.({ type: "session_start" }, harness.ctx);
+
+		assert.equal(harness.getActiveTools().includes("create_plan"), false);
+	});
+
 	it("restores normal tools when switching from Plan mode to an inactive session", async () => {
 		const harness = createHarness();
 		const normalTools = harness.getActiveTools();
@@ -129,7 +162,37 @@ describe("plan mode enforcement", () => {
 		);
 
 		assert.equal(result?.block, true);
-		assert.deepEqual(harness.getActiveTools(), ["read", "grep", "find", "ls", "write"]);
+		assert.deepEqual(harness.getActiveTools(), ["read", "grep", "find", "ls", "create_plan"]);
+	});
+
+	it("does not restore the internal plan creator from legacy active state", async () => {
+		const harness = createHarness({
+			branchEntries: [
+				{
+					type: "custom",
+					customType: "plan-theme-state",
+					data: {
+						active: true,
+						planPath: ".pi/plans/2026-08-09-230000-restored.md",
+						previousThemeName: "dark",
+						saveAuthorized: true,
+					},
+				},
+			],
+		});
+		harness.setActiveTools([...harness.getActiveTools(), "create_plan"]);
+		await harness.handlers.get("session_start")?.({ type: "session_start" }, harness.ctx);
+		const call = {
+			type: "tool_call",
+			toolCallId: "create-restored-plan",
+			toolName: "create_plan",
+			input: { content: "# Restored plan" },
+		};
+
+		await harness.handlers.get("tool_call")?.(call, harness.ctx);
+		await harness.handlers.get("tool_result")?.({ ...call, type: "tool_result", isError: false }, harness.ctx);
+
+		assert.equal(harness.getActiveTools().includes("create_plan"), false);
 	});
 
 	it("restores prior tools and save authorization with an active Plan session", async () => {
@@ -156,9 +219,9 @@ describe("plan mode enforcement", () => {
 		await harness.handlers.get("session_start")?.({ type: "session_start" }, harness.ctx);
 		const call = {
 			type: "tool_call",
-			toolCallId: "write-restored-plan",
-			toolName: "write",
-			input: { path: ".pi/plans/restored.md" },
+			toolCallId: "create-restored-plan",
+			toolName: "create_plan",
+			input: { content: "# Restored plan" },
 		};
 
 		const result = await harness.handlers.get("tool_call")?.(call, harness.ctx);
@@ -180,14 +243,14 @@ describe("plan mode enforcement", () => {
 
 		assert.equal(result?.block, true);
 		assert.equal(harness.entries.at(-1)?.data.active, true);
-		assert.deepEqual(harness.getActiveTools(), ["read", "grep", "find", "ls", "write"]);
+		assert.deepEqual(harness.getActiveTools(), ["read", "grep", "find", "ls", "create_plan"]);
 	});
 
 	it("hides mutating and custom tools while retaining the controlled plan writer", async () => {
 		const harness = createHarness();
 		await activatePlan(harness);
 
-		assert.deepEqual(harness.getActiveTools(), ["read", "grep", "find", "ls", "write"]);
+		assert.deepEqual(harness.getActiveTools(), ["read", "grep", "find", "ls", "create_plan"]);
 	});
 
 	it("blocks source-file writes while planning", async () => {
@@ -212,10 +275,13 @@ describe("plan mode enforcement", () => {
 			},
 		});
 		await activatePlan(harness);
-		const planPath = harness.entries.at(-1)?.data.planPath;
-
 		const result = await harness.handlers.get("tool_call")?.(
-			{ type: "tool_call", toolCallId: "write-plan", toolName: "write", input: { path: planPath } },
+			{
+				type: "tool_call",
+				toolCallId: "create-plan",
+				toolName: "create_plan",
+				input: { content: "# Plan" },
+			},
 			harness.ctx,
 		);
 
@@ -230,8 +296,12 @@ describe("plan mode enforcement", () => {
 		const harness = createHarness({ confirm: async () => true });
 		const previousTools = harness.getActiveTools();
 		await activatePlan(harness);
-		const planPath = harness.entries.at(-1)?.data.planPath;
-		const call = { type: "tool_call", toolCallId: "write-plan", toolName: "write", input: { path: planPath } };
+		const call = {
+			type: "tool_call",
+			toolCallId: "create-plan",
+			toolName: "create_plan",
+			input: { content: "# Plan" },
+		};
 
 		const result = await harness.handlers.get("tool_call")?.(call, harness.ctx);
 		assert.equal(result?.block, undefined);
@@ -239,6 +309,33 @@ describe("plan mode enforcement", () => {
 
 		assert.equal(harness.entries.at(-1)?.data.active, false);
 		assert.deepEqual(harness.getActiveTools(), previousTools);
+	});
+
+	it("atomically advances a late collision through the controlled plan creator", async () => {
+		const cwd = await mkdtemp(join(tmpdir(), "pi-plan-theme-"));
+		try {
+			const harness = createHarness({ confirm: async () => true, cwd });
+			await activatePlan(harness);
+			const generatedPath = harness.entries.at(-1)?.data.planPath as string;
+			await mkdir(dirname(join(cwd, generatedPath)), { recursive: true });
+			await writeFile(join(cwd, generatedPath), "existing plan");
+			const call = {
+				type: "tool_call",
+				toolCallId: "create-plan",
+				toolName: "create_plan",
+				input: { content: "# New plan" },
+			};
+			await harness.handlers.get("tool_call")?.(call, harness.ctx);
+
+			const tool = harness.registeredTools.get("create_plan");
+			const result = await tool.execute(call.toolCallId, call.input, undefined, undefined, harness.ctx);
+
+			assert.notEqual(result.details.path, generatedPath);
+			assert.equal(await readFile(join(cwd, generatedPath), "utf8"), "existing plan");
+			assert.equal(await readFile(join(cwd, result.details.path), "utf8"), "# New plan");
+		} finally {
+			await rm(cwd, { recursive: true, force: true });
+		}
 	});
 
 	it("keeps Plan mode active when interactive approval is unavailable", async () => {
@@ -275,15 +372,13 @@ describe("plan mode enforcement", () => {
 			{ type: "input", source: "interactive", text: "/plan" },
 			harness.ctx,
 		);
-		const planPath = harness.entries.at(-1)?.data.planPath;
-
 		const writeResult = await harness.handlers.get("tool_call")?.(
-			{ type: "tool_call", toolCallId: "write-plan", toolName: "write", input: { path: planPath } },
+			{ type: "tool_call", toolCallId: "create-plan", toolName: "create_plan", input: { content: "# Plan" } },
 			harness.ctx,
 		);
 
 		assert.equal(commandResult?.action, "transform");
-		assert.match(commandResult?.text ?? "", /then implement the saved plan/);
+		assert.match(commandResult?.text ?? "", /creation succeeds, implement the saved plan/);
 		assert.equal(writeResult?.block, undefined);
 		assert.equal(confirmations, 1);
 	});
@@ -295,10 +390,9 @@ describe("plan mode enforcement", () => {
 			},
 		});
 		await activatePlan(harness);
-		const planPath = harness.entries.at(-1)?.data.planPath;
 
 		const writeResult = await harness.handlers.get("tool_call")?.(
-			{ type: "tool_call", toolCallId: "write-plan", toolName: "write", input: { path: planPath } },
+			{ type: "tool_call", toolCallId: "create-plan", toolName: "create_plan", input: { content: "# Plan" } },
 			harness.ctx,
 		);
 		const readResult = await harness.handlers.get("tool_call")?.(
@@ -324,15 +418,14 @@ describe("plan mode enforcement", () => {
 			},
 		});
 		await activatePlan(harness);
-		const planPath = harness.entries.at(-1)?.data.planPath;
 		const first = harness.handlers.get("tool_call")?.(
-			{ type: "tool_call", toolCallId: "write-plan-1", toolName: "write", input: { path: planPath } },
+			{ type: "tool_call", toolCallId: "create-plan-1", toolName: "create_plan", input: { content: "# Plan" } },
 			harness.ctx,
 		);
 		await new Promise((resolve) => setImmediate(resolve));
 
 		const sibling = harness.handlers.get("tool_call")?.(
-			{ type: "tool_call", toolCallId: "write-plan-2", toolName: "write", input: { path: planPath } },
+			{ type: "tool_call", toolCallId: "create-plan-2", toolName: "create_plan", input: { content: "# Plan" } },
 			harness.ctx,
 		);
 		await new Promise((resolve) => setImmediate(resolve));
@@ -346,34 +439,32 @@ describe("plan mode enforcement", () => {
 	it("locks the approved plan-write arguments against later extension mutation", async () => {
 		const harness = createHarness({ confirm: async () => true });
 		await activatePlan(harness);
-		const planPath = harness.entries.at(-1)?.data.planPath;
 		const call = {
 			type: "tool_call",
-			toolCallId: "write-plan",
-			toolName: "write",
-			input: { path: planPath, content: "# Plan" },
+			toolCallId: "create-plan",
+			toolName: "create_plan",
+			input: { content: "# Plan" },
 		};
 
 		await harness.handlers.get("tool_call")?.(call, harness.ctx);
 
 		assert.throws(() => {
-			call.input.path = "src/app.ts";
+			call.input.content = "mutated plan";
 		}, TypeError);
-		assert.equal(Reflect.set(call, "input", { path: "src/app.ts" }), false);
-		assert.equal(call.input.path, planPath);
+		assert.equal(Reflect.set(call, "input", { content: "mutated plan" }), false);
+		assert.equal(call.input.content, "# Plan");
 	});
 
 	it("blocks sibling tool calls while the approved plan write is in progress", async () => {
 		const harness = createHarness({ confirm: async () => true });
 		await activatePlan(harness);
-		const planPath = harness.entries.at(-1)?.data.planPath;
 
 		await harness.handlers.get("tool_call")?.(
-			{ type: "tool_call", toolCallId: "write-plan-1", toolName: "write", input: { path: planPath } },
+			{ type: "tool_call", toolCallId: "create-plan-1", toolName: "create_plan", input: { content: "# Plan" } },
 			harness.ctx,
 		);
 		const sibling = await harness.handlers.get("tool_call")?.(
-			{ type: "tool_call", toolCallId: "write-plan-2", toolName: "write", input: { path: planPath } },
+			{ type: "tool_call", toolCallId: "create-plan-2", toolName: "create_plan", input: { content: "# Plan" } },
 			harness.ctx,
 		);
 
@@ -385,9 +476,8 @@ describe("plan mode enforcement", () => {
 		const decisions = [true, false];
 		const harness = createHarness({ confirm: async () => decisions.shift() ?? false });
 		await activatePlan(harness);
-		const planPath = harness.entries.at(-1)?.data.planPath;
 		await harness.handlers.get("tool_call")?.(
-			{ type: "tool_call", toolCallId: "interrupted-write", toolName: "write", input: { path: planPath } },
+			{ type: "tool_call", toolCallId: "interrupted-write", toolName: "create_plan", input: { content: "# Plan" } },
 			harness.ctx,
 		);
 
@@ -414,12 +504,11 @@ describe("plan mode enforcement", () => {
 			},
 		});
 		await activatePlan(harness);
-		const planPath = harness.entries.at(-1)?.data.planPath;
 		const firstCall = {
 			type: "tool_call",
-			toolCallId: "write-plan-1",
-			toolName: "write",
-			input: { path: planPath },
+			toolCallId: "create-plan-1",
+			toolName: "create_plan",
+			input: { content: "# Plan" },
 		};
 
 		await harness.handlers.get("tool_call")?.(firstCall, harness.ctx);
@@ -433,7 +522,7 @@ describe("plan mode enforcement", () => {
 		assert.equal(confirmations, 1);
 		assert.equal(harness.entries.at(-1)?.data.active, true);
 		assert.equal(harness.entries.at(-1)?.data.saveAuthorized, true);
-		assert.deepEqual(harness.getActiveTools(), ["read", "grep", "find", "ls", "write"]);
+		assert.deepEqual(harness.getActiveTools(), ["read", "grep", "find", "ls", "create_plan"]);
 	});
 
 	it("blocks an overridden writer without asking it to create the plan", async () => {

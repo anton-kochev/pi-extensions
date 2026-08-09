@@ -18,8 +18,8 @@ cheapest to fix before any code is written.
 **Rule 1 — Explore before you ask.** If a question can be answered by reading the
 codebase, you MUST answer it by reading the codebase. Asking the user to recite
 facts that are sitting in the code is slow, error-prone, and signals you haven't
-done the work. Read, grep, and run read-only commands until the code has told you
-everything it can.
+done the work. Use the trusted read, grep, find, and ls tools until the code has
+told you everything it can.
 
 **Rule 2 — Don't implement until there is shared understanding.** Do not write
 the plan file or change any code until the user has *explicitly* confirmed your
@@ -32,8 +32,8 @@ Plan mode enforces read-only exploration. During planning (Phases 1–3), use on
 the trusted read, grep, find, and ls tools. Write, edit, shell, user-shell, and
 custom tools are blocked, so do not attempt to change files, run commands,
 contact external systems, or delegate implementation. The only controlled
-mutation is creating the exact generated plan file under `.pi/plans/` in Phase
-4, after interactive approval.
+mutation is the dedicated `create_plan` tool atomically creating the generated
+plan file under `.pi/plans/` in Phase 4, after interactive approval.
 
 ---
 
@@ -95,9 +95,10 @@ go-ahead.**
 
 ### Phase 4 — Save the plan
 
-Only after shared understanding is complete, prepare the plan below and attempt
-to write it to the exact generated path supplied by the plan extension under
-`.pi/plans/`. That write opens an interactive confirmation:
+Only after shared understanding is complete, prepare the plan below and call
+`create_plan` with its complete Markdown content. The extension exclusively
+creates the generated path supplied in the system prompt under `.pi/plans/`.
+That call opens an interactive confirmation:
 
 - **Create plan** authorizes that one plan-file write, exits Plan mode after it
   succeeds, and authorizes implementation.
@@ -105,10 +106,8 @@ to write it to the exact generated path supplied by the plan extension under
   active. Continue exploring or refining the design; do not immediately repeat
   the write attempt.
 
-If no path was supplied, generate a sortable UTC timestamp-prefixed kebab-case
-Markdown name there (for example,
-`2026-08-05-132751-save-plan-storage.md`). Preserve the readable name and advance
-the timestamp on collision; never overwrite an existing plan or add a numeric
+The controlled creator preserves the readable name and atomically advances the
+timestamp on collision; it never overwrites an existing plan or adds a numeric
 suffix. Keep the plan tight and skimmable:
 
 ```markdown
@@ -144,11 +143,11 @@ suffix. Keep the plan tight and skimmable:
 ```
 
 The interactive approval to create the plan is the final transition gate. Do not
-ask for another approval after the write succeeds.
+ask for another approval after creation succeeds.
 
 ### Phase 5 — Implement
 
-Begin only after the approved plan write succeeds and Plan mode exits. Work
+Begin only after approved plan creation succeeds and Plan mode exits. Work
 through the saved plan file step by step. Keep it honest: if reality
 diverges, update that same file. If a divergence is *material* — it changes the
 approach, scope, or a tradeoff the user weighed in on — stop and check before
@@ -161,7 +160,7 @@ own verification commands (found in Phase 1) before declaring a step done.
 
 - **Interviewing the user about facts that are in the code.** Explore first, always.
 - **Racing to the plan file.** A plan written before shared understanding just formalizes a misunderstanding.
-- **Editing "just a little" during planning.** Read-only mode is enforced; the only exception is the interactively approved generated plan write at Phase 4.
+- **Editing "just a little" during planning.** Read-only mode is enforced; the only exception is interactively approved plan creation at Phase 4.
 - **Hiding the fork.** Choosing between two real designs without telling the user makes a decision that was theirs.
 - **Treating a vague "ok" as agreement.** Confirm the aspects that actually carry risk.
 

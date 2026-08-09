@@ -16,9 +16,10 @@ describe("selectPlanModeTools", () => {
 			builtin("write"),
 			builtin("edit"),
 			builtin("bash"),
+			{ name: "create_plan", sourceInfo: { source: "package", path: "/extensions/plan-theme.ts" } },
 			{ name: "guild_handover", sourceInfo: { source: "package", path: "/extensions/guild.ts" } },
-		]);
+		], "/extensions/plan-theme.ts");
 
-		assert.deepEqual(selected, ["read", "grep", "find", "ls", "write"]);
+		assert.deepEqual(selected, ["read", "grep", "find", "ls", "create_plan"]);
 	});
 });

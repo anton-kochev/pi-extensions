@@ -1,20 +1,39 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { fileURLToPath } from "node:url";
 import {
 	buildPlanCancellationMessage,
 	buildPlanSystemPrompt,
+	createPlanFile,
 	generatePlanPath,
-	preparePlanMutation,
 	resolvePlanCancellation,
 } from "./plan-files.ts";
 import { confirmPlanCreation, handleActivePlanCommand } from "./plan-exit.ts";
-import { isTrustedBuiltinTool, isTrustedPlanReadTool, selectPlanModeTools } from "./plan-policy.ts";
+import {
+	isTrustedPlanCreationTool,
+	isTrustedPlanReadTool,
+	PLAN_CREATE_TOOL_NAME,
+	selectPlanModeTools,
+} from "./plan-policy.ts";
 import { updatePlanStatus } from "./plan-status.ts";
 
 const CONFIG_DIR_NAME = ".pi";
+const PLAN_EXTENSION_PATH = fileURLToPath(import.meta.url);
+const CREATE_PLAN_PARAMETERS = {
+	type: "object",
+	properties: {
+		content: { type: "string", description: "Complete Markdown content for the approved plan" },
+	},
+	required: ["content"],
+	additionalProperties: false,
+} as const;
 const PLAN_COMMAND_RE = /^\/plan(?:\s|$)/;
 const PLAN_THEME_NAME = "plan";
 const FALLBACK_THEME_NAME = "dark";
 const PLAN_STATUS_MESSAGE_TYPE = "plan-mode-status";
+
+function withoutInternalPlanCreator(toolNames: string[]): string[] {
+	return toolNames.filter((name) => name !== PLAN_CREATE_TOOL_NAME);
+}
 
 type PlanThemeState = {
 	active: boolean;
@@ -35,6 +54,27 @@ export default function planTheme(pi: ExtensionAPI): void {
 	let previousThemeName: string | undefined;
 	let previousToolNames: string[] | undefined;
 	let planPath: string | undefined;
+
+	pi.registerTool({
+		name: PLAN_CREATE_TOOL_NAME,
+		label: "Create Plan",
+		description: "Atomically create the approved generated plan without overwriting an existing plan.",
+		parameters: CREATE_PLAN_PARAMETERS as never,
+		executionMode: "sequential",
+		async execute(toolCallId, params, _signal, _onUpdate, ctx) {
+			if (!active || !saveAuthorized || toolCallId !== planSaveToolCallId || !planPath) {
+				throw new Error("Plan creation is not currently authorized.");
+			}
+			const content = (params as unknown as { content: string }).content;
+			const createdPath = await createPlanFile(ctx.cwd, planPath, content);
+			planPath = createdPath;
+			persistState();
+			return {
+				content: [{ type: "text", text: `Created plan at ${createdPath}` }],
+				details: { path: createdPath },
+			};
+		},
+	});
 
 	function persistState(): void {
 		pi.appendEntry("plan-theme-state", {
@@ -93,8 +133,8 @@ export default function planTheme(pi: ExtensionAPI): void {
 		planSaveToolCallId = undefined;
 		active = true;
 		planPath = generatedPlanPath;
-		previousToolNames = toolsToRestore ?? pi.getActiveTools();
-		pi.setActiveTools(selectPlanModeTools(pi.getAllTools()));
+		previousToolNames = withoutInternalPlanCreator(toolsToRestore ?? pi.getActiveTools());
+		pi.setActiveTools(selectPlanModeTools(pi.getAllTools(), PLAN_EXTENSION_PATH));
 		setThemeWithoutPersisting(ctx, PLAN_THEME_NAME);
 		persistState();
 		updatePlanStatus(ctx.ui, true);
@@ -110,7 +150,7 @@ export default function planTheme(pi: ExtensionAPI): void {
 		cancelled = reason === "cancelled";
 		saveAuthorized = false;
 		planSaveToolCallId = undefined;
-		if (previousToolNames) pi.setActiveTools(previousToolNames);
+		if (previousToolNames) pi.setActiveTools(withoutInternalPlanCreator(previousToolNames));
 		previousToolNames = undefined;
 		previousThemeName = undefined;
 		planPath = undefined;
@@ -121,7 +161,7 @@ export default function planTheme(pi: ExtensionAPI): void {
 
 	pi.on("session_start", async (_event, ctx) => {
 		if (active) {
-			if (previousToolNames) pi.setActiveTools(previousToolNames);
+			if (previousToolNames) pi.setActiveTools(withoutInternalPlanCreator(previousToolNames));
 			if (previousThemeName) setThemeWithoutPersisting(ctx, previousThemeName);
 		}
 
@@ -150,6 +190,7 @@ export default function planTheme(pi: ExtensionAPI): void {
 			);
 		} else {
 			if (state && state.cancelled === undefined) persistState();
+			pi.setActiveTools(withoutInternalPlanCreator(pi.getActiveTools()));
 			updatePlanStatus(ctx.ui, false);
 		}
 
@@ -205,11 +246,10 @@ export default function planTheme(pi: ExtensionAPI): void {
 			return { block: true, reason: "The approved plan save is in progress; sibling tool calls are blocked." };
 		}
 		const allTools = pi.getAllTools();
-		const isTrustedWriter = event.toolName === "write" && isTrustedBuiltinTool(allTools, "write");
-		const isPlanMutation = isTrustedWriter && preparePlanMutation(event.toolName, event.input, planPath);
+		const isPlanCreation = isTrustedPlanCreationTool(allTools, event.toolName, PLAN_EXTENSION_PATH);
 		const isTrustedRead = isTrustedPlanReadTool(allTools, event.toolName);
 		if (isTrustedRead) return undefined;
-		if (isPlanMutation) {
+		if (isPlanCreation) {
 			if (!saveAuthorized) {
 				planSaveToolCallId = event.toolCallId;
 				if (!ctx.hasUI) {
@@ -256,7 +296,7 @@ export default function planTheme(pi: ExtensionAPI): void {
 			planSaveToolCallId = undefined;
 			return undefined;
 		}
-		if (preparePlanMutation(event.toolName, event.input, planPath)) exitPlanMode(ctx, "saved");
+		if (event.toolName === PLAN_CREATE_TOOL_NAME) exitPlanMode(ctx, "saved");
 		return undefined;
 	});
 }

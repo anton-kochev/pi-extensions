@@ -22,8 +22,9 @@ describe("confirmPlanCreation", () => {
 		]);
 		assert.equal(decision.action, "create");
 		if (decision.action === "create") {
-			assert.match(decision.instruction, /write it to exactly `.pi\/plans\/example.md`/);
-			assert.match(decision.instruction, /then implement the saved plan/);
+			assert.match(decision.instruction, /call create_plan/i);
+			assert.match(decision.instruction, /for `.pi\/plans\/example.md`/);
+			assert.match(decision.instruction, /creation succeeds, implement the saved plan/);
 			assert.doesNotMatch(decision.instruction, /Do not begin implementation/);
 		}
 	});
@@ -40,7 +41,7 @@ describe("confirmPlanCreation", () => {
 
 		assert.deepEqual(result, {
 			action: "transform",
-			text: "Finalize the current plan and write it to exactly `.pi/plans/example.md`. Once the write succeeds, then implement the saved plan.",
+			text: "Finalize the current plan and call create_plan with its complete Markdown content for `.pi/plans/example.md`. Once creation succeeds, implement the saved plan.",
 		});
 		assert.equal(authorized, true);
 	});
