@@ -56,7 +56,7 @@ The TDD workflow is packaged as a skill. Pi can load it proactively for matching
 
 ## Changelog
 
-### Unreleased
+### 0.3.2
 
 - Create generated plans atomically through a dedicated controlled tool so late path collisions cannot overwrite existing files.
 - Clarify the Plan mode enforcement boundary and behavior without an interactive UI.
