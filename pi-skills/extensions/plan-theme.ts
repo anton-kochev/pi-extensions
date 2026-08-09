@@ -6,6 +6,7 @@ import {
 	preparePlanMutation,
 	resolvePlanCancellation,
 } from "./plan-files.ts";
+import { handlePlanExitCommand } from "./plan-exit.ts";
 import { updatePlanStatus } from "./plan-status.ts";
 
 const PLAN_COMMAND_RE = /^\/plan(?:\s|$)/;
@@ -139,8 +140,11 @@ export default function planTheme(pi: ExtensionAPI): void {
 
 		const text = event.text.trim();
 		if (active && text === "/plan") {
-			restorePreviousTheme(ctx, "cancelled");
-			return { action: "handled" as const };
+			if (!planPath) {
+				restorePreviousTheme(ctx, "cancelled");
+				return { action: "handled" as const };
+			}
+			return handlePlanExitCommand(ctx.ui, planPath, () => restorePreviousTheme(ctx, "cancelled"));
 		}
 
 		if (!active && PLAN_COMMAND_RE.test(text)) {

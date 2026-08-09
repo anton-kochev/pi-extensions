@@ -4,7 +4,7 @@
 
 Anton Kochev's pi skills and prompt commands.
 
-Use `/plan` when you want the agent to explore before asking questions, reach explicit shared understanding, save a plan under `.pi/plans/`, and only then implement. The extension preserves a readable task-derived name behind a sortable UTC timestamp, such as `2026-08-05-132751-save-plan-storage.md`. If that path already exists, it advances the timestamp instead of adding a numeric suffix. The bundled `plan` theme is enabled automatically while `/plan` is active and replaces the standard footer with only `● planning`. The previous theme and standard footer return after the generated plan is written. Run `/plan` again before the plan is written to cancel planning and restore the normal interface; subsequent turns explicitly ignore the stale Plan Mode instructions already stored in conversation history.
+Use `/plan` when you want the agent to explore before asking questions, reach explicit shared understanding, save a plan under `.pi/plans/`, and only then implement. The extension preserves a readable task-derived name behind a sortable UTC timestamp, such as `2026-08-05-132751-save-plan-storage.md`. If that path already exists, it advances the timestamp instead of adding a numeric suffix. The bundled `plan` theme is enabled automatically while `/plan` is active and replaces the standard footer with only a subtly fading `● planning` indicator. The previous theme and standard footer return after the generated plan is written. Run `/plan` again before the plan is written to choose whether to create it before exiting: confirm to ask the agent to finalize and save it, or decline to cancel planning and restore the normal interface. After cancellation, subsequent turns explicitly ignore the stale Plan Mode instructions already stored in conversation history.
 
 Use `/commit` to stage relevant files when intent is clear and generate a Conventional Commits 1.0.0 message — problem-framed subjects, subject-only by default, with a body only when it earns its place.
 
@@ -46,7 +46,8 @@ The TDD workflow is packaged as a skill. Pi can load it proactively for matching
 
 ### Unreleased
 
-- Add an automatic temporary minimal `plan` theme and replace the standard footer with only `● planning` while `/plan` is active.
+- Ask whether to create the generated plan file when exiting an active `/plan` session.
+- Add an automatic temporary minimal `plan` theme and replace the standard footer with a subtly fading `● planning` indicator while `/plan` is active.
 - Save plans under `.pi/plans/` with unique, timestamp-prefixed readable names instead of overwriting a root `PLAN.md` or adding numeric suffixes.
 - Fix cancelled `/plan` sessions continuing to influence later model turns through stale prompt history.
 
