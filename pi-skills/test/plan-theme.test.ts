@@ -1,0 +1,512 @@
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import planTheme from "../extensions/plan-theme.ts";
+
+function builtin(name: string) {
+	return {
+		name,
+		description: name,
+		parameters: {},
+		promptGuidelines: [],
+		sourceInfo: { source: "builtin", path: `<builtin:${name}>`, scope: "user", origin: "top-level" },
+	};
+}
+
+function createHarness(
+	options: {
+		confirm?: (title: string, message: string) => Promise<boolean>;
+		themeSwitchSucceeds?: boolean;
+		isIdle?: boolean;
+		branchEntries?: any[];
+		hasUI?: boolean;
+	} = {},
+) {
+	const handlers = new Map<string, (event: any, ctx: any) => Promise<any>>();
+	const branchEntries = options.branchEntries ?? [];
+	const allTools = ["read", "grep", "find", "ls", "write", "edit", "bash"].map(builtin);
+	let activeTools = allTools.map((tool) => tool.name);
+	const entries: Array<{ customType: string; data: any }> = [];
+	const pi = {
+		on(name: string, handler: (event: any, ctx: any) => Promise<any>) {
+			handlers.set(name, handler);
+		},
+		appendEntry(customType: string, data: any) {
+			entries.push({ customType, data });
+		},
+		sendMessage() {},
+		getActiveTools: () => [...activeTools],
+		getAllTools: () => allTools,
+		setActiveTools(toolNames: string[]) {
+			activeTools = [...toolNames];
+		},
+	};
+	const ctx = {
+		cwd: "/tmp/pi-plan-theme-test-project",
+		mode: "tui",
+		hasUI: options.hasUI ?? true,
+		isIdle: () => options.isIdle ?? true,
+		sessionManager: { getBranch: () => branchEntries },
+		ui: {
+			theme: { name: "dark" },
+			getTheme: (name: string) => ({ name }),
+			setTheme: () =>
+				options.themeSwitchSucceeds === false
+					? { success: false, error: "theme unavailable" }
+					: { success: true },
+			setFooter() {},
+			setStatus() {},
+			notify() {},
+			confirm: options.confirm ?? (async () => false),
+		},
+	};
+	planTheme(pi as never);
+	return { handlers, ctx, entries, branchEntries, allTools, getActiveTools: () => activeTools };
+}
+
+async function activatePlan(harness: ReturnType<typeof createHarness>) {
+	await harness.handlers.get("input")?.(
+		{ type: "input", source: "interactive", text: "/plan protect the project" },
+		harness.ctx,
+	);
+}
+
+describe("plan mode enforcement", () => {
+	it("refuses to activate Plan mode while another agent turn is running", async () => {
+		const harness = createHarness();
+
+		const result = await harness.handlers.get("input")?.(
+			{
+				type: "input",
+				source: "interactive",
+				text: "/plan protect the project",
+				streamingBehavior: "steer",
+			},
+			harness.ctx,
+		);
+
+		assert.deepEqual(result, { action: "handled" });
+		assert.equal(harness.entries.some((entry) => entry.data.active), false);
+		assert.deepEqual(harness.getActiveTools(), ["read", "grep", "find", "ls", "write", "edit", "bash"]);
+	});
+
+	it("fails closed when the runtime reports a busy agent without streaming metadata", async () => {
+		const harness = createHarness({ isIdle: false });
+
+		const result = await harness.handlers.get("input")?.(
+			{ type: "input", source: "interactive", text: "/plan protect the project" },
+			harness.ctx,
+		);
+
+		assert.deepEqual(result, { action: "handled" });
+		assert.equal(harness.entries.some((entry) => entry.data.active), false);
+	});
+
+	it("restores normal tools when switching from Plan mode to an inactive session", async () => {
+		const harness = createHarness();
+		const normalTools = harness.getActiveTools();
+		await activatePlan(harness);
+
+		await harness.handlers.get("session_start")?.({ type: "session_start" }, harness.ctx);
+
+		assert.deepEqual(harness.getActiveTools(), normalTools);
+	});
+
+	it("restores active Plan mode from the current session branch", async () => {
+		const harness = createHarness({
+			branchEntries: [
+			{
+				type: "custom",
+				customType: "plan-theme-state",
+				data: { active: true, planPath: ".pi/plans/restored.md", previousThemeName: "dark" },
+			},
+		],
+		});
+
+		await harness.handlers.get("session_start")?.({ type: "session_start" }, harness.ctx);
+		const result = await harness.handlers.get("tool_call")?.(
+			{ type: "tool_call", toolCallId: "write-source", toolName: "write", input: { path: "src/app.ts" } },
+			harness.ctx,
+		);
+
+		assert.equal(result?.block, true);
+		assert.deepEqual(harness.getActiveTools(), ["read", "grep", "find", "ls", "write"]);
+	});
+
+	it("restores prior tools and save authorization with an active Plan session", async () => {
+		let confirmations = 0;
+		const harness = createHarness({
+			confirm: async () => {
+				confirmations += 1;
+				return false;
+			},
+			branchEntries: [
+			{
+				type: "custom",
+				customType: "plan-theme-state",
+				data: {
+					active: true,
+					planPath: ".pi/plans/restored.md",
+					previousThemeName: "dark",
+					previousToolNames: ["read", "bash"],
+					saveAuthorized: true,
+				},
+			},
+		],
+		});
+		await harness.handlers.get("session_start")?.({ type: "session_start" }, harness.ctx);
+		const call = {
+			type: "tool_call",
+			toolCallId: "write-restored-plan",
+			toolName: "write",
+			input: { path: ".pi/plans/restored.md" },
+		};
+
+		const result = await harness.handlers.get("tool_call")?.(call, harness.ctx);
+		await harness.handlers.get("tool_result")?.({ ...call, type: "tool_result", isError: false }, harness.ctx);
+
+		assert.equal(result?.block, undefined);
+		assert.equal(confirmations, 0);
+		assert.deepEqual(harness.getActiveTools(), ["read", "bash"]);
+	});
+
+	it("remains enforced when switching to the Plan theme fails", async () => {
+		const harness = createHarness({ themeSwitchSucceeds: false });
+		await activatePlan(harness);
+
+		const result = await harness.handlers.get("tool_call")?.(
+			{ type: "tool_call", toolCallId: "write-source", toolName: "write", input: { path: "src/app.ts" } },
+			harness.ctx,
+		);
+
+		assert.equal(result?.block, true);
+		assert.equal(harness.entries.at(-1)?.data.active, true);
+		assert.deepEqual(harness.getActiveTools(), ["read", "grep", "find", "ls", "write"]);
+	});
+
+	it("hides mutating and custom tools while retaining the controlled plan writer", async () => {
+		const harness = createHarness();
+		await activatePlan(harness);
+
+		assert.deepEqual(harness.getActiveTools(), ["read", "grep", "find", "ls", "write"]);
+	});
+
+	it("blocks source-file writes while planning", async () => {
+		const harness = createHarness();
+		await activatePlan(harness);
+
+		const result = await harness.handlers.get("tool_call")?.(
+			{ type: "tool_call", toolCallId: "write-source", toolName: "write", input: { path: "src/app.ts" } },
+			harness.ctx,
+		);
+
+		assert.equal(result?.block, true);
+		assert.match(result?.reason ?? "", /read-only/i);
+	});
+
+	it("asks before creating the plan and stays read-only when the user continues planning", async () => {
+		const dialogs: Array<[string, string]> = [];
+		const harness = createHarness({
+			confirm: async (title, message) => {
+				dialogs.push([title, message]);
+				return false;
+			},
+		});
+		await activatePlan(harness);
+		const planPath = harness.entries.at(-1)?.data.planPath;
+
+		const result = await harness.handlers.get("tool_call")?.(
+			{ type: "tool_call", toolCallId: "write-plan", toolName: "write", input: { path: planPath } },
+			harness.ctx,
+		);
+
+		assert.equal(result?.block, true);
+		assert.match(result?.reason ?? "", /continue planning/i);
+		assert.equal(dialogs.length, 1);
+		assert.match(dialogs[0]?.join(" ") ?? "", /create.*plan/i);
+		assert.equal(harness.entries.at(-1)?.data.active, true);
+	});
+
+	it("exits Plan mode and restores the previous tools after an approved plan is written", async () => {
+		const harness = createHarness({ confirm: async () => true });
+		const previousTools = harness.getActiveTools();
+		await activatePlan(harness);
+		const planPath = harness.entries.at(-1)?.data.planPath;
+		const call = { type: "tool_call", toolCallId: "write-plan", toolName: "write", input: { path: planPath } };
+
+		const result = await harness.handlers.get("tool_call")?.(call, harness.ctx);
+		assert.equal(result?.block, undefined);
+		await harness.handlers.get("tool_result")?.({ ...call, type: "tool_result", isError: false }, harness.ctx);
+
+		assert.equal(harness.entries.at(-1)?.data.active, false);
+		assert.deepEqual(harness.getActiveTools(), previousTools);
+	});
+
+	it("keeps Plan mode active when interactive approval is unavailable", async () => {
+		let confirmations = 0;
+		const harness = createHarness({
+			hasUI: false,
+			confirm: async () => {
+				confirmations += 1;
+				return true;
+			},
+		});
+		await activatePlan(harness);
+
+		const result = await harness.handlers.get("input")?.(
+			{ type: "input", source: "interactive", text: "/plan" },
+			harness.ctx,
+		);
+
+		assert.deepEqual(result, { action: "handled" });
+		assert.equal(confirmations, 0);
+		assert.equal(harness.entries.at(-1)?.data.active, true);
+	});
+
+	it("re-running the Plan command authorizes the next plan write without asking twice", async () => {
+		let confirmations = 0;
+		const harness = createHarness({
+			confirm: async () => {
+				confirmations += 1;
+				return true;
+			},
+		});
+		await activatePlan(harness);
+		const commandResult = await harness.handlers.get("input")?.(
+			{ type: "input", source: "interactive", text: "/plan" },
+			harness.ctx,
+		);
+		const planPath = harness.entries.at(-1)?.data.planPath;
+
+		const writeResult = await harness.handlers.get("tool_call")?.(
+			{ type: "tool_call", toolCallId: "write-plan", toolName: "write", input: { path: planPath } },
+			harness.ctx,
+		);
+
+		assert.equal(commandResult?.action, "transform");
+		assert.match(commandResult?.text ?? "", /then implement the saved plan/);
+		assert.equal(writeResult?.block, undefined);
+		assert.equal(confirmations, 1);
+	});
+
+	it("stays read-only without locking Plan mode when interactive confirmation fails", async () => {
+		const harness = createHarness({
+			confirm: async () => {
+				throw new Error("dialog failed");
+			},
+		});
+		await activatePlan(harness);
+		const planPath = harness.entries.at(-1)?.data.planPath;
+
+		const writeResult = await harness.handlers.get("tool_call")?.(
+			{ type: "tool_call", toolCallId: "write-plan", toolName: "write", input: { path: planPath } },
+			harness.ctx,
+		);
+		const readResult = await harness.handlers.get("tool_call")?.(
+			{ type: "tool_call", toolCallId: "read-source", toolName: "read", input: { path: "README.md" } },
+			harness.ctx,
+		);
+
+		assert.equal(writeResult?.block, true);
+		assert.match(writeResult?.reason ?? "", /approval.*failed/i);
+		assert.equal(readResult?.block, undefined);
+	});
+
+	it("uses one confirmation and blocks concurrent calls while approval is pending", async () => {
+		let confirmations = 0;
+		let resolveConfirmation: ((approved: boolean) => void) | undefined;
+		const confirmation = new Promise<boolean>((resolve) => {
+			resolveConfirmation = resolve;
+		});
+		const harness = createHarness({
+			confirm: async () => {
+				confirmations += 1;
+				return confirmation;
+			},
+		});
+		await activatePlan(harness);
+		const planPath = harness.entries.at(-1)?.data.planPath;
+		const first = harness.handlers.get("tool_call")?.(
+			{ type: "tool_call", toolCallId: "write-plan-1", toolName: "write", input: { path: planPath } },
+			harness.ctx,
+		);
+		await new Promise((resolve) => setImmediate(resolve));
+
+		const sibling = harness.handlers.get("tool_call")?.(
+			{ type: "tool_call", toolCallId: "write-plan-2", toolName: "write", input: { path: planPath } },
+			harness.ctx,
+		);
+		await new Promise((resolve) => setImmediate(resolve));
+		resolveConfirmation?.(true);
+
+		assert.equal(confirmations, 1);
+		assert.equal((await first)?.block, undefined);
+		assert.equal((await sibling)?.block, true);
+	});
+
+	it("locks the approved plan-write arguments against later extension mutation", async () => {
+		const harness = createHarness({ confirm: async () => true });
+		await activatePlan(harness);
+		const planPath = harness.entries.at(-1)?.data.planPath;
+		const call = {
+			type: "tool_call",
+			toolCallId: "write-plan",
+			toolName: "write",
+			input: { path: planPath, content: "# Plan" },
+		};
+
+		await harness.handlers.get("tool_call")?.(call, harness.ctx);
+
+		assert.throws(() => {
+			call.input.path = "src/app.ts";
+		}, TypeError);
+		assert.equal(Reflect.set(call, "input", { path: "src/app.ts" }), false);
+		assert.equal(call.input.path, planPath);
+	});
+
+	it("blocks sibling tool calls while the approved plan write is in progress", async () => {
+		const harness = createHarness({ confirm: async () => true });
+		await activatePlan(harness);
+		const planPath = harness.entries.at(-1)?.data.planPath;
+
+		await harness.handlers.get("tool_call")?.(
+			{ type: "tool_call", toolCallId: "write-plan-1", toolName: "write", input: { path: planPath } },
+			harness.ctx,
+		);
+		const sibling = await harness.handlers.get("tool_call")?.(
+			{ type: "tool_call", toolCallId: "write-plan-2", toolName: "write", input: { path: planPath } },
+			harness.ctx,
+		);
+
+		assert.equal(sibling?.block, true);
+		assert.match(sibling?.reason ?? "", /save.*in progress/i);
+	});
+
+	it("recovers from an interrupted plan write when the user continues planning", async () => {
+		const decisions = [true, false];
+		const harness = createHarness({ confirm: async () => decisions.shift() ?? false });
+		await activatePlan(harness);
+		const planPath = harness.entries.at(-1)?.data.planPath;
+		await harness.handlers.get("tool_call")?.(
+			{ type: "tool_call", toolCallId: "interrupted-write", toolName: "write", input: { path: planPath } },
+			harness.ctx,
+		);
+
+		await harness.handlers.get("input")?.(
+			{ type: "input", source: "interactive", text: "/plan" },
+			harness.ctx,
+		);
+		const readResult = await harness.handlers.get("tool_call")?.(
+			{ type: "tool_call", toolCallId: "read-after-interruption", toolName: "read", input: { path: "README.md" } },
+			harness.ctx,
+		);
+
+		assert.equal(readResult?.block, undefined);
+		assert.equal(harness.entries.at(-1)?.data.active, true);
+		assert.equal(harness.entries.at(-1)?.data.saveAuthorized, false);
+	});
+
+	it("stays in Plan mode and retains approval when the plan write fails", async () => {
+		let confirmations = 0;
+		const harness = createHarness({
+			confirm: async () => {
+				confirmations += 1;
+				return true;
+			},
+		});
+		await activatePlan(harness);
+		const planPath = harness.entries.at(-1)?.data.planPath;
+		const firstCall = {
+			type: "tool_call",
+			toolCallId: "write-plan-1",
+			toolName: "write",
+			input: { path: planPath },
+		};
+
+		await harness.handlers.get("tool_call")?.(firstCall, harness.ctx);
+		await harness.handlers.get("tool_result")?.({ ...firstCall, type: "tool_result", isError: true }, harness.ctx);
+		const retry = await harness.handlers.get("tool_call")?.(
+			{ ...firstCall, toolCallId: "write-plan-2" },
+			harness.ctx,
+		);
+
+		assert.equal(retry?.block, undefined);
+		assert.equal(confirmations, 1);
+		assert.equal(harness.entries.at(-1)?.data.active, true);
+		assert.equal(harness.entries.at(-1)?.data.saveAuthorized, true);
+		assert.deepEqual(harness.getActiveTools(), ["read", "grep", "find", "ls", "write"]);
+	});
+
+	it("blocks an overridden writer without asking it to create the plan", async () => {
+		let confirmations = 0;
+		const harness = createHarness({
+			confirm: async () => {
+				confirmations += 1;
+				return true;
+			},
+		});
+		const write = harness.allTools.find((tool) => tool.name === "write");
+		assert.ok(write);
+		write.sourceInfo.source = "package";
+		write.sourceInfo.path = "/extensions/untrusted-write.ts";
+		await activatePlan(harness);
+		const planPath = harness.entries.at(-1)?.data.planPath;
+
+		const result = await harness.handlers.get("tool_call")?.(
+			{ type: "tool_call", toolCallId: "custom-write", toolName: "write", input: { path: planPath } },
+			harness.ctx,
+		);
+
+		assert.equal(result?.block, true);
+		assert.match(result?.reason ?? "", /read-only/i);
+		assert.equal(confirmations, 0);
+	});
+
+	it("blocks a custom tool that overrides a read-only built-in", async () => {
+		const harness = createHarness();
+		const read = harness.allTools.find((tool) => tool.name === "read");
+		assert.ok(read);
+		read.sourceInfo.source = "package";
+		read.sourceInfo.path = "/extensions/untrusted-read.ts";
+		await activatePlan(harness);
+
+		const result = await harness.handlers.get("tool_call")?.(
+			{ type: "tool_call", toolCallId: "custom-read", toolName: "read", input: { path: "README.md" } },
+			harness.ctx,
+		);
+
+		assert.equal(result?.block, true);
+		assert.match(result?.reason ?? "", /read-only/i);
+	});
+
+	it("blocks user shell commands while planning", async () => {
+		const harness = createHarness();
+		await activatePlan(harness);
+
+		const result = await harness.handlers.get("user_bash")?.(
+			{ type: "user_bash", command: "rm -rf src", excludeFromContext: false, cwd: harness.ctx.cwd },
+			harness.ctx,
+		);
+
+		assert.equal(result?.result?.exitCode, 126);
+		assert.match(result?.result?.output ?? "", /Plan mode.*read-only/i);
+	});
+
+	it("blocks editing, shell execution, and custom tools while planning", async () => {
+		const harness = createHarness();
+		await activatePlan(harness);
+
+		for (const [toolName, input] of [
+			["edit", { path: "src/app.ts" }],
+			["bash", { command: "rm -rf src" }],
+			["guild_handover", { member: "csharp-coder", task: "edit the project" }],
+		] as const) {
+			const result = await harness.handlers.get("tool_call")?.(
+				{ type: "tool_call", toolCallId: toolName, toolName, input },
+				harness.ctx,
+			);
+
+			assert.equal(result?.block, true, `${toolName} should be blocked`);
+			assert.match(result?.reason ?? "", /read-only/i);
+		}
+	});
+});

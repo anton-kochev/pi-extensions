@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { confirmPlanExit, handlePlanExitCommand } from "../extensions/plan-exit.ts";
+import { confirmPlanCreation, handleActivePlanCommand } from "../extensions/plan-exit.ts";
 
-describe("confirmPlanExit", () => {
-	it("requests a write to the generated plan path when the user confirms", async () => {
+describe("confirmPlanCreation", () => {
+	it("makes approval to create the plan authorize exiting and implementation", async () => {
 		const dialogs: Array<[string, string]> = [];
 		const ui = {
 			confirm: async (title: string, message: string) => {
@@ -12,54 +12,60 @@ describe("confirmPlanExit", () => {
 			},
 		};
 
-		const decision = await confirmPlanExit(ui, ".pi/plans/example.md");
+		const decision = await confirmPlanCreation(ui, ".pi/plans/example.md");
 
-		assert.deepEqual(dialogs, [["Exit Plan mode", "Create the plan file before exiting?"]]);
-		assert.equal(decision.action, "save");
-		if (decision.action === "save") {
+		assert.deepEqual(dialogs, [
+			[
+				"Create plan and exit Plan mode",
+				"Create the plan, exit read-only Plan mode, and begin implementation? Choose No to continue planning.",
+			],
+		]);
+		assert.equal(decision.action, "create");
+		if (decision.action === "create") {
 			assert.match(decision.instruction, /write it to exactly `.pi\/plans\/example.md`/);
-			assert.match(decision.instruction, /Do not begin implementation/);
+			assert.match(decision.instruction, /then implement the saved plan/);
+			assert.doesNotMatch(decision.instruction, /Do not begin implementation/);
 		}
 	});
 
-	it("keeps Plan mode active while the confirmed save request runs", async () => {
-		let cancelled = false;
-		const result = await handlePlanExitCommand(
+	it("authorizes the save while keeping Plan mode active until the write succeeds", async () => {
+		let authorized = false;
+		const result = await handleActivePlanCommand(
 			{ confirm: async () => true },
 			".pi/plans/example.md",
 			() => {
-				cancelled = true;
+				authorized = true;
 			},
 		);
 
 		assert.deepEqual(result, {
 			action: "transform",
-			text: "Finalize the current plan and write it to exactly `.pi/plans/example.md`. Do not begin implementation.",
+			text: "Finalize the current plan and write it to exactly `.pi/plans/example.md`. Once the write succeeds, then implement the saved plan.",
 		});
-		assert.equal(cancelled, false);
+		assert.equal(authorized, true);
 	});
 
-	it("returns a cancellation decision when the user declines to create a plan file", async () => {
+	it("returns a continue-planning decision when the user declines to create a plan file", async () => {
 		const ui = {
 			confirm: async () => false,
 		};
 
-		const decision = await confirmPlanExit(ui, ".pi/plans/example.md");
+		const decision = await confirmPlanCreation(ui, ".pi/plans/example.md");
 
-		assert.deepEqual(decision, { action: "cancel" });
+		assert.deepEqual(decision, { action: "continue" });
 	});
 
-	it("cancels immediately and handles the exit command when the user declines", async () => {
-		let cancelled = false;
-		const result = await handlePlanExitCommand(
+	it("revokes save authorization and keeps Plan mode active when the user continues planning", async () => {
+		let authorized = true;
+		const result = await handleActivePlanCommand(
 			{ confirm: async () => false },
 			".pi/plans/example.md",
-			() => {
-				cancelled = true;
+			(value) => {
+				authorized = value;
 			},
 		);
 
 		assert.deepEqual(result, { action: "handled" });
-		assert.equal(cancelled, true);
+		assert.equal(authorized, false);
 	});
 });

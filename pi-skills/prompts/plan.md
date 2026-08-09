@@ -1,5 +1,5 @@
 ---
-description: "Plan-first workflow: explore, agree, save a named plan under .pi/plans, then implement."
+description: "Enforced read-only planning: explore, agree, approve a named plan under .pi/plans, then implement."
 argument-hint: "<task>"
 ---
 
@@ -26,15 +26,14 @@ the plan file or change any code until the user has *explicitly* confirmed your
 understanding of the goal, approach, and scope. "Yes, that's right" / "go ahead"
 is confirmation; silence or a vague "sounds good" to a wall of text is not.
 
-## Planning posture: read-only until the plan is approved
+## Planning posture: enforced read-only until plan creation is approved
 
-This agent has no built-in read-only mode, so the discipline is on you. During
-planning (Phases 1–3) you may only read files, search the codebase (grep / find /
-ripgrep), and run non-mutating commands (`git log`, `git diff`, `ls`, `cat`,
-dependency listing, dry-runs). Do NOT edit, create, or delete source files, run
-migrations, install packages, or run anything with side effects. The one file you
-may create is the generated plan file under `.pi/plans/`, and only at Phase 4,
-after approval.
+Plan mode enforces read-only exploration. During planning (Phases 1–3), use only
+the trusted read, grep, find, and ls tools. Write, edit, shell, user-shell, and
+custom tools are blocked, so do not attempt to change files, run commands,
+contact external systems, or delegate implementation. The only controlled
+mutation is creating the exact generated plan file under `.pi/plans/` in Phase
+4, after interactive approval.
 
 ---
 
@@ -96,12 +95,21 @@ go-ahead.**
 
 ### Phase 4 — Save the plan
 
-Only after approval, write the plan to the exact generated path supplied by the
-plan extension under `.pi/plans/`, keeping it tight and skimmable. If no path was
-supplied, generate a sortable UTC timestamp-prefixed kebab-case Markdown name
-there (for example, `2026-08-05-132751-save-plan-storage.md`). Preserve the
-readable name and advance the timestamp on collision; never overwrite an existing
-plan or add a numeric suffix:
+Only after shared understanding is complete, prepare the plan below and attempt
+to write it to the exact generated path supplied by the plan extension under
+`.pi/plans/`. That write opens an interactive confirmation:
+
+- **Create plan** authorizes that one plan-file write, exits Plan mode after it
+  succeeds, and authorizes implementation.
+- **Continue planning** blocks the write and keeps enforced read-only Plan mode
+  active. Continue exploring or refining the design; do not immediately repeat
+  the write attempt.
+
+If no path was supplied, generate a sortable UTC timestamp-prefixed kebab-case
+Markdown name there (for example,
+`2026-08-05-132751-save-plan-storage.md`). Preserve the readable name and advance
+the timestamp on collision; never overwrite an existing plan or add a numeric
+suffix. Keep the plan tight and skimmable:
 
 ```markdown
 # Plan: <short title>
@@ -135,11 +143,13 @@ plan or add a numeric suffix:
 <Anything still assumed rather than confirmed.>
 ```
 
-Show it to the user and get a final nod before implementing.
+The interactive approval to create the plan is the final transition gate. Do not
+ask for another approval after the write succeeds.
 
 ### Phase 5 — Implement
 
-Work through the saved plan file step by step. Keep it honest: if reality
+Begin only after the approved plan write succeeds and Plan mode exits. Work
+through the saved plan file step by step. Keep it honest: if reality
 diverges, update that same file. If a divergence is *material* — it changes the
 approach, scope, or a tradeoff the user weighed in on — stop and check before
 proceeding; small mechanical adjustments don't need a check-in. Run the project's
@@ -151,7 +161,7 @@ own verification commands (found in Phase 1) before declaring a step done.
 
 - **Interviewing the user about facts that are in the code.** Explore first, always.
 - **Racing to the plan file.** A plan written before shared understanding just formalizes a misunderstanding.
-- **Editing "just a little" during planning.** Planning is read-only; the only exception is the generated plan file at Phase 4.
+- **Editing "just a little" during planning.** Read-only mode is enforced; the only exception is the interactively approved generated plan write at Phase 4.
 - **Hiding the fork.** Choosing between two real designs without telling the user makes a decision that was theirs.
 - **Treating a vague "ok" as agreement.** Confirm the aspects that actually carry risk.
 

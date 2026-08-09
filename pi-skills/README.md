@@ -4,7 +4,7 @@
 
 Anton Kochev's pi skills and prompt commands.
 
-Use `/plan` when you want the agent to explore before asking questions, reach explicit shared understanding, save a plan under `.pi/plans/`, and only then implement. The extension preserves a readable task-derived name behind a sortable UTC timestamp, such as `2026-08-05-132751-save-plan-storage.md`. If that path already exists, it advances the timestamp instead of adding a numeric suffix. The bundled `plan` theme is enabled automatically while `/plan` is active and replaces the standard footer with only a subtly fading `● planning` indicator. The previous theme and standard footer return after the generated plan is written. Run `/plan` again before the plan is written to choose whether to create it before exiting: confirm to ask the agent to finalize and save it, or decline to cancel planning and restore the normal interface. After cancellation, subsequent turns explicitly ignore the stale Plan Mode instructions already stored in conversation history.
+Use `/plan` when you want the agent to explore before asking questions, reach explicit shared understanding, save a plan under `.pi/plans/`, and only then implement. Plan mode is enforced read-only: Pi exposes only trusted built-in read/search tools plus a controlled plan writer, blocks source edits, shell commands, user `!` commands, and custom tools, and preserves the previous tool set for restoration. The extension gives each plan a sortable UTC timestamp and readable task-derived name, such as `2026-08-05-132751-save-plan-storage.md`; collisions advance the timestamp instead of overwriting or adding a numeric suffix. The bundled `plan` theme replaces the standard footer with a subtly fading `● planning` indicator, but enforcement remains active even if the theme cannot load. When the agent is ready to write the generated plan—or when you run `/plan` again—Pi asks interactively whether to create the plan and proceed to implementation or continue planning. Only approval permits the exact plan write; declining keeps Plan mode read-only and active. After a successful approved write, Pi restores the previous theme and tools and implementation can begin.
 
 Use `/commit` to stage relevant files when intent is clear and generate a Conventional Commits 1.0.0 message — problem-framed subjects, subject-only by default, with a body only when it earns its place.
 
@@ -43,6 +43,11 @@ The TDD workflow is packaged as a skill. Pi can load it proactively for matching
 ```
 
 ## Changelog
+
+### Unreleased
+
+- Enforce read-only Plan mode across built-in, custom, and user-shell tools, with fail-closed activation and branch-scoped state restoration.
+- Require interactive approval for the exact generated plan write; continuing stays in Plan mode, while a successful approved write exits and authorizes implementation.
 
 ### 0.3.0
 

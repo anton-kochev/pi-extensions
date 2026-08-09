@@ -1,32 +1,38 @@
-export type PlanExitUI = {
+export type PlanCreationUI = {
 	confirm(title: string, message: string): Promise<boolean>;
 };
 
-export type PlanExitDecision =
-	| { action: "save"; instruction: string }
-	| { action: "cancel" };
+export type PlanCreationDecision =
+	| { action: "create"; instruction: string }
+	| { action: "continue" };
 
-export type PlanExitCommandResult =
+export type ActivePlanCommandResult =
 	| { action: "transform"; text: string }
 	| { action: "handled" };
 
-export async function confirmPlanExit(ui: PlanExitUI, planPath: string): Promise<PlanExitDecision> {
-	const shouldSave = await ui.confirm("Exit Plan mode", "Create the plan file before exiting?");
-	if (!shouldSave) return { action: "cancel" };
+export async function confirmPlanCreation(ui: PlanCreationUI, planPath: string): Promise<PlanCreationDecision> {
+	const shouldCreate = await ui.confirm(
+		"Create plan and exit Plan mode",
+		"Create the plan, exit read-only Plan mode, and begin implementation? Choose No to continue planning.",
+	);
+	if (!shouldCreate) return { action: "continue" };
 
 	return {
-		action: "save",
-		instruction: `Finalize the current plan and write it to exactly \`${planPath}\`. Do not begin implementation.`,
+		action: "create",
+		instruction: `Finalize the current plan and write it to exactly \`${planPath}\`. Once the write succeeds, then implement the saved plan.`,
 	};
 }
 
-export async function handlePlanExitCommand(
-	ui: PlanExitUI,
+export async function handleActivePlanCommand(
+	ui: PlanCreationUI,
 	planPath: string,
-	cancel: () => void,
-): Promise<PlanExitCommandResult> {
-	const decision = await confirmPlanExit(ui, planPath);
-	if (decision.action === "save") return { action: "transform", text: decision.instruction };
-	cancel();
+	setSaveAuthorization: (authorized: boolean) => void,
+): Promise<ActivePlanCommandResult> {
+	const decision = await confirmPlanCreation(ui, planPath);
+	if (decision.action === "create") {
+		setSaveAuthorization(true);
+		return { action: "transform", text: decision.instruction };
+	}
+	setSaveAuthorization(false);
 	return { action: "handled" };
 }

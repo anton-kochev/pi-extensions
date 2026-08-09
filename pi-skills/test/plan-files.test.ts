@@ -90,6 +90,19 @@ describe("buildPlanSystemPrompt", () => {
 		assert.match(prompt ?? "", /Ignore any earlier Plan Mode workflow instructions/);
 	});
 
+	it("reinforces enforced read-only behavior on every active Plan turn", () => {
+		const prompt = buildPlanSystemPrompt("base prompt", {
+			active: true,
+			cancelled: false,
+			planPath: ".pi/plans/example.md",
+		});
+
+		assert.match(prompt ?? "", /read-only Plan mode is enforced/i);
+		assert.match(prompt ?? "", /read, grep, find, and ls/i);
+		assert.match(prompt ?? "", /interactive approval/i);
+		assert.match(prompt ?? "", /continue planning/i);
+	});
+
 	it("supplies the generated plan path while planning remains active", () => {
 		const prompt = buildPlanSystemPrompt("base prompt", {
 			active: true,

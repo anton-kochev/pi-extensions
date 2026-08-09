@@ -74,7 +74,7 @@ export type PlanPromptState = {
 
 export function buildPlanSystemPrompt(systemPrompt: string, state: PlanPromptState): string | undefined {
 	if (state.active && state.planPath) {
-		return `${systemPrompt}\n\nWhen the plan is approved, save it at exactly \`${state.planPath}\`. Keep using that path for later plan updates.`;
+		return `${systemPrompt}\n\nRead-only Plan mode is enforced. Use only the trusted read, grep, find, and ls tools while exploring. Do not modify project files, run shell commands, or invoke custom tools. When the plan is ready, attempt to save it at exactly \`${state.planPath}\`; Pi will request interactive approval before creating it. If the user chooses to continue planning, keep Plan mode active and do not create the file. Approval to create the plan authorizes exiting Plan mode and implementing it after the write succeeds.`;
 	}
 	if (state.cancelled) {
 		return `${systemPrompt}\n\nPlan mode is inactive because the user cancelled it. Ignore any earlier Plan Mode workflow instructions in the conversation history. Respond normally unless the user invokes /plan again.`;
