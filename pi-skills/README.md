@@ -44,7 +44,7 @@ The TDD workflow is packaged as a skill. Pi can load it proactively for matching
 
 ## Changelog
 
-### Unreleased
+### 0.3.1
 
 - Enforce read-only Plan mode across built-in, custom, and user-shell tools, with fail-closed activation and branch-scoped state restoration.
 - Require interactive approval for the exact generated plan write; continuing stays in Plan mode, while a successful approved write exits and authorizes implementation.
