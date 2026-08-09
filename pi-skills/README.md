@@ -44,7 +44,7 @@ The TDD workflow is packaged as a skill. Pi can load it proactively for matching
 
 ## Changelog
 
-### Unreleased
+### 0.3.0
 
 - Ask whether to create the generated plan file when exiting an active `/plan` session.
 - Add an automatic temporary minimal `plan` theme and replace the standard footer with a subtly fading `● planning` indicator while `/plan` is active.
