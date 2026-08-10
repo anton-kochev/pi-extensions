@@ -1,0 +1,41 @@
+{
+  "name": "@anton-kochev/pithos.echo",
+  "version": "0.4.1",
+  "description": "Echo: a read-only side-channel question asker for Pi sessions and project code.",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "pithos",
+    "echo",
+    "ask",
+    "read-only"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anton-kochev/pithos-kit.git",
+    "directory": "pithos.echo"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "jiti": "^2.4.2"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions"
+    ]
+  },
+  "files": [
+    "extensions",
+    "src",
+    "README.md"
+  ]
+}

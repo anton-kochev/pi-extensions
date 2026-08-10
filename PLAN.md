@@ -4,9 +4,9 @@
 Allow the user to delegate a task directly to a Guild member from the Pi TUI without asking the main agent to call `guild_handover`. Run the handover synchronously, preserve its lifecycle in the transcript, and make the started and terminal events available to the main agent on its next turn without automatically triggering a response.
 
 ## Context (from the codebase)
-- `guild/src/guild.ts` currently registers the agent-callable `guild_handover` tool and the roster-only `/guild` command. Tool preparation, project-override approval, active-run visibility, child execution, and result construction currently live in the tool handler.
-- `guild/src/runner.ts` already runs an isolated child Pi process, inherits the active model/thinking level/cwd/trust decision, enforces member tool boundaries, streams updates, and supports cancellation through an `AbortSignal`.
-- `guild/src/visibility.ts` and `guild/src/ui.ts` provide the active-only `guild-dashboard` and the existing Guild call/result presentation.
+- `pithos.guild/src/guild.ts` currently registers the agent-callable `guild_handover` tool and the roster-only `/guild` command. Tool preparation, project-override approval, active-run visibility, child execution, and result construction currently live in the tool handler.
+- `pithos.guild/src/runner.ts` already runs an isolated child Pi process, inherits the active model/thinking level/cwd/trust decision, enforces member tool boundaries, streams updates, and supports cancellation through an `AbortSignal`.
+- `pithos.guild/src/visibility.ts` and `pithos.guild/src/ui.ts` provide the active-only `guild-dashboard` and the existing Guild call/result presentation.
 - Pi extension commands can execute while the main agent is streaming. `ExtensionCommandContext.waitForIdle()` is therefore required before direct execution to prevent the main agent and a write-enabled Guild member from editing concurrently.
 - `BorderedLoader` is Pi's established cancellable TUI component and exposes the signal needed by `runGuildMember()`.
 - `pi.sendMessage()` persists a custom message without triggering a turn when `triggerTurn` is false. Pi converts that custom message to a user-role message for later model context, so lifecycle content must identify itself as an extension event and frame generated member output as report data rather than new instructions.
@@ -78,11 +78,11 @@ Add a custom Guild lifecycle renderer that distinguishes started, completed, fai
 12. Run the full automated verification suite, package dry-run, whitespace checks, and manual fresh-process TUI scenarios.
 
 ## Files to change
-- `guild/src/guild.ts` — register `/guild-handover`, add completions and TUI flow, share preparation/execution between command and tool, emit lifecycle messages, and coordinate cancellation/visibility.
-- `guild/src/ui.ts` — render started, completed, failed, and cancelled lifecycle messages consistently with existing Guild cards.
-- `guild/test/extension.test.ts` — cover command forms, idle waiting, shared execution behavior, approval, cancellation, lifecycle context, failures, and regressions.
-- `guild/test/ui.test.ts` — cover lifecycle message presentation and expansion.
-- `guild/README.md` — document direct delegation and main-agent awareness.
+- `pithos.guild/src/guild.ts` — register `/guild-handover`, add completions and TUI flow, share preparation/execution between command and tool, emit lifecycle messages, and coordinate cancellation/visibility.
+- `pithos.guild/src/ui.ts` — render started, completed, failed, and cancelled lifecycle messages consistently with existing Guild cards.
+- `pithos.guild/test/extension.test.ts` — cover command forms, idle waiting, shared execution behavior, approval, cancellation, lifecycle context, failures, and regressions.
+- `pithos.guild/test/ui.test.ts` — cover lifecycle message presentation and expansion.
+- `pithos.guild/README.md` — document direct delegation and main-agent awareness.
 - `PLAN.md` — keep this plan aligned with implementation if non-material mechanics change.
 
 A separate source/test module may be extracted for command parsing or lifecycle types if a red-green-refactor cycle shows that `guild.ts` is becoming difficult to test or understand; that mechanical extraction does not change the approved behavior.
@@ -90,7 +90,7 @@ A separate source/test module may be extracted for command parsing or lifecycle 
 ## Testing & verification
 Follow strict red-green-refactor cycles, running the focused test after every red and green step before the full suite.
 
-Automated verification from `guild/`:
+Automated verification from `pithos.guild/`:
 
 ```bash
 npm test

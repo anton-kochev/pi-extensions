@@ -1,0 +1,38 @@
+{
+  "name": "@anton-kochev/pithos.aegis",
+  "version": "0.1.0",
+  "description": "Protect Pi agent shell commands and file mutations with configurable block and confirmation rules.",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "pithos",
+    "aegis",
+    "permissions",
+    "shell"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anton-kochev/pithos-kit.git",
+    "directory": "pithos.aegis"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.ts"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions"
+    ]
+  },
+  "files": [
+    "extensions",
+    "README.md"
+  ]
+}

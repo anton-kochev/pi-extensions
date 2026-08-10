@@ -1,0 +1,56 @@
+{
+  "name": "@anton-kochev/pithos.skills",
+  "version": "0.3.2",
+  "description": "Anton Kochev's Pi skills and prompt commands.",
+  "keywords": [
+    "pi-package",
+    "pi-prompt-template",
+    "pi-skill",
+    "pithos",
+    "plan-mode",
+    "planning",
+    "tdd",
+    "test-driven-development",
+    "srs",
+    "requirements",
+    "iso-29148",
+    "ears"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.ts"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anton-kochev/pithos-kit.git",
+    "directory": "pithos.skills"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions/plan-theme.ts"
+    ],
+    "prompts": [
+      "./prompts"
+    ],
+    "skills": [
+      "./skills"
+    ],
+    "themes": [
+      "./themes"
+    ]
+  },
+  "files": [
+    "extensions",
+    "prompts",
+    "skills",
+    "themes",
+    "README.md"
+  ]
+}

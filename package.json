@@ -1,12 +1,15 @@
 {
-  "name": "pi-extensions-monorepo",
+  "name": "pithos-kit",
   "version": "0.0.0",
-  "description": "Monorepo for @anton-kochev pi extensions and skills.",
+  "description": "Monorepo for the pithos-kit collection of Pi extensions and skills.",
   "private": true,
   "license": "MIT",
   "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/anton-kochev/pi-extensions.git"
+    "url": "git+https://github.com/anton-kochev/pithos-kit.git"
   }
 }

@@ -1,59 +1,57 @@
-# pi-extensions
+# pithos-kit
 
-A monorepo for personal pi extensions, each published independently to npm.
+A monorepo of independently published Pi extensions, skills, prompts, and themes for Pithos.
 
-## Extensions
+## Packages
 
-- [`squiggle/`](./squiggle) — quietly polish grammar and spelling in user prompts. [![npm version](https://img.shields.io/npm/v/@anton-kochev/squiggle.svg)](https://www.npmjs.com/package/@anton-kochev/squiggle)
-- [`echo/`](./echo) — read-only side-channel question asker for pi sessions and project code. [![npm version](https://img.shields.io/npm/v/@anton-kochev/echo.svg)](https://www.npmjs.com/package/@anton-kochev/echo)
-- [`answer/`](./answer) — extract questions from the last assistant response, answer them in an interactive TUI, and submit the answers. [![npm version](https://img.shields.io/npm/v/@anton-kochev/answer.svg)](https://www.npmjs.com/package/@anton-kochev/answer)
-- [`telos/`](./telos) — repo-scoped structured task tracking through `/tasks`, an agent tool, and `TASKS.md`. [![npm version](https://img.shields.io/npm/v/@anton-kochev/telos.svg)](https://www.npmjs.com/package/@anton-kochev/telos)
-- [`command-guard/`](./command-guard) — guard Pi agent shell commands and file mutations with configurable rules. [![npm version](https://img.shields.io/npm/v/@anton-kochev/command-guard.svg)](https://www.npmjs.com/package/@anton-kochev/command-guard)
-- [`guild/`](./guild) — isolated .NET and Angular architecture and implementation Guild members. [![npm version](https://img.shields.io/npm/v/@anton-kochev/guild.svg)](https://www.npmjs.com/package/@anton-kochev/guild)
-- [`context-bar/`](./context-bar) — a thin, stacked context-window composition bar above the editor. [![npm version](https://img.shields.io/npm/v/@anton-kochev/context-bar.svg)](https://www.npmjs.com/package/@anton-kochev/context-bar)
-- [`pi-skills/`](./pi-skills) — pi skills and prompt commands, including an enforced read-only `/plan` workflow with an interactive implementation gate, plus `/commit`, `/srs`, and TDD guidance. [![npm version](https://img.shields.io/npm/v/@anton-kochev/pi-skills.svg)](https://www.npmjs.com/package/@anton-kochev/pi-skills)
+- [`pithos.squiggle/`](./pithos.squiggle) — quietly polish grammar and spelling in user prompts. [![npm version](https://img.shields.io/npm/v/@anton-kochev/pithos.squiggle.svg)](https://www.npmjs.com/package/@anton-kochev/pithos.squiggle)
+- [`pithos.echo/`](./pithos.echo) — read-only side-channel question asker for Pi sessions and project code. [![npm version](https://img.shields.io/npm/v/@anton-kochev/pithos.echo.svg)](https://www.npmjs.com/package/@anton-kochev/pithos.echo)
+- [`pithos.answer/`](./pithos.answer) — extract questions from the last assistant response, answer them in an interactive TUI, and submit the answers. [![npm version](https://img.shields.io/npm/v/@anton-kochev/pithos.answer.svg)](https://www.npmjs.com/package/@anton-kochev/pithos.answer)
+- [`pithos.telos/`](./pithos.telos) — repo-scoped structured task tracking through `/tasks`, an agent tool, and `.pi/telos-tasks.md`. [![npm version](https://img.shields.io/npm/v/@anton-kochev/pithos.telos.svg)](https://www.npmjs.com/package/@anton-kochev/pithos.telos)
+- [`pithos.aegis/`](./pithos.aegis) — protect Pi agent shell commands and file mutations with configurable rules. [![npm version](https://img.shields.io/npm/v/@anton-kochev/pithos.aegis.svg)](https://www.npmjs.com/package/@anton-kochev/pithos.aegis)
+- [`pithos.guild/`](./pithos.guild) — isolated .NET and Angular architecture and implementation Guild members. [![npm version](https://img.shields.io/npm/v/@anton-kochev/pithos.guild.svg)](https://www.npmjs.com/package/@anton-kochev/pithos.guild)
+- [`pithos.context-bar/`](./pithos.context-bar) — a thin, stacked context-window composition bar above the editor. [![npm version](https://img.shields.io/npm/v/@anton-kochev/pithos.context-bar.svg)](https://www.npmjs.com/package/@anton-kochev/pithos.context-bar)
+- [`pithos.skills/`](./pithos.skills) — Pi skills and prompt commands, including an enforced read-only `/plan` workflow, `/commit`, `/srs`, and TDD guidance. [![npm version](https://img.shields.io/npm/v/@anton-kochev/pithos.skills.svg)](https://www.npmjs.com/package/@anton-kochev/pithos.skills)
 
 ## Install
 
 ```bash
-pi install npm:@anton-kochev/squiggle
-pi install npm:@anton-kochev/echo
-pi install npm:@anton-kochev/answer
-pi install npm:@anton-kochev/telos
-pi install npm:@anton-kochev/command-guard
-pi install npm:@anton-kochev/guild
-pi install npm:@anton-kochev/context-bar
-pi install npm:@anton-kochev/pi-skills
+pi install npm:@anton-kochev/pithos.squiggle
+pi install npm:@anton-kochev/pithos.echo
+pi install npm:@anton-kochev/pithos.answer
+pi install npm:@anton-kochev/pithos.telos
+pi install npm:@anton-kochev/pithos.aegis
+pi install npm:@anton-kochev/pithos.guild
+pi install npm:@anton-kochev/pithos.context-bar
+pi install npm:@anton-kochev/pithos.skills
 ```
 
 Pin to a specific version:
 
 ```bash
-pi install npm:@anton-kochev/squiggle@<version>
+pi install npm:@anton-kochev/pithos.squiggle@<version>
 ```
 
 ## Local development
 
-From a checkout of this repo:
+From a checkout of this repository:
 
 ```bash
-pi install -l ./squiggle
-pi install -l ./echo
-pi install -l ./answer
-pi install -l ./telos
-pi install -l ./command-guard
-pi install -l ./guild
-pi install -l ./context-bar
-pi install -l ./pi-skills
+pi install -l ./pithos.squiggle
+pi install -l ./pithos.echo
+pi install -l ./pithos.answer
+pi install -l ./pithos.telos
+pi install -l ./pithos.aegis
+pi install -l ./pithos.guild
+pi install -l ./pithos.context-bar
+pi install -l ./pithos.skills
 ```
 
-Each subdirectory has its own `package.json` and is published as a standalone npm package.
+Each dotted subdirectory has its own `package.json` and is published as a standalone npm package.
 
 ## Local Pi patches
 
-Repo-local helper scripts for local Pi install patches live in [`scripts/pi-patches/`](./scripts/pi-patches).
-These are for changes that survive restarts but may be overwritten by a Pi package update.
-Run them after updating or reinstalling Pi.
+Repo-local helper scripts for local Pi install patches live in [`scripts/pi-patches/`](./scripts/pi-patches). These changes survive restarts but may be overwritten by a Pi package update. Run them after updating or reinstalling Pi.
 
 ```bash
 scripts/pi-patches/suppress-prompt-template-display.mjs
@@ -61,54 +59,23 @@ scripts/pi-patches/suppress-prompt-template-display.mjs
 
 ## Release
 
-Each extension releases independently via a prefixed tag:
+Each package releases independently. From its directory, use the matching dotted tag prefix:
 
 ```bash
-cd squiggle
-npm version patch --tag-version-prefix="squiggle-v"   # or minor/major
+cd pithos.squiggle
+npm version patch --tag-version-prefix="pithos.squiggle-v" # or minor/major
 git push --follow-tags
 ```
 
-```bash
-cd echo
-npm version patch --tag-version-prefix="echo-v"
-git push --follow-tags
-```
+| Package directory | Tag prefix | Workflow |
+|---|---|---|
+| `pithos.squiggle` | `pithos.squiggle-v` | `publish-pithos.squiggle.yml` |
+| `pithos.echo` | `pithos.echo-v` | `publish-pithos.echo.yml` |
+| `pithos.answer` | `pithos.answer-v` | `publish-pithos.answer.yml` |
+| `pithos.telos` | `pithos.telos-v` | `publish-pithos.telos.yml` |
+| `pithos.aegis` | `pithos.aegis-v` | `publish-pithos.aegis.yml` |
+| `pithos.guild` | `pithos.guild-v` | `publish-pithos.guild.yml` |
+| `pithos.context-bar` | `pithos.context-bar-v` | `publish-pithos.context-bar.yml` |
+| `pithos.skills` | `pithos.skills-v` | `publish-pithos.skills.yml` |
 
-```bash
-cd answer
-npm version patch --tag-version-prefix="answer-v"
-git push --follow-tags
-```
-
-```bash
-cd telos
-npm version patch --tag-version-prefix="telos-v"
-git push --follow-tags
-```
-
-```bash
-cd command-guard
-npm version patch --tag-version-prefix="command-guard-v"
-git push --follow-tags
-```
-
-```bash
-cd guild
-npm version patch --tag-version-prefix="guild-v"
-git push --follow-tags
-```
-
-```bash
-cd context-bar
-npm version patch --tag-version-prefix="context-bar-v"
-git push --follow-tags
-```
-
-```bash
-cd pi-skills
-npm version patch --tag-version-prefix="pi-skills-v"
-git push --follow-tags
-```
-
-Trusted publishing handles the rest — the workflows at `.github/workflows/publish-squiggle.yml`, `.github/workflows/publish-echo.yml`, `.github/workflows/publish-answer.yml`, `.github/workflows/publish-telos.yml`, `.github/workflows/publish-command-guard.yml`, `.github/workflows/publish-guild.yml`, `.github/workflows/publish-context-bar.yml`, and `.github/workflows/publish-pi-skills.yml` fire on their respective tag prefixes and publish to npm via OIDC.
+The workflows in [`.github/workflows/`](./.github/workflows) publish to npm through trusted publishing and OIDC. Before the first dotted releases, complete the external steps in [`CUTOVER.md`](./CUTOVER.md).

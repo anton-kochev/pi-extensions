@@ -1,0 +1,36 @@
+{
+  "name": "@anton-kochev/pithos.squiggle",
+  "version": "0.4.0",
+  "description": "Quietly polish grammar and spelling in your Pi prompts.",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "pithos",
+    "grammar",
+    "writing"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anton-kochev/pithos-kit.git",
+    "directory": "pithos.squiggle"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions"
+    ]
+  },
+  "files": [
+    "index.ts",
+    "extensions",
+    "README.md"
+  ]
+}
