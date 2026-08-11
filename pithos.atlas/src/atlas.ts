@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import { VERSION, type ExtensionAPI, type ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
+import { resolveActivePiVersion } from "./active-pi.ts";
 import { loadBundledCatalog } from "./bundled-catalog.ts";
 import type { Catalog, CatalogPackage } from "./catalog.ts";
 import { refreshCatalog, type RefreshedCatalog } from "./catalog-service.ts";
@@ -14,7 +15,9 @@ import { runConfigWizard } from "./ui.ts";
 
 const MAX_OUTPUT_CHARS = 40_000;
 
-export const ATLAS_HELP = `Usage: /pithos [command]
+export const ATLAS_HELP = `Pithos Atlas configures reproducible toolchain, Pi, and pithos-kit package pins, and diagnoses the active environment.
+
+Usage: /pithos [command]
 
 Commands:
   /pithos                  Open the interactive Atlas menu
@@ -22,7 +25,7 @@ Commands:
   /pithos packages         List pithos-kit packages and capabilities
   /pithos versions         Check published versions (use --refresh to bypass the session cache)
   /pithos doctor           Diagnose Pi, package, runtime, and .pithos compatibility
-  /pithos config           Manage Pi and pithos-kit pins interactively
+  /pithos config           Manage toolchain, Pi, and pithos-kit pins interactively
   /pithos config validate  Validate .pithos without changing it`;
 
 export type AtlasCommand =
@@ -110,22 +113,25 @@ function formatCatalog(packages: CatalogPackage[], runtime: ObservedRuntimePacka
 	].join("\n"));
 }
 
-function formatVersions(catalog: Catalog, refreshed: RefreshedCatalog): string {
+function formatVersions(catalog: Catalog, refreshed: RefreshedCatalog, activePiVersion: string): string {
 	const latestByName = new Map(Object.entries(refreshed.publishedVersions).map(([name, versions]) => [name, versions[0]?.version]));
 	const lines = catalog.packages.map((pkg) => {
 		const latest = latestByName.get(pkg.name);
 		return `${pkg.name}  bundled ${pkg.version}  latest ${latest ?? "unavailable"}`;
 	});
-	if (refreshed.piLatestVersion) lines.unshift(`Pi  active ${VERSION}  latest ${refreshed.piLatestVersion}`);
-	else lines.unshift(`Pi  active ${VERSION}  latest unavailable`);
+	if (refreshed.piLatestVersion) lines.unshift(`Pi  active ${activePiVersion}  latest ${refreshed.piLatestVersion}`);
+	else lines.unshift(`Pi  active ${activePiVersion}  latest unavailable`);
 	if (refreshed.warnings.length > 0) lines.push(`Warnings: ${refreshed.warnings.join("; ")}`);
 	return bounded(lines.join("\n"));
 }
 
 function formatConfig(state: ManagedPithosState, exists: boolean): string {
+	const toolchains = Object.entries(state.toolchains).sort(([a], [b]) => a.localeCompare(b));
 	const packages = Object.entries(state.packages).sort(([a], [b]) => a.localeCompare(b));
 	return bounded([
-		`.pithos: ${exists ? "valid" : "not present (an empty managed configuration is valid)"}`,
+		`.pithos: ${exists ? "valid" : "not present (Atlas can create it)"}`,
+		"Configured toolchains:",
+		...(toolchains.length > 0 ? toolchains.map(([name, version]) => `  ${name}: ${version}`) : ["  none"]),
 		`Configured Pi: ${state.piVersion ?? "not set"}`,
 		"Configured pithos-kit packages:",
 		...(packages.length > 0 ? packages.map(([name, version]) => `  ${name}: npm:${version}`) : ["  none"]),
@@ -152,6 +158,7 @@ function formatDoctor(report: DiagnosticsReport, warnings: string[]): string {
 }
 
 export function registerAtlas(pi: ExtensionAPI): void {
+	const activePiVersion = resolveActivePiVersion({ entrypoint: process.argv[1], fallbackVersion: VERSION });
 	const catalog = loadBundledCatalog();
 	const registry = new RegistryClient({ offline: isOfflineEnvironment() });
 
@@ -166,7 +173,7 @@ export function registerAtlas(pi: ExtensionAPI): void {
 		]);
 		return {
 			report: buildDiagnostics({
-				activePiVersion: VERSION,
+				activePiVersion,
 				configuredPiVersion: config.state.piVersion,
 				bundled: catalog.packages,
 				publishedVersions: registryState.publishedVersions,
@@ -202,7 +209,7 @@ export function registerAtlas(pi: ExtensionAPI): void {
 				if (request.action === "versions") {
 					const state = await refreshed(signal, request.refresh);
 					const packages = selectPackage(state.packages, request.package);
-					return { content: [{ type: "text", text: formatVersions({ ...catalog, packages }, state) }], details: { packages, piLatestVersion: state.piLatestVersion, warnings: state.warnings } };
+					return { content: [{ type: "text", text: formatVersions({ ...catalog, packages }, state, activePiVersion) }], details: { packages, piLatestVersion: state.piLatestVersion, warnings: state.warnings } };
 				}
 				const state = await doctor(ctx.cwd, signal, request.refresh);
 				return { content: [{ type: "text", text: formatDoctor(state.report, state.warnings) }], details: state };
@@ -219,13 +226,11 @@ export function registerAtlas(pi: ExtensionAPI): void {
 				emitText(ctx, ATLAS_HELP);
 				return;
 			}
-			const choice = await ctx.ui.select("Pithos Atlas", ["Packages", "Check versions", "Run diagnostics", "Configure .pithos", "Help"]);
+			const choice = await ctx.ui.select("Pithos Atlas", ["About", "Doctor", "Configure"]);
 			const selected: Record<string, AtlasCommand> = {
-				Packages: { action: "packages" },
-				"Check versions": { action: "versions", refresh: false },
-				"Run diagnostics": { action: "doctor", refresh: false },
-				"Configure .pithos": { action: "config" },
-				Help: { action: "help" },
+				About: { action: "help" },
+				Doctor: { action: "doctor", refresh: false },
+				Configure: { action: "config" },
 			};
 			if (choice) await runCommand(selected[choice], ctx);
 			return;
@@ -240,7 +245,7 @@ export function registerAtlas(pi: ExtensionAPI): void {
 		}
 		if (command.action === "versions") {
 			const state = await refreshed(ctx.signal, command.refresh);
-			emitText(ctx, formatVersions(catalog, state), state.warnings.length > 0 ? "warning" : "info");
+			emitText(ctx, formatVersions(catalog, state, activePiVersion), state.warnings.length > 0 ? "warning" : "info");
 			return;
 		}
 		if (command.action === "config-validate") {
@@ -273,7 +278,7 @@ export function registerAtlas(pi: ExtensionAPI): void {
 			}
 			const staged = await runConfigWizard(ctx.ui, {
 				source: snapshot.content,
-				activePiVersion: VERSION,
+				activePiVersion,
 				latestPiVersion: registryState.piLatestVersion,
 				packages: registryState.packages,
 				publishedVersions: registryState.publishedVersions,

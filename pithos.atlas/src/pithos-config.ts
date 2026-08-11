@@ -3,8 +3,15 @@ import { isAlias, isMap, isSeq, parseAllDocuments, type Document } from "yaml";
 
 const PITHOS_PACKAGE_RE = /^@pithos-kit\/[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/u;
 const NPM_PIN_RE = /^npm:(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$/u;
+const TOOLCHAIN_NAME_RE = /^[a-z0-9]+$/u;
+const TOOLCHAIN_VERSION_RE = /^\d+(?:\.\d+){0,2}$/u;
+
+export function isValidToolchainVersion(value: string): boolean {
+	return TOOLCHAIN_VERSION_RE.test(value);
+}
 
 export interface ManagedPithosState {
+	toolchains: Record<string, string>;
 	piVersion?: string;
 	packages: Record<string, string>;
 }
@@ -15,6 +22,7 @@ export interface ParsedPithosConfig {
 }
 
 export interface ManagedPithosUpdate {
+	toolchains?: Record<string, string>;
 	piVersion?: string;
 	packages?: Record<string, string>;
 }
@@ -33,10 +41,17 @@ function containsAlias(node: unknown): boolean {
 	return false;
 }
 
-function samePackages(left: Record<string, string>, right: Record<string, string>): boolean {
+function sameEntries(left: Record<string, string>, right: Record<string, string>): boolean {
 	const leftEntries = Object.entries(left).sort(([a], [b]) => a.localeCompare(b));
 	const rightEntries = Object.entries(right).sort(([a], [b]) => a.localeCompare(b));
 	return JSON.stringify(leftEntries) === JSON.stringify(rightEntries);
+}
+
+function validateManagedToolchains(toolchains: Record<string, string>): void {
+	for (const [name, version] of Object.entries(toolchains)) {
+		if (!TOOLCHAIN_NAME_RE.test(name)) throw new PithosConfigError(`Invalid toolchain name: ${name}`);
+		if (!isValidToolchainVersion(version)) throw new PithosConfigError(`${name} must use an exact numeric toolchain version`);
+	}
 }
 
 function validateManagedPackages(packages: Record<string, string>): void {
@@ -48,16 +63,33 @@ function validateManagedPackages(packages: Record<string, string>): void {
 
 export function stagePithosConfig(source: string, update: ManagedPithosUpdate): string {
 	const parsed = parsePithosConfig(source);
+	const toolchains = update.toolchains ?? parsed.state.toolchains;
+	validateManagedToolchains(toolchains);
 	const piVersion = update.piVersion ?? parsed.state.piVersion;
 	if (piVersion !== undefined && !valid(piVersion)) {
 		throw new PithosConfigError("pi.version must be an exact semantic version");
 	}
 	const packages = update.packages ?? parsed.state.packages;
 	validateManagedPackages(packages);
-	if (piVersion === parsed.state.piVersion && samePackages(packages, parsed.state.packages)) return source;
+	if (
+		sameEntries(toolchains, parsed.state.toolchains)
+		&& piVersion === parsed.state.piVersion
+		&& sameEntries(packages, parsed.state.packages)
+	) return source;
 
 	const document = parsed.document;
 	if (document.contents === null) document.contents = document.createNode({});
+	if (document.get("toolchains", true) === undefined) document.set("toolchains", document.createNode({}));
+	const toolchainsNode = document.get("toolchains", true);
+	if (isMap(toolchainsNode)) {
+		for (const pair of [...toolchainsNode.items]) {
+			const name = pair.key?.toString();
+			if (name && !(name in toolchains)) toolchainsNode.delete(name);
+		}
+		for (const [name, version] of Object.entries(toolchains).sort(([a], [b]) => a.localeCompare(b))) {
+			toolchainsNode.set(name, version);
+		}
+	}
 	if (document.get("pi", true) === undefined) document.set("pi", document.createNode({}));
 	if (piVersion !== undefined) document.setIn(["pi", "version"], piVersion);
 
@@ -85,6 +117,25 @@ export function parsePithosConfig(source: string): ParsedPithosConfig {
 	if (document.errors.length > 0) throw new PithosConfigError(`Invalid .pithos YAML: ${document.errors[0]?.message}`);
 	if (containsAlias(document.contents)) throw new PithosConfigError(".pithos aliases are not supported");
 	if (!isMap(document.contents)) throw new PithosConfigError(".pithos must be a mapping");
+
+	const toolchainsNode = document.get("toolchains", true);
+	if (toolchainsNode !== undefined && toolchainsNode !== null && !isMap(toolchainsNode)) {
+		throw new PithosConfigError(".pithos toolchains must be a mapping");
+	}
+	const toolchains: Record<string, string> = {};
+	if (isMap(toolchainsNode)) {
+		for (const pair of toolchainsNode.items) {
+			const name = pair.key?.toString();
+			if (!name || !TOOLCHAIN_NAME_RE.test(name)) {
+				throw new PithosConfigError(".pithos toolchain names must contain only lowercase letters and digits");
+			}
+			const version = document.getIn(["toolchains", name]);
+			if (typeof version !== "string" || !isValidToolchainVersion(version)) {
+				throw new PithosConfigError(`${name} must use an exact numeric toolchain version`);
+			}
+			toolchains[name] = version;
+		}
+	}
 
 	const piNode = document.get("pi", true);
 	if (piNode !== undefined && piNode !== null && !isMap(piNode)) {
@@ -117,5 +168,5 @@ export function parsePithosConfig(source: string): ParsedPithosConfig {
 		}
 	}
 
-	return { document, state: { piVersion, packages } };
+	return { document, state: { toolchains, piVersion, packages } };
 }

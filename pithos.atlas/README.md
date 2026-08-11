@@ -13,7 +13,7 @@ pi install npm:@pithos-kit/atlas
 Pin an exact version:
 
 ```bash
-pi install npm:@pithos-kit/atlas@0.1.0
+pi install npm:@pithos-kit/atlas@0.1.1
 ```
 
 For local development:
@@ -27,7 +27,7 @@ pi install -l ./pithos.atlas
 ```yaml
 pi:
   extensions:
-    "@pithos-kit/atlas": "npm:0.1.0"
+    "@pithos-kit/atlas": "npm:0.1.1"
 ```
 
 The separate Pithos base image can preinstall Atlas so it remains available to diagnose a project configuration that would otherwise prevent project packages from loading.
@@ -44,7 +44,7 @@ The separate Pithos base image can preinstall Atlas so it remains available to d
 /pithos config validate
 ```
 
-- `/pithos` opens the interactive Atlas menu in TUI mode and prints help in non-interactive modes.
+- `/pithos` opens a focused About, Doctor, and Configure menu in TUI mode and prints help in non-interactive modes.
 - `/pithos help` is the single Atlas help page. Detailed package-command help remains with each package through its own `--help` or `-h`.
 - `packages` lists package-owned commands, tools, prompts, skills, themes, agents, and configuration from the bundled catalog, then adds runtime command/tool provenance without contacting npm.
 - `versions` explicitly queries public npm registry endpoints, distinguishing bundled and latest versions.
@@ -54,16 +54,22 @@ The separate Pithos base image can preinstall Atlas so it remains available to d
 
 ## Interactive configuration
 
-`/pithos config` manages only:
+`/pithos config` manages:
 
 ```yaml
+toolchains:
+  dotnet: "<exact-version>"
+  go: "<exact-version>"
+  rust: "<exact-version>"
 pi:
   version: "..."
   extensions:
     "@pithos-kit/...": "npm:<exact-version>"
 ```
 
-Atlas preserves toolchains, unknown keys, comments and ordering where YAML document editing permits, and third-party `pi.extensions` entries. It never edits `.pithos.d/`, installs packages, changes the active Pi process, or rebuilds Pithos.
+Configure has three steps: select the Pi version, select Pithos toolchains and their exact numeric versions, then select pithos-kit packages. Atlas preserves unknown keys, comments and ordering where YAML document editing permits, and third-party `pi.extensions` entries. It never edits `.pithos.d/`, installs packages, changes the active Pi process, or rebuilds Pithos.
+
+The toolchain and package selectors use `◆` for selected entries, `◇` for available entries, and `◈` for changes staged in the wizard but not yet submitted. The package step presents one alphabetized list using compact version labels; an `↑` between versions means an update is available. Selected-Pi requirements are called out inline. When registry metadata is unavailable, Atlas labels bundled fallback versions explicitly instead of presenting them as latest. Press Escape to cancel any selector.
 
 A configuration transaction:
 

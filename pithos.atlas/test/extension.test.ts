@@ -36,6 +36,40 @@ describe("Atlas extension", () => {
 		}
 	});
 
+	it("reports configured toolchains through the read-only config tool", async () => {
+		const directory = await mkdtemp(join(tmpdir(), "atlas-toolchains-"));
+		await writeFile(join(directory, ".pithos"), "toolchains:\n  go: \"1.24.0\"\npi:\n  version: \"0.84.1\"\n");
+		try {
+			const { tools } = createHarness();
+			const result = await tools.get("pithos_info").execute("call", { action: "config" }, undefined, undefined, {
+				cwd: directory,
+			} as never);
+			assert.match(result.content[0].text, /Configured toolchains:\n  go: 1\.24\.0/);
+		} finally {
+			await rm(directory, { recursive: true, force: true });
+		}
+	});
+
+	it("offers a focused main menu with About, Doctor, and Configure", async () => {
+		const { commands } = createHarness();
+		const selections: Array<{ title: string; options: string[] }> = [];
+		const notifications: string[] = [];
+		await commands.get("pithos").handler("", {
+			mode: "tui",
+			hasUI: true,
+			ui: {
+				async select(title: string, options: string[]) {
+					selections.push({ title, options });
+					return "About";
+				},
+				notify: (message: string) => notifications.push(message),
+			},
+		} as never);
+
+		assert.deepEqual(selections, [{ title: "Pithos Atlas", options: ["About", "Doctor", "Configure"] }]);
+		assert.match(notifications[0] ?? "", /Usage: \/pithos/);
+	});
+
 	it("refuses configuration outside a trusted TUI before reading or fetching", async () => {
 		const { commands } = createHarness();
 		const logs: string[] = [];
@@ -93,15 +127,17 @@ describe("Atlas extension", () => {
 				ui: {
 					notify() {},
 					async select(title: string, options: string[]) {
-						if (title === "Pi version") return options[0];
-						if (title === "Pithos packages") {
+						if (title === "Configure 1/3 · Pi version") return options[0];
+						if (title === "Configure 2/3 · Toolchains") return "Continue";
+						if (title === "Configure 3/3 · pithos-kit packages") {
 							packageMenuCount += 1;
-							return packageMenuCount === 1 ? options.find((option) => option.startsWith("○ Atlas")) : "Review changes";
+							return packageMenuCount === 1 ? options.find((option) => option.startsWith("◇ Atlas")) : "Review and Submit";
 						}
 						if (title === "Atlas version") return "0.1.0";
 						if (title.startsWith("Review .pithos changes")) return "Yes";
 						return undefined;
 					},
+					async input() { return undefined; },
 				},
 			} as never);
 			assert.match(await readFile(path, "utf8"), /"@pithos-kit\/atlas": npm:0\.1\.0/);

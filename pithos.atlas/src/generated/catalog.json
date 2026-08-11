@@ -65,7 +65,7 @@
     },
     {
       "name": "@pithos-kit/atlas",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "Interactive catalog, diagnostics, version checks, and .pithos configuration management for pithos-kit.",
       "pi": {
         "extensions": [
@@ -97,7 +97,7 @@
           {
             "kind": "file",
             "key": ".pithos",
-            "summary": "Atlas manages pi.version and @pithos-kit entries under pi.extensions."
+            "summary": "Atlas manages toolchains, pi.version, and @pithos-kit entries under pi.extensions."
           },
           {
             "kind": "environment",

@@ -42,11 +42,11 @@ In `.pithos`, Pi packages live under `pi.extensions`:
 pi:
   version: "0.83.0"
   extensions:
-    "@pithos-kit/atlas": "npm:0.1.0"
+    "@pithos-kit/atlas": "npm:0.1.1"
     "@pithos-kit/squiggle": "npm:0.4.0"
 ```
 
-Atlas can validate and interactively manage `pi.version` and `@pithos-kit/*` entries while preserving toolchains and third-party configuration. Its changes describe a future rebuilt Pithos environment; they do not replace the active Pi process. Run `/pithos help` after installing it.
+Atlas can validate and interactively manage toolchain versions, `pi.version`, and `@pithos-kit/*` entries while preserving third-party configuration. Its changes describe a future rebuilt Pithos environment; they do not replace the active Pi process. Run `/pithos help` after installing it.
 
 Current package metadata declares Pi `>=0.83.0` except Context Bar, which requires Pi `>=0.84.1`. Atlas reports that incompatibility rather than silently treating Context Bar as compatible with this repository's retained Pi `0.83.0` pin.
 
