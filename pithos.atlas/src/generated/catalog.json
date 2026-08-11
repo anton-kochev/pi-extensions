@@ -65,7 +65,7 @@
     },
     {
       "name": "@pithos-kit/atlas",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "description": "Interactive catalog, diagnostics, version checks, and .pithos configuration management for pithos-kit.",
       "pi": {
         "extensions": [
