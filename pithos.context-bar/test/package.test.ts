@@ -14,7 +14,7 @@ describe("context-bar package metadata", () => {
       readFileSync(resolve(import.meta.dirname, "../package.json"), "utf8"),
     );
 
-    assert.equal(packageJson.name, "@anton-kochev/pithos.context-bar");
+    assert.equal(packageJson.name, "@pithos-kit/context-bar");
     assert.equal(packageJson.repository.directory, "pithos.context-bar");
     assert.deepEqual(packageJson.pi.extensions, ["./extensions"]);
     assert.equal(packageJson.peerDependencies["@earendil-works/pi-coding-agent"], ">=0.84.1");
@@ -33,8 +33,8 @@ describe("context-bar package metadata", () => {
       "utf8",
     );
 
-    assert.match(readme, /@anton-kochev\/pithos\.context-bar/);
-    assert.match(workflow, /tags: \["pithos\.context-bar-v\*"\]/);
+    assert.match(readme, /@pithos-kit\/context-bar/);
+    assert.match(workflow, /tags: \["pithos-kit\.context-bar-v\*"\]/);
     assert.match(workflow, /working-directory: pithos\.context-bar/);
     assert.match(workflow, /npm ci/);
     assert.match(workflow, /npm test/);

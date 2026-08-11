@@ -237,6 +237,22 @@ describe("context-bar extension", () => {
     assert.equal(harness.editorFactories.at(-1), undefined);
   });
 
+  it("shows package-local help for --help and -h without toggling the bar", async () => {
+    for (const alias of ["--help", "-h"]) {
+      const harness = createHarness();
+      const command = harness.commands.get("context-bar")!;
+
+      await command.handler(alias, harness.context);
+
+      assert.equal(harness.notifications.length, 1);
+      assert.equal(harness.notifications[0]?.type, "info");
+      assert.match(harness.notifications[0]?.message ?? "", /Usage: \/context-bar \[on\|off\|status\]/);
+      assert.match(harness.notifications[0]?.message ?? "", /--help, -h/);
+      assert.equal(harness.entries.length, 0);
+      assert.equal(harness.widgets.length, 0);
+    }
+  });
+
   it("reports command usage for unsupported arguments", async () => {
     const harness = createHarness();
     const command = harness.commands.get("context-bar")!;

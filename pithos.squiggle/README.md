@@ -7,13 +7,13 @@ The extension intercepts user input, shows a `squiggling...` spinner while proce
 ## Install
 
 ```bash
-pi install npm:@anton-kochev/pithos.squiggle
+pi install npm:@pithos-kit/squiggle
 ```
 
 Pin to a version:
 
 ```bash
-pi install npm:@anton-kochev/pithos.squiggle@<version>
+pi install npm:@pithos-kit/squiggle@<version>
 ```
 
 For local development from a checkout of [`pithos-kit`](https://github.com/anton-kochev/pithos-kit):
@@ -39,7 +39,7 @@ pi -e ./pithos.squiggle
 ```yaml
 pi:
   extensions:
-    "@anton-kochev/pithos.squiggle": "npm:0.4.0"
+    "@pithos-kit/squiggle": "npm:0.4.0"
 ```
 
 ## Configuration
@@ -73,9 +73,13 @@ SQUIGGLE_MAX_CHARS=1000 pi
 Inside pi:
 
 ```text
-/squiggle toggle      # switch between on/off
-/squiggle-status      # show status
+/squiggle toggle          # switch between on/off
+/squiggle --help          # show toggle usage
+/squiggle-status          # show status
+/squiggle-status --help   # show status-command usage
 ```
+
+`-h` is accepted wherever `--help` is shown.
 
 The toggle state is saved in the current pi session and overrides `.pi/squiggle.json` and environment configuration for that session.
 

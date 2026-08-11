@@ -31,6 +31,45 @@ const PLAN_THEME_NAME = "plan";
 const FALLBACK_THEME_NAME = "dark";
 const PLAN_STATUS_MESSAGE_TYPE = "plan-mode-status";
 
+type PackageHelpCommand = "commit" | "plan" | "srs" | "skill:tdd";
+
+const PACKAGE_COMMAND_HELP: Record<PackageHelpCommand, string> = {
+	commit: `Usage: /commit [instructions]
+
+Generate and create a Conventional Commit from the relevant repository changes. Optional instructions can narrow the intended scope.
+
+Options:
+  --help, -h  Show this help`,
+	plan: `Usage: /plan <task>
+
+Enter enforced read-only Plan mode for a task. Run /plan again while planning to approve creation of the generated plan.
+
+Options:
+  --help, -h  Show this help`,
+	srs: `Usage: /srs <request>
+
+Elicit, draft, approve, and write an ISO/IEC/IEEE 29148-style Software Requirements Specification with EARS requirements.
+
+Options:
+  --help, -h  Show this help`,
+	"skill:tdd": `Usage: /skill:tdd [task context]
+
+Load the test-driven development workflow. Optional task context is appended to the skill instructions.
+
+Options:
+  --help, -h  Show this help`,
+};
+
+function packageCommandHelp(input: string): string | undefined {
+	const match = input.trim().match(/^\/(commit|plan|srs|skill:tdd)\s+(?:--help|-h)$/);
+	return match ? PACKAGE_COMMAND_HELP[match[1] as PackageHelpCommand] : undefined;
+}
+
+function emitPackageCommandHelp(ctx: ExtensionContext, help: string): void {
+	if (ctx.hasUI) ctx.ui.notify(help, "info");
+	else console.log(help);
+}
+
 function withoutInternalPlanCreator(toolNames: string[]): string[] {
 	return toolNames.filter((name) => name !== PLAN_CREATE_TOOL_NAME);
 }
@@ -206,6 +245,12 @@ export default function planTheme(pi: ExtensionAPI): void {
 
 	pi.on("input", async (event, ctx) => {
 		if (event.source === "extension") return { action: "continue" as const };
+
+		const commandHelp = packageCommandHelp(event.text);
+		if (commandHelp) {
+			emitPackageCommandHelp(ctx, commandHelp);
+			return { action: "handled" as const };
+		}
 
 		const text = event.text.trim();
 		if (PLAN_COMMAND_RE.test(text) && (event.streamingBehavior || !ctx.isIdle())) {

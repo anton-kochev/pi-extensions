@@ -10,14 +10,24 @@ The real bar uses a harmonious theme-aware color progression and spans the termi
 
 ## Install
 
+Context Bar requires Pi `0.84.1` or later. Do not add it to a Pithos environment still pinned to Pi `0.83.0`; Atlas will report that combination as incompatible.
+
 ```bash
-pi install npm:@anton-kochev/pithos.context-bar
+pi install npm:@pithos-kit/context-bar
 ```
 
 For local development:
 
 ```bash
 pi install -l ./pithos.context-bar
+```
+
+## Pithos `.pithos` config
+
+```yaml
+pi:
+  extensions:
+    "@pithos-kit/context-bar": "npm:0.1.0"
 ```
 
 ## Commands
@@ -28,6 +38,9 @@ pi install -l ./pithos.context-bar
 | `/context-bar on` | Enable it |
 | `/context-bar off` | Disable it |
 | `/context-bar status` | Show the legend, estimated counts, model/window, and estimation basis |
+| `/context-bar --help` | Show command usage without changing bar state |
+
+`-h` is also accepted.
 
 New sessions start enabled. Explicit changes are stored as non-context entries on the active session branch, so they survive reload, resume, and fork without creating project or global configuration.
 

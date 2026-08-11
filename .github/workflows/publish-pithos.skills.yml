@@ -2,7 +2,7 @@ name: Publish Pithos Skills
 
 on:
   push:
-    tags: ["pithos.skills-v*"]
+    tags: ["pithos-kit.skills-v*"]
 
 permissions:
   contents: read
@@ -30,7 +30,7 @@ jobs:
 
       - name: Validate version matches package.json
         run: |
-          TAG=${GITHUB_REF#refs/tags/pithos.skills-v}
+          TAG=${GITHUB_REF#refs/tags/pithos-kit.skills-v}
           PKG_VERSION=$(node -p "require('./package.json').version")
           if [ "$PKG_VERSION" != "$TAG" ]; then
             echo "Tag version ($TAG) != package.json ($PKG_VERSION)"

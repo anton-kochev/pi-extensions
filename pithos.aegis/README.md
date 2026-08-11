@@ -9,13 +9,13 @@ User-entered `!` and `!!` shell commands are not protected because they already 
 ## Install
 
 ```bash
-pi install npm:@anton-kochev/pithos.aegis
+pi install npm:@pithos-kit/aegis
 ```
 
 Pin to a version:
 
 ```bash
-pi install npm:@anton-kochev/pithos.aegis@<version>
+pi install npm:@pithos-kit/aegis@<version>
 ```
 
 For local development from a checkout of [`pithos-kit`](https://github.com/anton-kochev/pithos-kit):
@@ -41,7 +41,7 @@ pi -e ./pithos.aegis
 ```yaml
 pi:
   extensions:
-    "@anton-kochev/pithos.aegis": "npm:0.1.0"
+    "@pithos-kit/aegis": "npm:0.1.0"
 ```
 
 ## Default behavior
@@ -112,8 +112,10 @@ Inside Pi:
 /aegis list
 /aegis reload
 /aegis toggle
-/aegis help
+/aegis --help
 ```
+
+`-h` and the existing `help` subcommand also show usage.
 
 - `status` — show the config path, whether it was found, and the rule count.
 - `list` — show effective rules.

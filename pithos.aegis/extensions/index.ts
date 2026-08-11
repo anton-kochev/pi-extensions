@@ -85,7 +85,7 @@ export default function aegis(pi: ExtensionAPI) {
 				return emitText(ctx, formatStatus(state, enabled));
 			}
 
-			if (command === "help") {
+			if (command === "help" || command === "--help" || command === "-h") {
 				return emitText(ctx, AEGIS_HELP);
 			}
 
@@ -153,7 +153,10 @@ Commands:
 - /aegis list    Show effective rules.
 - /aegis reload  Reload .pi/aegis.json from disk.
 - /aegis toggle  Enable/disable Aegis for this session.
-- /aegis help    Show this help.`;
+- /aegis help    Show this help.
+
+Options:
+- --help, -h      Show this help.`;
 
 async function guardValue(
 	ctx: ExtensionContext,

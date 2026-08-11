@@ -47,6 +47,24 @@ describe("Aegis extension", () => {
     assert.match(harness.commands.get("aegis")?.description ?? "", /Aegis/i);
   });
 
+  it("shows package-local help for --help and -h without changing state", async () => {
+    for (const alias of ["--help", "-h"]) {
+      const harness = createHarness();
+      const cwd = mkdtempSync(join(tmpdir(), "pithos-aegis-"));
+      try {
+        const context = createContext(cwd);
+        const result = await harness.commands.get("aegis")!.handler(alias, context);
+
+        assert.match(String(result), /Usage: \/aegis/);
+        assert.match(String(result), /agent-run bash commands/);
+        assert.deepEqual(context.notifications.at(-1)?.level, "info");
+        assert.equal(harness.entries.length, 0);
+      } finally {
+        rmSync(cwd, { recursive: true, force: true });
+      }
+    }
+  });
+
   it("loads project rules only from .pi/aegis.json", async () => {
     const cwd = mkdtempSync(join(tmpdir(), "pithos-aegis-"));
     try {

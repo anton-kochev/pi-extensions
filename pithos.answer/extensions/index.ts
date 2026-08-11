@@ -10,6 +10,7 @@ import {
 	wrapTextWithAnsi,
 } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
+import { getAnswerCommandHelp } from "./command-help.ts";
 
 type SelectionMode = "none" | "single" | "multiple";
 
@@ -80,7 +81,14 @@ Rules:
 export default function answer(pi: ExtensionAPI) {
 	pi.registerCommand("answer", {
 		description: "Extract questions from the last assistant response, answer them in a TUI, then submit the answers",
-		handler: async (_args, ctx) => {
+		handler: async (args, ctx) => {
+			const commandHelp = getAnswerCommandHelp(args);
+			if (commandHelp) {
+				if (ctx.hasUI) ctx.ui.notify(commandHelp, "info");
+				else console.log(commandHelp);
+				return;
+			}
+
 			if (!ctx.hasUI) {
 				ctx.ui.notify("/answer requires interactive mode", "error");
 				return;

@@ -1,0 +1,423 @@
+{
+  "schemaVersion": 1,
+  "packages": [
+    {
+      "name": "@pithos-kit/aegis",
+      "version": "0.1.0",
+      "description": "Protect Pi agent shell commands and file mutations with configurable block and confirmation rules.",
+      "pi": {
+        "extensions": [
+          "./extensions"
+        ]
+      },
+      "pithosKit": {
+        "displayName": "Aegis",
+        "summary": "Protect agent shell commands and file mutations with project rules.",
+        "minimumPi": ">=0.83.0",
+        "commands": [
+          {
+            "name": "aegis",
+            "summary": "Inspect and control Aegis for the current session.",
+            "usage": "/aegis [status|list|reload|toggle|--help]"
+          }
+        ],
+        "tools": [],
+        "prompts": [],
+        "skills": [],
+        "themes": [],
+        "agents": [],
+        "configuration": [
+          {
+            "kind": "file",
+            "key": ".pi/aegis.json",
+            "summary": "Project command and path protection rules."
+          }
+        ]
+      }
+    },
+    {
+      "name": "@pithos-kit/answer",
+      "version": "0.2.0",
+      "description": "Interactive Q&A extraction and answer submission for Pi assistant responses.",
+      "pi": {
+        "extensions": [
+          "./extensions"
+        ]
+      },
+      "pithosKit": {
+        "displayName": "Answer",
+        "summary": "Extract questions from the latest assistant response and answer them interactively.",
+        "minimumPi": ">=0.83.0",
+        "commands": [
+          {
+            "name": "answer",
+            "summary": "Open the interactive answer form.",
+            "usage": "/answer [--help]"
+          }
+        ],
+        "tools": [],
+        "prompts": [],
+        "skills": [],
+        "themes": [],
+        "agents": [],
+        "configuration": []
+      }
+    },
+    {
+      "name": "@pithos-kit/atlas",
+      "version": "0.1.0",
+      "description": "Interactive catalog, diagnostics, version checks, and .pithos configuration management for pithos-kit.",
+      "pi": {
+        "extensions": [
+          "./extensions"
+        ]
+      },
+      "pithosKit": {
+        "displayName": "Atlas",
+        "summary": "Explore pithos-kit packages, check compatibility, and manage .pithos interactively.",
+        "minimumPi": ">=0.83.0",
+        "commands": [
+          {
+            "name": "pithos",
+            "summary": "Open Atlas or run a catalog, diagnostic, or configuration action.",
+            "usage": "/pithos [help|packages|versions|doctor|config]"
+          }
+        ],
+        "tools": [
+          {
+            "name": "pithos_info",
+            "summary": "Read pithos-kit catalog, version, runtime, and configuration information."
+          }
+        ],
+        "prompts": [],
+        "skills": [],
+        "themes": [],
+        "agents": [],
+        "configuration": [
+          {
+            "kind": "file",
+            "key": ".pithos",
+            "summary": "Atlas manages pi.version and @pithos-kit entries under pi.extensions."
+          },
+          {
+            "kind": "environment",
+            "key": "PI_OFFLINE",
+            "summary": "Disable registry requests when true, yes, or 1."
+          }
+        ]
+      }
+    },
+    {
+      "name": "@pithos-kit/context-bar",
+      "version": "0.1.0",
+      "description": "A thin, stacked context-window composition bar for Pi.",
+      "pi": {
+        "extensions": [
+          "./extensions"
+        ]
+      },
+      "pithosKit": {
+        "displayName": "Context Bar",
+        "summary": "Show a theme-aware estimate of context-window composition above the editor.",
+        "minimumPi": ">=0.84.1",
+        "commands": [
+          {
+            "name": "context-bar",
+            "summary": "Toggle or inspect the context composition bar.",
+            "usage": "/context-bar [on|off|status|--help]"
+          }
+        ],
+        "tools": [],
+        "prompts": [],
+        "skills": [],
+        "themes": [],
+        "agents": [],
+        "configuration": []
+      }
+    },
+    {
+      "name": "@pithos-kit/echo",
+      "version": "0.4.1",
+      "description": "Echo: a read-only side-channel question asker for Pi sessions and project code.",
+      "pi": {
+        "extensions": [
+          "./extensions"
+        ]
+      },
+      "pithosKit": {
+        "displayName": "Echo",
+        "summary": "Ask an isolated read-only side agent about the session and project.",
+        "minimumPi": ">=0.83.0",
+        "commands": [
+          {
+            "name": "ask",
+            "summary": "Ask Echo a read-only side-channel question.",
+            "usage": "/ask [--model <provider/model>] [--] <question>"
+          },
+          {
+            "name": "asked",
+            "summary": "Browse saved Echo answers.",
+            "usage": "/asked [--help]"
+          },
+          {
+            "name": "ask-clear",
+            "summary": "Hide a stale Echo answer widget.",
+            "usage": "/ask-clear [--help]"
+          }
+        ],
+        "tools": [],
+        "prompts": [],
+        "skills": [],
+        "themes": [],
+        "agents": [],
+        "configuration": []
+      }
+    },
+    {
+      "name": "@pithos-kit/guild",
+      "version": "0.1.0",
+      "description": "Standalone .NET and Angular Guild members for Pi.",
+      "pi": {
+        "extensions": [
+          "./extensions"
+        ]
+      },
+      "pithosKit": {
+        "displayName": "Guild",
+        "summary": "Delegate focused .NET and Angular work to isolated architecture and implementation members.",
+        "minimumPi": ">=0.83.0",
+        "commands": [
+          {
+            "name": "guild",
+            "summary": "List the active Guild roster.",
+            "usage": "/guild [--help]"
+          },
+          {
+            "name": "guild-handover",
+            "summary": "Delegate directly from the interactive TUI.",
+            "usage": "/guild-handover [member] [task]"
+          }
+        ],
+        "tools": [
+          {
+            "name": "guild_handover",
+            "summary": "Hand focused work to an isolated Guild member."
+          }
+        ],
+        "prompts": [],
+        "skills": [],
+        "themes": [],
+        "agents": [
+          {
+            "name": "dotnet-architect",
+            "summary": "Read-only .NET architecture and review."
+          },
+          {
+            "name": "frontend-architect",
+            "summary": "Read-only front-end architecture and review."
+          },
+          {
+            "name": "csharp-coder",
+            "summary": "Scoped C# and .NET implementation."
+          },
+          {
+            "name": "angular-coder",
+            "summary": "Scoped Angular implementation."
+          }
+        ],
+        "configuration": [
+          {
+            "kind": "directory",
+            "key": ".pi/agents",
+            "summary": "Trusted project Guild member overrides."
+          },
+          {
+            "kind": "directory",
+            "key": "~/.pi/agent/agents",
+            "summary": "User Guild member overrides."
+          }
+        ]
+      }
+    },
+    {
+      "name": "@pithos-kit/skills",
+      "version": "0.3.2",
+      "description": "Anton Kochev's Pi skills and prompt commands.",
+      "pi": {
+        "extensions": [
+          "./extensions/plan-theme.ts"
+        ],
+        "prompts": [
+          "./prompts"
+        ],
+        "skills": [
+          "./skills"
+        ],
+        "themes": [
+          "./themes"
+        ]
+      },
+      "pithosKit": {
+        "displayName": "Skills",
+        "summary": "Provide enforced planning, commit and SRS prompts, a Plan theme, and TDD guidance.",
+        "minimumPi": ">=0.83.0",
+        "commands": [
+          {
+            "name": "plan",
+            "summary": "Enter an enforced read-only planning workflow.",
+            "usage": "/plan <task>"
+          },
+          {
+            "name": "commit",
+            "summary": "Create a relevant Conventional Commit.",
+            "usage": "/commit [instructions]"
+          },
+          {
+            "name": "srs",
+            "summary": "Create an approved ISO 29148-style SRS.",
+            "usage": "/srs <request>"
+          },
+          {
+            "name": "skill:tdd",
+            "summary": "Load the bundled TDD workflow explicitly.",
+            "usage": "/skill:tdd [task context]"
+          }
+        ],
+        "tools": [
+          {
+            "name": "create_plan",
+            "summary": "Internal controlled plan writer, active only during Plan mode.",
+            "internal": true
+          }
+        ],
+        "prompts": [
+          {
+            "name": "plan",
+            "summary": "Enforced read-only planning workflow."
+          },
+          {
+            "name": "commit",
+            "summary": "Conventional Commit workflow."
+          },
+          {
+            "name": "srs-generator",
+            "summary": "ISO 29148-style SRS workflow."
+          }
+        ],
+        "skills": [
+          {
+            "name": "tdd",
+            "summary": "Test-driven development through red-green-refactor."
+          }
+        ],
+        "themes": [
+          {
+            "name": "plan",
+            "summary": "Minimal planning-state theme."
+          }
+        ],
+        "agents": [],
+        "configuration": [
+          {
+            "kind": "directory",
+            "key": ".pi/plans",
+            "summary": "Approved generated implementation plans."
+          }
+        ]
+      }
+    },
+    {
+      "name": "@pithos-kit/squiggle",
+      "version": "0.4.0",
+      "description": "Quietly polish grammar and spelling in your Pi prompts.",
+      "pi": {
+        "extensions": [
+          "./extensions"
+        ]
+      },
+      "pithosKit": {
+        "displayName": "Squiggle",
+        "summary": "Quietly polish grammar and spelling in user prompts.",
+        "minimumPi": ">=0.83.0",
+        "commands": [
+          {
+            "name": "squiggle",
+            "summary": "Toggle prompt correction.",
+            "usage": "/squiggle [toggle|--help]"
+          },
+          {
+            "name": "squiggle-status",
+            "summary": "Show correction status and configuration.",
+            "usage": "/squiggle-status [--help]"
+          }
+        ],
+        "tools": [],
+        "prompts": [],
+        "skills": [],
+        "themes": [],
+        "agents": [],
+        "configuration": [
+          {
+            "kind": "file",
+            "key": ".pi/squiggle.json",
+            "summary": "Project correction mode, model, and input limit."
+          },
+          {
+            "kind": "environment",
+            "key": "SQUIGGLE_MODE",
+            "summary": "Override correction mode."
+          },
+          {
+            "kind": "environment",
+            "key": "SQUIGGLE_MODEL",
+            "summary": "Override the correction model."
+          },
+          {
+            "kind": "environment",
+            "key": "SQUIGGLE_MAX_CHARS",
+            "summary": "Override the maximum corrected input length."
+          }
+        ]
+      }
+    },
+    {
+      "name": "@pithos-kit/telos",
+      "version": "0.2.0",
+      "description": "Telos: repo-scoped structured task tracking for Pi.",
+      "pi": {
+        "extensions": [
+          "./extensions"
+        ]
+      },
+      "pithosKit": {
+        "displayName": "Telos",
+        "summary": "Manage repo-scoped structured tasks through a command and agent tool.",
+        "minimumPi": ">=0.83.0",
+        "commands": [
+          {
+            "name": "tasks",
+            "summary": "Browse and manage project tasks.",
+            "usage": "/tasks [subcommand] [options]"
+          }
+        ],
+        "tools": [
+          {
+            "name": "telos_tasks",
+            "summary": "Manage repo-scoped project tasks."
+          }
+        ],
+        "prompts": [],
+        "skills": [],
+        "themes": [],
+        "agents": [],
+        "configuration": [
+          {
+            "kind": "file",
+            "key": ".pi/telos-tasks.md",
+            "summary": "Canonical task data and generated human-readable summary."
+          }
+        ]
+      }
+    }
+  ]
+}

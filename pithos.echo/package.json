@@ -1,5 +1,5 @@
 {
-  "name": "@anton-kochev/pithos.echo",
+  "name": "@pithos-kit/echo",
   "version": "0.4.1",
   "description": "Echo: a read-only side-channel question asker for Pi sessions and project code.",
   "keywords": [
@@ -12,6 +12,9 @@
   ],
   "license": "MIT",
   "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.ts"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/anton-kochev/pithos-kit.git",
@@ -27,6 +30,22 @@
     "@earendil-works/pi-coding-agent": "*",
     "@earendil-works/pi-tui": "*",
     "typebox": "*"
+  },
+  "pithosKit": {
+    "displayName": "Echo",
+    "summary": "Ask an isolated read-only side agent about the session and project.",
+    "minimumPi": ">=0.83.0",
+    "commands": [
+      { "name": "ask", "usage": "/ask [--model <provider/model>] [--] <question>", "summary": "Ask Echo a read-only side-channel question." },
+      { "name": "asked", "usage": "/asked [--help]", "summary": "Browse saved Echo answers." },
+      { "name": "ask-clear", "usage": "/ask-clear [--help]", "summary": "Hide a stale Echo answer widget." }
+    ],
+    "tools": [],
+    "prompts": [],
+    "skills": [],
+    "themes": [],
+    "agents": [],
+    "configuration": []
   },
   "pi": {
     "extensions": [

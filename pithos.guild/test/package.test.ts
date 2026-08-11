@@ -7,7 +7,7 @@ describe("Guild package metadata", () => {
   it("publishes under the Guild package identity", () => {
     const packageJson = JSON.parse(readFileSync(resolve(import.meta.dirname, "../package.json"), "utf8"));
 
-    assert.equal(packageJson.name, "@anton-kochev/pithos.guild");
+    assert.equal(packageJson.name, "@pithos-kit/guild");
     assert.equal(packageJson.repository.directory, "pithos.guild");
     assert.match(packageJson.description, /Guild members/);
   });

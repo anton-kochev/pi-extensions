@@ -1,0 +1,75 @@
+{
+  "name": "@pithos-kit/atlas",
+  "version": "0.1.0",
+  "description": "Interactive catalog, diagnostics, version checks, and .pithos configuration management for pithos-kit.",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "pithos",
+    "atlas",
+    "catalog",
+    "configuration"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anton-kochev/pithos-kit.git",
+    "directory": "pithos.atlas"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "catalog:generate": "node --import tsx ../scripts/generate-atlas-catalog.ts",
+    "test": "node --import tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "diff": "^8.0.2",
+    "semver": "^7.7.2",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "0.83.0",
+    "@earendil-works/pi-tui": "0.83.0",
+    "@types/node": "^24.0.0",
+    "@types/semver": "^7.7.0",
+    "tsx": "^4.20.4",
+    "typescript": "^5.9.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": ">=0.83.0",
+    "@earendil-works/pi-tui": ">=0.83.0",
+    "typebox": "*"
+  },
+  "pithosKit": {
+    "displayName": "Atlas",
+    "summary": "Explore pithos-kit packages, check compatibility, and manage .pithos interactively.",
+    "minimumPi": ">=0.83.0",
+    "commands": [
+      { "name": "pithos", "usage": "/pithos [help|packages|versions|doctor|config]", "summary": "Open Atlas or run a catalog, diagnostic, or configuration action." }
+    ],
+    "tools": [
+      { "name": "pithos_info", "summary": "Read pithos-kit catalog, version, runtime, and configuration information." }
+    ],
+    "prompts": [],
+    "skills": [],
+    "themes": [],
+    "agents": [],
+    "configuration": [
+      { "kind": "file", "key": ".pithos", "summary": "Atlas manages pi.version and @pithos-kit entries under pi.extensions." },
+      { "kind": "environment", "key": "PI_OFFLINE", "summary": "Disable registry requests when true, yes, or 1." }
+    ]
+  },
+  "pi": {
+    "extensions": [
+      "./extensions"
+    ]
+  },
+  "files": [
+    "extensions",
+    "src",
+    "README.md"
+  ]
+}

@@ -1,5 +1,5 @@
 {
-  "name": "@anton-kochev/pithos.aegis",
+  "name": "@pithos-kit/aegis",
   "version": "0.1.0",
   "description": "Protect Pi agent shell commands and file mutations with configurable block and confirmation rules.",
   "keywords": [
@@ -25,6 +25,22 @@
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*"
+  },
+  "pithosKit": {
+    "displayName": "Aegis",
+    "summary": "Protect agent shell commands and file mutations with project rules.",
+    "minimumPi": ">=0.83.0",
+    "commands": [
+      { "name": "aegis", "usage": "/aegis [status|list|reload|toggle|--help]", "summary": "Inspect and control Aegis for the current session." }
+    ],
+    "tools": [],
+    "prompts": [],
+    "skills": [],
+    "themes": [],
+    "agents": [],
+    "configuration": [
+      { "kind": "file", "key": ".pi/aegis.json", "summary": "Project command and path protection rules." }
+    ]
   },
   "pi": {
     "extensions": [

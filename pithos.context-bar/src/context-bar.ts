@@ -22,6 +22,17 @@ type EditorFactory = NonNullable<ReturnType<ExtensionContext["ui"]["getEditorCom
 
 const WIDGET_KEY = "context-bar";
 const STATE_ENTRY_TYPE = "context-bar-enabled";
+const CONTEXT_BAR_HELP = `Usage: /context-bar [on|off|status]
+
+Toggle the context-window composition bar, set it explicitly on or off, or show its current token breakdown.
+
+Options:
+  --help, -h  Show this help`;
+
+function emitHelp(ctx: ExtensionCommandContext): void {
+  if (ctx.hasUI) ctx.ui.notify(CONTEXT_BAR_HELP, "info");
+  else console.log(CONTEXT_BAR_HELP);
+}
 
 function stableJson(value: unknown): string {
   try {
@@ -288,7 +299,9 @@ export default function contextBar(pi: ExtensionAPI): void {
     description: "Toggle or inspect the context-window composition bar",
     handler: async (args, ctx) => {
       const action = args.trim().toLowerCase();
-      if (!action) {
+      if (action === "--help" || action === "-h") {
+        emitHelp(ctx);
+      } else if (!action) {
         if (!enabled) loadCommandInputs(ctx);
         setEnabled(!enabled, ctx);
       } else if (action === "on") {

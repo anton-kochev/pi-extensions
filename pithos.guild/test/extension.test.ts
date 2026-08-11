@@ -123,6 +123,38 @@ describe("guild extension", () => {
     assert.equal(handover.getArgumentCompletions("csharp-coder "), null);
   });
 
+  it("shows package-local help for both Guild commands via --help and -h without starting work", async () => {
+    for (const [commandName, usage] of [
+      ["guild", "Usage: /guild"],
+      ["guild-handover", "Usage: /guild-handover [member] [task]"],
+    ] as const) {
+      for (const alias of ["--help", "-h"]) {
+        const pi = fakePi();
+        let discoveries = 0;
+        let waited = 0;
+        registerGuild(pi.api as never, {
+          discover: () => {
+            discoveries += 1;
+            return { members: [], warnings: [] };
+          },
+          run: async () => successfulResult(),
+        });
+        const notifications: Array<{ message: string; level: string }> = [];
+        const ctx: any = context({ waitForIdle: async () => { waited += 1; } });
+        ctx.ui.notify = (message: string, level: string) => notifications.push({ message, level });
+
+        await pi.commands.get(commandName).handler(alias, ctx);
+
+        assert.equal(notifications.length, 1);
+        assert.equal(notifications[0]?.level, "info");
+        assert.match(notifications[0]?.message ?? "", new RegExp(usage.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+        assert.match(notifications[0]?.message ?? "", /--help, -h/);
+        assert.equal(discoveries, 0);
+        assert.equal(waited, 0);
+      }
+    }
+  });
+
   it("directly runs an inline member and task after waiting for the main agent to become idle", async () => {
     const pi = fakePi();
     let waited = 0;

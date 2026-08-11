@@ -14,10 +14,18 @@ It demonstrates the prompt-generator pattern with custom TUI:
 ## Install
 
 ```bash
-pi install npm:@anton-kochev/pithos.answer
+pi install npm:@pithos-kit/answer
 ```
 
-Inside a [pithos](https://github.com/anton-kochev/pithos) container this extension is preinstalled — `/answer` works out of the box with no install step.
+Inside a [pithos](https://github.com/anton-kochev/pithos) container this extension may be preinstalled — `/answer` then works with no install step.
+
+## Pithos `.pithos` config
+
+```yaml
+pi:
+  extensions:
+    "@pithos-kit/answer": "npm:0.2.0"
+```
 
 For local development from this repository:
 
@@ -38,7 +46,10 @@ After an assistant response that contains questions, run:
 
 ```text
 /answer
+/answer --help
 ```
+
+Use `--help` or `-h` to show usage without extracting questions or calling a model.
 
 Keys in the TUI:
 

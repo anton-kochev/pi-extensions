@@ -6,6 +6,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
+    "catalog:generate": "cd pithos.atlas && node --import tsx ../scripts/generate-atlas-catalog.ts",
     "test": "node --test test/*.test.mjs"
   },
   "repository": {

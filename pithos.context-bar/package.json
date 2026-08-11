@@ -1,5 +1,5 @@
 {
-  "name": "@anton-kochev/pithos.context-bar",
+  "name": "@pithos-kit/context-bar",
   "version": "0.1.0",
   "description": "A thin, stacked context-window composition bar for Pi.",
   "keywords": [
@@ -28,6 +28,20 @@
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": ">=0.84.1"
+  },
+  "pithosKit": {
+    "displayName": "Context Bar",
+    "summary": "Show a theme-aware estimate of context-window composition above the editor.",
+    "minimumPi": ">=0.84.1",
+    "commands": [
+      { "name": "context-bar", "usage": "/context-bar [on|off|status|--help]", "summary": "Toggle or inspect the context composition bar." }
+    ],
+    "tools": [],
+    "prompts": [],
+    "skills": [],
+    "themes": [],
+    "agents": [],
+    "configuration": []
   },
   "pi": {
     "extensions": [

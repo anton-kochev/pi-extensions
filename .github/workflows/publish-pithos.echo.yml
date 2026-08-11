@@ -2,7 +2,7 @@ name: Publish Pithos Echo
 
 on:
   push:
-    tags: ["pithos.echo-v*"]
+    tags: ["pithos-kit.echo-v*"]
 
 permissions:
   contents: read
@@ -30,12 +30,15 @@ jobs:
 
       - name: Validate version matches package.json
         run: |
-          TAG=${GITHUB_REF#refs/tags/pithos.echo-v}
+          TAG=${GITHUB_REF#refs/tags/pithos-kit.echo-v}
           PKG_VERSION=$(node -p "require('./package.json').version")
           if [ "$PKG_VERSION" != "$TAG" ]; then
             echo "Tag version ($TAG) != package.json ($PKG_VERSION)"
             exit 1
           fi
+
+      - name: Test
+        run: npm test
 
       - name: Verify package contents
         run: npm pack --dry-run

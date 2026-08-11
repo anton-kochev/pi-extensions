@@ -1,5 +1,5 @@
 {
-  "name": "@anton-kochev/pithos.squiggle",
+  "name": "@pithos-kit/squiggle",
   "version": "0.4.0",
   "description": "Quietly polish grammar and spelling in your Pi prompts.",
   "keywords": [
@@ -11,6 +11,9 @@
   ],
   "license": "MIT",
   "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.ts"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/anton-kochev/pithos-kit.git",
@@ -22,6 +25,26 @@
   "peerDependencies": {
     "@earendil-works/pi-ai": "*",
     "@earendil-works/pi-coding-agent": "*"
+  },
+  "pithosKit": {
+    "displayName": "Squiggle",
+    "summary": "Quietly polish grammar and spelling in user prompts.",
+    "minimumPi": ">=0.83.0",
+    "commands": [
+      { "name": "squiggle", "usage": "/squiggle [toggle|--help]", "summary": "Toggle prompt correction." },
+      { "name": "squiggle-status", "usage": "/squiggle-status [--help]", "summary": "Show correction status and configuration." }
+    ],
+    "tools": [],
+    "prompts": [],
+    "skills": [],
+    "themes": [],
+    "agents": [],
+    "configuration": [
+      { "kind": "file", "key": ".pi/squiggle.json", "summary": "Project correction mode, model, and input limit." },
+      { "kind": "environment", "key": "SQUIGGLE_MODE", "summary": "Override correction mode." },
+      { "kind": "environment", "key": "SQUIGGLE_MODEL", "summary": "Override the correction model." },
+      { "kind": "environment", "key": "SQUIGGLE_MAX_CHARS", "summary": "Override the maximum corrected input length." }
+    ]
   },
   "pi": {
     "extensions": [

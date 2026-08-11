@@ -7,13 +7,13 @@ Telos adds a `/tasks` command and an agent-callable `telos_tasks` tool. Tasks pe
 ## Install
 
 ```bash
-pi install npm:@anton-kochev/pithos.telos
+pi install npm:@pithos-kit/telos
 ```
 
 Pin to a version:
 
 ```bash
-pi install npm:@anton-kochev/pithos.telos@<version>
+pi install npm:@pithos-kit/telos@<version>
 ```
 
 For local development from a checkout of [`pithos-kit`](https://github.com/anton-kochev/pithos-kit):
@@ -27,6 +27,14 @@ Temporary test run:
 
 ```bash
 pi -e ./pithos.telos
+```
+
+## Pithos `.pithos` config
+
+```yaml
+pi:
+  extensions:
+    "@pithos-kit/telos": "npm:0.2.0"
 ```
 
 ## Usage
@@ -47,6 +55,8 @@ Inside pi:
 /tasks delete <id>       # rejected; use archive instead
 /tasks --help
 ```
+
+`-h` is also accepted, and help returns before reading or changing the task artifact.
 
 Examples:
 
@@ -176,7 +186,7 @@ This package is intended to publish through the repository's trusted publishing 
 
 ```bash
 cd pithos.telos
-npm version patch --tag-version-prefix="pithos.telos-v"
+npm version patch --tag-version-prefix="pithos-kit.telos-v"
 git push --follow-tags
 ```
 

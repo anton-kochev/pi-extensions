@@ -7,7 +7,7 @@ The extension adds an agent-callable `guild_handover` tool and an interactive `/
 ## Install
 
 ```bash
-pi install npm:@anton-kochev/pithos.guild
+pi install npm:@pithos-kit/guild
 ```
 
 For local development from this repository:
@@ -21,6 +21,14 @@ Temporary test run:
 
 ```bash
 pi -e ./pithos.guild
+```
+
+## Pithos `.pithos` config
+
+```yaml
+pi:
+  extensions:
+    "@pithos-kit/guild": "npm:0.1.0"
 ```
 
 ## Guild members
@@ -57,6 +65,7 @@ Delegate directly from the interactive TUI without asking the main agent to invo
 /guild-handover
 /guild-handover csharp-coder
 /guild-handover csharp-coder Implement validation and run the tests
+/guild-handover --help
 ```
 
 With no member, the command opens a roster picker. With no task, it opens a multiline task editor. The command waits for the main agent to become idle, applies the same member discovery and project-override approval as the tool, and then runs synchronously in a cancellable live handover card. Direct command execution is intentionally TUI-only.
@@ -65,7 +74,10 @@ List the active roster and definition sources without executing a member:
 
 ```text
 /guild
+/guild --help
 ```
+
+Both commands also accept `-h`; help returns before discovery, UI prompts, idle waits, or child execution.
 
 ## Live transparency
 

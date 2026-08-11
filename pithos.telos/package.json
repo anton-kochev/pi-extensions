@@ -1,5 +1,5 @@
 {
-  "name": "@anton-kochev/pithos.telos",
+  "name": "@pithos-kit/telos",
   "version": "0.2.0",
   "description": "Telos: repo-scoped structured task tracking for Pi.",
   "keywords": [
@@ -31,6 +31,24 @@
     "@earendil-works/pi-coding-agent": "*",
     "@earendil-works/pi-tui": "*",
     "typebox": "*"
+  },
+  "pithosKit": {
+    "displayName": "Telos",
+    "summary": "Manage repo-scoped structured tasks through a command and agent tool.",
+    "minimumPi": ">=0.83.0",
+    "commands": [
+      { "name": "tasks", "usage": "/tasks [subcommand] [options]", "summary": "Browse and manage project tasks." }
+    ],
+    "tools": [
+      { "name": "telos_tasks", "summary": "Manage repo-scoped project tasks." }
+    ],
+    "prompts": [],
+    "skills": [],
+    "themes": [],
+    "agents": [],
+    "configuration": [
+      { "kind": "file", "key": ".pi/telos-tasks.md", "summary": "Canonical task data and generated human-readable summary." }
+    ]
   },
   "pi": {
     "extensions": [

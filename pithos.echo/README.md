@@ -7,13 +7,13 @@ Echo adds a `/ask` command that spawns an isolated pi side-process with only rea
 ## Install
 
 ```bash
-pi install npm:@anton-kochev/pithos.echo
+pi install npm:@pithos-kit/echo
 ```
 
 Pin to a version:
 
 ```bash
-pi install npm:@anton-kochev/pithos.echo@<version>
+pi install npm:@pithos-kit/echo@<version>
 ```
 
 For local development from a checkout of [`pithos-kit`](https://github.com/anton-kochev/pithos-kit):
@@ -39,7 +39,7 @@ pi -e ./pithos.echo
 ```yaml
 pi:
   extensions:
-    "@anton-kochev/pithos.echo": "npm:0.4.1"
+    "@pithos-kit/echo": "npm:0.4.1"
 ```
 
 ## Commands
@@ -48,9 +48,12 @@ Inside pi:
 
 ```text
 /ask [--model <provider/model>] [--] <question>
-/asked
-/ask-clear
+/ask --help
+/asked [--help]
+/ask-clear [--help]
 ```
+
+`-h` is also accepted by every Echo command.
 
 - `/ask` — ask Echo a question.
 - `/asked` — browse previous Echo answers interactively with ↑/↓ and open one with Enter.

@@ -34,6 +34,7 @@ function createHarness(
 	let activeTools = allTools.map((tool) => tool.name);
 	const entries: Array<{ customType: string; data: any }> = [];
 	const registeredTools = new Map<string, any>();
+	const notifications: Array<{ message: string; level: string }> = [];
 	const pi = {
 		on(name: string, handler: (event: any, ctx: any) => Promise<any>) {
 			handlers.set(name, handler);
@@ -70,7 +71,9 @@ function createHarness(
 					: { success: true },
 			setFooter() {},
 			setStatus() {},
-			notify() {},
+			notify(message: string, level: string) {
+				notifications.push({ message, level });
+			},
 			confirm: options.confirm ?? (async () => false),
 		},
 	};
@@ -82,6 +85,7 @@ function createHarness(
 		branchEntries,
 		allTools,
 		registeredTools,
+		notifications,
 		getActiveTools: () => activeTools,
 		setActiveTools: (toolNames: string[]) => pi.setActiveTools(toolNames),
 	};
@@ -95,6 +99,33 @@ async function activatePlan(harness: ReturnType<typeof createHarness>) {
 }
 
 describe("plan mode enforcement", () => {
+	it("intercepts package prompt and skill --help/-h before expansion", async () => {
+		for (const [command, usage] of [
+			["/commit", "Usage: /commit [instructions]"],
+			["/plan", "Usage: /plan <task>"],
+			["/srs", "Usage: /srs <request>"],
+			["/skill:tdd", "Usage: /skill:tdd [task context]"],
+		] as const) {
+			for (const alias of ["--help", "-h"]) {
+				const harness = createHarness();
+				const normalTools = harness.getActiveTools();
+
+				const result = await harness.handlers.get("input")?.(
+					{ type: "input", source: "interactive", text: `${command} ${alias}` },
+					harness.ctx,
+				);
+
+				assert.deepEqual(result, { action: "handled" });
+				assert.equal(harness.notifications.length, 1);
+				assert.equal(harness.notifications[0]?.level, "info");
+				assert.match(harness.notifications[0]?.message ?? "", new RegExp(usage.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+				assert.match(harness.notifications[0]?.message ?? "", /--help, -h/);
+				assert.equal(harness.entries.length, 0);
+				assert.deepEqual(harness.getActiveTools(), normalTools);
+			}
+		}
+	});
+
 	it("refuses to activate Plan mode while another agent turn is running", async () => {
 		const harness = createHarness();
 

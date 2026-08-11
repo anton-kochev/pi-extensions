@@ -3,6 +3,16 @@ import { describe, it } from "node:test";
 import { parseTasksCommand } from "../src/commands";
 
 describe("/tasks command parser", () => {
+	it("returns package-local help for --help and -h", () => {
+		for (const alias of ["--help", "-h"]) {
+			const parsed = parseTasksCommand(alias);
+			assert.equal(parsed.type, "help");
+			if (parsed.type !== "help") continue;
+			assert.match(parsed.text, /Usage: \/tasks/);
+			assert.match(parsed.text, /--help, -h/);
+		}
+	});
+
 	it("parses create with options and quoted title", () => {
 		assert.deepEqual(parseTasksCommand('create --priority high --notes "Needs care" --depends TSK-abc123ef,TSK-fed456ba "Build Telos"'), {
 			type: "operation",

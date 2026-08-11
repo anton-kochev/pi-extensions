@@ -5,6 +5,7 @@ import * as path from "node:path";
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { BorderedLoader, DynamicBorder, getMarkdownTheme } from "@earendil-works/pi-coding-agent";
 import { Container, Markdown, matchesKey, SelectList, Spacer, Text, type SelectItem } from "@earendil-works/pi-tui";
+import { ASK_HELP, getEchoCommandHelp } from "./command-help";
 
 type QaUsage = {
 	input: number;
@@ -44,19 +45,6 @@ const MAX_INLINE_SESSION_CHARS = 12_000;
 const MAX_INLINE_MESSAGE_CHARS = 2_500;
 const MAX_SNAPSHOT_FILE_CHARS = 2_000_000;
 const MAX_SNAPSHOT_MESSAGE_CHARS = 100_000;
-
-const ASK_HELP = `Usage: /ask [options] [--] question
-
-Ask an isolated side-channel pi process. Echo receives progressive read-only access to the current session and only has read-only tools: read, grep, find, ls. The answer is shown to you and saved in Echo history, but it is not injected into the main agent context.
-
-Options:
-  --model <model>     Use a specific model (default: current model)
-  --help, -h          Show this help
-
-Examples:
-  /ask what did we decide about the API shape?
-  /ask what files have we touched so far?
-  /ask --model anthropic/claude-haiku-4-5 summarize the open questions`;
 
 function formatCount(count: number): string {
 	if (count < 1000) return String(count);
@@ -592,6 +580,12 @@ export default function echo(pi: ExtensionAPI) {
 	pi.registerCommand("ask", {
 		description: "Ask Echo, an isolated read-only side agent; answer is not added to the main LLM context",
 		handler: async (args, ctx) => {
+			const commandHelp = getEchoCommandHelp("ask", args);
+			if (commandHelp) {
+				await showMarkdown("/ask help", commandHelp, ctx);
+				return;
+			}
+
 			const parsed = parseAskArgs(args);
 			if (parsed.type === "help") {
 				await showMarkdown("/ask help", ASK_HELP, ctx);
@@ -638,7 +632,13 @@ export default function echo(pi: ExtensionAPI) {
 
 	pi.registerCommand("ask-clear", {
 		description: "Hide any stale Echo answer widget",
-		handler: async (_args, ctx) => {
+		handler: async (args, ctx) => {
+			const commandHelp = getEchoCommandHelp("ask-clear", args);
+			if (commandHelp) {
+				await showMarkdown("/ask-clear help", commandHelp, ctx);
+				return;
+			}
+
 			if (ctx.hasUI) {
 				ctx.ui.setWidget("echo", undefined);
 				ctx.ui.setWidget("session-qa", undefined);
@@ -716,7 +716,14 @@ export default function echo(pi: ExtensionAPI) {
 
 	pi.registerCommand("asked", {
 		description: "Interactively browse previous /ask answers",
-		handler: showAskedHistory,
+		handler: async (args, ctx) => {
+			const commandHelp = getEchoCommandHelp("asked", args);
+			if (commandHelp) {
+				await showMarkdown("/asked help", commandHelp, ctx);
+				return;
+			}
+			await showAskedHistory(args, ctx);
+		},
 	});
 
 }

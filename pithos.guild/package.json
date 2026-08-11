@@ -1,5 +1,5 @@
 {
-  "name": "@anton-kochev/pithos.guild",
+  "name": "@pithos-kit/guild",
   "version": "0.1.0",
   "description": "Standalone .NET and Angular Guild members for Pi.",
   "keywords": [
@@ -31,6 +31,31 @@
     "@earendil-works/pi-coding-agent": "*",
     "@earendil-works/pi-tui": "*",
     "typebox": "*"
+  },
+  "pithosKit": {
+    "displayName": "Guild",
+    "summary": "Delegate focused .NET and Angular work to isolated architecture and implementation members.",
+    "minimumPi": ">=0.83.0",
+    "commands": [
+      { "name": "guild", "usage": "/guild [--help]", "summary": "List the active Guild roster." },
+      { "name": "guild-handover", "usage": "/guild-handover [member] [task]", "summary": "Delegate directly from the interactive TUI." }
+    ],
+    "tools": [
+      { "name": "guild_handover", "summary": "Hand focused work to an isolated Guild member." }
+    ],
+    "prompts": [],
+    "skills": [],
+    "themes": [],
+    "agents": [
+      { "name": "dotnet-architect", "summary": "Read-only .NET architecture and review." },
+      { "name": "frontend-architect", "summary": "Read-only front-end architecture and review." },
+      { "name": "csharp-coder", "summary": "Scoped C# and .NET implementation." },
+      { "name": "angular-coder", "summary": "Scoped Angular implementation." }
+    ],
+    "configuration": [
+      { "kind": "directory", "key": ".pi/agents", "summary": "Trusted project Guild member overrides." },
+      { "kind": "directory", "key": "~/.pi/agent/agents", "summary": "User Guild member overrides." }
+    ]
   },
   "pi": {
     "extensions": [

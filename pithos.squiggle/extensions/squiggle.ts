@@ -1,7 +1,21 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { complete, type UserMessage } from "@earendil-works/pi-ai";
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent";
+
+const SQUIGGLE_HELP = `Usage: /squiggle toggle
+
+Toggle Squiggle on or off for the current session.
+
+Options:
+  --help, -h  Show this help`;
+
+const SQUIGGLE_STATUS_HELP = `Usage: /squiggle-status
+
+Show whether Squiggle is enabled and which correction model it uses.
+
+Options:
+  --help, -h  Show this help`;
 
 export default function squiggle(pi: ExtensionAPI) {
 	let runtimeMode: SquiggleConfig["mode"] | undefined;
@@ -13,6 +27,8 @@ export default function squiggle(pi: ExtensionAPI) {
 	pi.registerCommand("squiggle", {
 		description: "Toggle squiggle on/off",
 		handler: async (args, ctx) => {
+			if (isHelpRequest(args)) return emitHelp(ctx, SQUIGGLE_HELP);
+
 			const command = args.trim().toLowerCase();
 			if (command !== "toggle") {
 				ctx.ui.notify("Usage: /squiggle toggle", "warning");
@@ -28,7 +44,8 @@ export default function squiggle(pi: ExtensionAPI) {
 
 	pi.registerCommand("squiggle-status", {
 		description: "Show whether squiggle is loaded",
-		handler: async (_args, ctx) => {
+		handler: async (args, ctx) => {
+			if (isHelpRequest(args)) return emitHelp(ctx, SQUIGGLE_STATUS_HELP);
 			ctx.ui.notify(formatStatus(ctx, loadEffectiveConfig(ctx.cwd, runtimeMode)), "info");
 		},
 	});
@@ -58,6 +75,16 @@ export default function squiggle(pi: ExtensionAPI) {
 
 		return { action: "transform", text: corrected };
 	});
+}
+
+function isHelpRequest(args: string): boolean {
+	const normalized = args.trim();
+	return normalized === "--help" || normalized === "-h";
+}
+
+function emitHelp(ctx: ExtensionCommandContext, text: string): void {
+	if (ctx.hasUI) ctx.ui.notify(text, "info");
+	else console.log(text);
 }
 
 const CORRECTION_PROMPT = `You are a conservative grammar and spelling corrector for user prompts sent to a coding assistant.

@@ -1,6 +1,6 @@
-# @anton-kochev/pithos.skills
+# @pithos-kit/skills
 
-[![npm version](https://img.shields.io/npm/v/@anton-kochev/pithos.skills)](https://www.npmjs.com/package/@anton-kochev/pithos.skills)
+[![npm version](https://img.shields.io/npm/v/@pithos-kit/skills)](https://www.npmjs.com/package/@pithos-kit/skills)
 
 Anton Kochev's Pi skills and prompt commands.
 
@@ -27,13 +27,21 @@ Use the `tdd` skill when you want the agent to build or change non-trivial logic
 ## Install
 
 ```bash
-pi install npm:@anton-kochev/pithos.skills
+pi install npm:@pithos-kit/skills
 ```
 
 For local development from this repository:
 
 ```bash
 pi install -l ./pithos.skills
+```
+
+## Pithos `.pithos` config
+
+```yaml
+pi:
+  extensions:
+    "@pithos-kit/skills": "npm:0.3.2"
 ```
 
 ## Usage
@@ -44,7 +52,12 @@ Invoke prompt commands directly:
 /plan <your task>
 /commit [instructions]
 /srs <product or change description>
+/plan --help
+/commit --help
+/srs --help
 ```
+
+Each command accepts `--help` or `-h` before prompt expansion, so asking for help does not start an agent turn or activate Plan mode.
 
 These are prompt templates, so they are manual-only: they appear as slash commands rather than being auto-selected as skills.
 
@@ -52,7 +65,10 @@ The TDD workflow is packaged as a skill. Pi can load it proactively for matching
 
 ```text
 /skill:tdd <your task>
+/skill:tdd --help
 ```
+
+The help invocation is intercepted before the skill is expanded.
 
 ## Changelog
 

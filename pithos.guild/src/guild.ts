@@ -36,6 +36,24 @@ import { GuildRunTracker } from "./visibility";
 const BUILTIN_AGENTS_DIR = fileURLToPath(new URL("../agents", import.meta.url));
 const MAX_MODEL_OUTPUT_BYTES = 50 * 1024;
 const GUILD_HANDOVER_MESSAGE_TYPE = "guild-handover";
+const GUILD_HELP = `Usage: /guild
+
+List the effective Guild members available from built-in, user, and trusted project definitions.
+
+Options:
+  --help, -h  Show this help`;
+const GUILD_HANDOVER_HELP = `Usage: /guild-handover [member] [task]
+
+Directly delegate a task to an isolated Guild member. Omit member to choose from the roster, or omit task to open the task editor.
+
+Members:
+  dotnet-architect
+  frontend-architect
+  csharp-coder
+  angular-coder
+
+Options:
+  --help, -h  Show this help`;
 
 interface DiscoveryContext {
 	cwd: string;
@@ -115,6 +133,16 @@ function resultDetails(
 		activity: result.activity,
 		activityTool: result.activityTool,
 	};
+}
+
+function isHelpRequest(args: string): boolean {
+	const normalized = args.trim();
+	return normalized === "--help" || normalized === "-h";
+}
+
+function emitCommandText(ctx: ExtensionContext, text: string): void {
+	if (ctx.hasUI) ctx.ui.notify(text, "info");
+	else console.log(text);
 }
 
 function formatRoster(discovery: GuildDiscoveryResult): string {
@@ -327,6 +355,8 @@ export function registerGuild(pi: ExtensionAPI, dependencies: GuildDependencies 
 				}));
 		},
 		handler: async (args, ctx) => {
+			if (isHelpRequest(args)) return emitCommandText(ctx, GUILD_HANDOVER_HELP);
+
 			if (!ctx.hasUI || ctx.mode !== "tui") {
 				ctx.ui.notify("Direct Guild handover is available only in the interactive TUI.", "error");
 				return;
@@ -512,10 +542,9 @@ export function registerGuild(pi: ExtensionAPI, dependencies: GuildDependencies 
 
 	pi.registerCommand("guild", {
 		description: "List available Guild members",
-		handler: async (_args, ctx) => {
-			const text = formatRoster(dependencies.discover(ctx));
-			if (ctx.hasUI) ctx.ui.notify(text, "info");
-			else console.log(text);
+		handler: async (args, ctx) => {
+			if (isHelpRequest(args)) return emitCommandText(ctx, GUILD_HELP);
+			emitCommandText(ctx, formatRoster(dependencies.discover(ctx)));
 		},
 	});
 }

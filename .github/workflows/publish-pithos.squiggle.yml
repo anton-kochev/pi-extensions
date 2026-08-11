@@ -2,7 +2,7 @@ name: Publish Pithos Squiggle
 
 on:
   push:
-    tags: ["pithos.squiggle-v*"]
+    tags: ["pithos-kit.squiggle-v*"]
 
 permissions:
   contents: read
@@ -30,12 +30,18 @@ jobs:
 
       - name: Validate version matches package.json
         run: |
-          TAG=${GITHUB_REF#refs/tags/pithos.squiggle-v}
+          TAG=${GITHUB_REF#refs/tags/pithos-kit.squiggle-v}
           PKG_VERSION=$(node -p "require('./package.json').version")
           if [ "$PKG_VERSION" != "$TAG" ]; then
             echo "Tag version ($TAG) != package.json ($PKG_VERSION)"
             exit 1
           fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test
 
       - name: Verify package contents
         run: npm pack --dry-run

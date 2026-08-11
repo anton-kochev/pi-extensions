@@ -1,5 +1,5 @@
 {
-  "name": "@anton-kochev/pithos.answer",
+  "name": "@pithos-kit/answer",
   "version": "0.2.0",
   "description": "Interactive Q&A extraction and answer submission for Pi assistant responses.",
   "keywords": [
@@ -12,6 +12,9 @@
   ],
   "license": "MIT",
   "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.ts"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/anton-kochev/pithos-kit.git",
@@ -25,6 +28,20 @@
     "@earendil-works/pi-coding-agent": "*",
     "@earendil-works/pi-tui": "*",
     "typebox": "*"
+  },
+  "pithosKit": {
+    "displayName": "Answer",
+    "summary": "Extract questions from the latest assistant response and answer them interactively.",
+    "minimumPi": ">=0.83.0",
+    "commands": [
+      { "name": "answer", "usage": "/answer [--help]", "summary": "Open the interactive answer form." }
+    ],
+    "tools": [],
+    "prompts": [],
+    "skills": [],
+    "themes": [],
+    "agents": [],
+    "configuration": []
   },
   "pi": {
     "extensions": [
