@@ -1,0 +1,56 @@
+{
+  "name": "@pithos-kit/themes",
+  "version": "0.1.0",
+  "description": "Accessible Auric light and dark themes for Pi.",
+  "keywords": [
+    "pi-package",
+    "pi-theme",
+    "pithos",
+    "theme",
+    "dark-theme",
+    "light-theme",
+    "solarized",
+    "accessibility"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": ">=0.84.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anton-kochev/pithos-kit.git",
+    "directory": "pithos.themes"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "pithosKit": {
+    "displayName": "Themes",
+    "summary": "Add accessible Auric light and dark themes with automatic appearance switching.",
+    "minimumPi": ">=0.84.1",
+    "commands": [],
+    "tools": [],
+    "prompts": [],
+    "skills": [],
+    "themes": [
+      { "name": "auric-dark", "summary": "Near-black dark theme with antique gold and restrained semantic surfaces." },
+      { "name": "auric-light", "summary": "Solarized-inspired light theme with sand and gold surfaces." }
+    ],
+    "agents": [],
+    "configuration": []
+  },
+  "pi": {
+    "themes": [
+      "./themes"
+    ]
+  },
+  "files": [
+    "themes",
+    "LICENSE",
+    "README.md"
+  ]
+}

@@ -12,6 +12,7 @@ A monorepo of independently published Pi extensions, skills, prompts, themes, an
 - [`pithos.guild/`](./pithos.guild) — isolated .NET and Angular architecture and implementation Guild members. [![npm version](https://img.shields.io/npm/v/@pithos-kit/guild.svg)](https://www.npmjs.com/package/@pithos-kit/guild)
 - [`pithos.context-bar/`](./pithos.context-bar) — a thin, stacked context-window composition bar above the editor. [![npm version](https://img.shields.io/npm/v/@pithos-kit/context-bar.svg)](https://www.npmjs.com/package/@pithos-kit/context-bar)
 - [`pithos.skills/`](./pithos.skills) — enforced Plan mode, `/commit`, `/srs`, a theme, and TDD guidance. [![npm version](https://img.shields.io/npm/v/@pithos-kit/skills.svg)](https://www.npmjs.com/package/@pithos-kit/skills)
+- [`pithos.themes/`](./pithos.themes) — accessible Auric light and dark themes with automatic appearance switching. [![npm version](https://img.shields.io/npm/v/@pithos-kit/themes.svg)](https://www.npmjs.com/package/@pithos-kit/themes)
 - [`pithos.atlas/`](./pithos.atlas) — explore package capabilities and versions, diagnose compatibility, and manage `.pithos` interactively. [![npm version](https://img.shields.io/npm/v/@pithos-kit/atlas.svg)](https://www.npmjs.com/package/@pithos-kit/atlas)
 
 ## Install
@@ -28,6 +29,7 @@ pi install npm:@pithos-kit/aegis
 pi install npm:@pithos-kit/guild
 pi install npm:@pithos-kit/context-bar
 pi install npm:@pithos-kit/skills
+pi install npm:@pithos-kit/themes
 ```
 
 Pin an exact version when reproducibility matters:
@@ -48,7 +50,7 @@ pi:
 
 Atlas can validate and interactively manage toolchain versions, `pi.version`, and `@pithos-kit/*` entries while preserving third-party configuration. Its changes describe a future rebuilt Pithos environment; they do not replace the active Pi process. Run `/pithos help` after installing it.
 
-Current package metadata declares Pi `>=0.83.0` except Context Bar, which requires Pi `>=0.84.1`. Atlas reports that incompatibility rather than silently treating Context Bar as compatible with this repository's retained Pi `0.83.0` pin.
+Current package metadata declares Pi `>=0.83.0` except Context Bar and Themes, which require Pi `>=0.84.1`. Atlas reports incompatible combinations rather than silently accepting them.
 
 ## Package-local help
 
@@ -74,6 +76,7 @@ pi install -l ./pithos.aegis
 pi install -l ./pithos.guild
 pi install -l ./pithos.context-bar
 pi install -l ./pithos.skills
+pi install -l ./pithos.themes
 pi install -l ./pithos.atlas
 ```
 
@@ -107,6 +110,7 @@ git push --follow-tags
 | `pithos.guild` | `@pithos-kit/guild` | `pithos-kit.guild-v` | `publish-pithos.guild.yml` |
 | `pithos.context-bar` | `@pithos-kit/context-bar` | `pithos-kit.context-bar-v` | `publish-pithos.context-bar.yml` |
 | `pithos.skills` | `@pithos-kit/skills` | `pithos-kit.skills-v` | `publish-pithos.skills.yml` |
+| `pithos.themes` | `@pithos-kit/themes` | `pithos-kit.themes-v` | `publish-pithos.themes.yml` |
 | `pithos.atlas` | `@pithos-kit/atlas` | `pithos-kit.atlas-v` | `publish-pithos.atlas.yml` |
 
 The workflows publish through npm trusted publishing and OIDC. Complete the external organization, publisher, Pithos-base, and deprecation steps in [`CUTOVER.md`](./CUTOVER.md) before releasing.

@@ -14,6 +14,7 @@ const packages = [
   { directory: "pithos.guild", shortName: "guild", version: "0.1.0", minimumPi: ">=0.83.0" },
   { directory: "pithos.context-bar", shortName: "context-bar", version: "0.1.0", minimumPi: ">=0.84.1" },
   { directory: "pithos.skills", shortName: "skills", version: "0.3.2", minimumPi: ">=0.83.0" },
+  { directory: "pithos.themes", shortName: "themes", version: "0.1.0", minimumPi: ">=0.84.1" },
   { directory: "pithos.atlas", shortName: "atlas", version: "0.2.0", minimumPi: ">=0.83.0" },
 ];
 
@@ -60,7 +61,11 @@ describe("pithos-kit package identities", () => {
       for (const kind of capabilityKinds) {
         assert.equal(Array.isArray(manifest.pithosKit?.[kind]), true, `${manifest.name} must describe ${kind}`);
       }
-      assert.equal(manifest.pithosKit.commands.length > 0, true, `${manifest.name} must describe a command`);
+      assert.equal(
+        capabilityKinds.some((kind) => manifest.pithosKit[kind].length > 0),
+        true,
+        `${manifest.name} must describe at least one capability`,
+      );
 
       const workflowPath = resolve(root, ".github", "workflows", `publish-${directory}.yml`);
       assert.equal(existsSync(workflowPath), true, `missing publish-${directory}.yml`);
@@ -76,7 +81,9 @@ describe("pithos-kit package identities", () => {
       assert.match(packageReadme, /\.pithos/u, `${manifest.name} must document .pithos`);
       assert.match(packageReadme, new RegExp(`"@pithos-kit/${shortName}": "npm:${version.replaceAll(".", "\\.")}"`));
       if (shortName === "atlas") assert.match(packageReadme, /\/pithos help/u);
-      else assert.match(packageReadme, /--help/u, `${manifest.name} must document package-local help`);
+      else if (manifest.pithosKit.commands.length > 0) {
+        assert.match(packageReadme, /--help/u, `${manifest.name} must document package-local help`);
+      }
     }
 
     const generatedCatalog = readJson(resolve(root, "pithos.atlas", "src", "generated", "catalog.json"));
