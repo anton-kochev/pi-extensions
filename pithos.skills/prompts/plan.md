@@ -21,10 +21,11 @@ facts that are sitting in the code is slow, error-prone, and signals you haven't
 done the work. Use the trusted read, grep, find, and ls tools until the code has
 told you everything it can.
 
-**Rule 2 — Don't implement until there is shared understanding.** Do not write
-the plan file or change any code until the user has *explicitly* confirmed your
-understanding of the goal, approach, and scope. "Yes, that's right" / "go ahead"
-is confirmation; silence or a vague "sounds good" to a wall of text is not.
+**Rule 2 — Don't implement until there is shared understanding.** Resolve every
+open question and present your understanding of the goal, approach, and scope
+before preparing the plan. The `create_plan` interactive confirmation is the
+sole final approval gate: approval creates the plan and authorizes implementation,
+while continuing planning means the understanding still needs work.
 
 ## Planning posture: enforced read-only until plan creation is approved
 
@@ -88,17 +89,18 @@ Present back, in natural prose (not a rigid form), a compact synthesis: the
 **goal** (1–2 sentences), **what the code told you** (so the user can correct a
 misread), the **proposed approach** plus alternatives you set aside and why, your
 **open questions** (only the human-only ones), and any **assumptions** you're
-making so the user can veto them. Then iterate — answer, adjust, re-present —
-until the user confirms every aspect. Favor real back-and-forth with explanations
-over a checkbox interrogation. **Do not advance to Phase 4 without an explicit
-go-ahead.**
+making so the user can veto them. Iterate while questions, corrections, or design
+decisions remain. Once there are no unresolved human decisions, proceed directly
+to Phase 4 instead of asking for a separate conversational confirmation.
 
 ### Phase 4 — Save the plan
 
 Only after shared understanding is complete, prepare the plan below and call
-`create_plan` with its complete Markdown content. The extension exclusively
-creates the generated path supplied in the system prompt under `.pi/plans/`.
-That call opens an interactive confirmation:
+`create_plan` immediately with its complete Markdown content. Do not first ask the
+user to reply with approval in chat. The extension exclusively creates the
+generated path supplied in the system prompt under `.pi/plans/`. That call opens
+an interactive confirmation; this interactive confirmation is the sole final
+approval gate:
 
 - **Create plan** authorizes that one plan-file write, exits Plan mode after it
   succeeds, and authorizes implementation.
@@ -162,7 +164,7 @@ own verification commands (found in Phase 1) before declaring a step done.
 - **Racing to the plan file.** A plan written before shared understanding just formalizes a misunderstanding.
 - **Editing "just a little" during planning.** Read-only mode is enforced; the only exception is interactively approved plan creation at Phase 4.
 - **Hiding the fork.** Choosing between two real designs without telling the user makes a decision that was theirs.
-- **Treating a vague "ok" as agreement.** Confirm the aspects that actually carry risk.
+- **Adding a chat approval before plan creation.** Present the synthesis, then use the controlled interactive confirmation as the approval gate.
 
 ---
 
