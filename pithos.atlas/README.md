@@ -13,7 +13,7 @@ pi install npm:@pithos-kit/atlas
 Pin an exact version:
 
 ```bash
-pi install npm:@pithos-kit/atlas@0.2.0
+pi install npm:@pithos-kit/atlas@0.2.1
 ```
 
 For local development:
@@ -27,7 +27,7 @@ pi install -l ./pithos.atlas
 ```yaml
 pi:
   extensions:
-    "@pithos-kit/atlas": "npm:0.2.0"
+    "@pithos-kit/atlas": "npm:0.2.1"
 ```
 
 The separate Pithos base image can preinstall Atlas so it remains available to diagnose a project configuration that would otherwise prevent project packages from loading.
