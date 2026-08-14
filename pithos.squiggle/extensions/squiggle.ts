@@ -17,7 +17,10 @@ Show whether Squiggle is enabled and which correction model it uses.
 Options:
   --help, -h  Show this help`;
 
-export default function squiggle(pi: ExtensionAPI) {
+export function registerSquiggle(
+	pi: ExtensionAPI,
+	correctPrompt: (input: string, ctx: ExtensionContext, config: SquiggleConfig) => Promise<string | null> = correctWithModel,
+) {
 	let runtimeMode: SquiggleConfig["mode"] | undefined;
 
 	pi.on("session_start", async (_event, ctx) => {
@@ -58,23 +61,16 @@ export default function squiggle(pi: ExtensionAPI) {
 		if (!event.text.trim()) return { action: "continue" };
 
 		const stopIndicator = startSquiggleIndicator(ctx);
-		const corrected = await correctWithModel(event.text, ctx, config).finally(stopIndicator);
+		const corrected = await correctPrompt(event.text, ctx, config).finally(stopIndicator);
 		if (!corrected || corrected === event.text) return { action: "continue" };
 
 		if (ctx.hasUI) ctx.ui.notify(formatColoredDiff(event.text, corrected), "info");
-
-		// In interactive mode, `transform` changes what the agent receives, but the
-		// already-submitted prompt may still be rendered as originally typed. To make
-		// the visible user message corrected too, swallow the original input and
-		// resubmit the corrected text as an extension-originated user message. The
-		// source guard above prevents a correction loop.
-		if (event.source === "interactive") {
-			pi.sendUserMessage(corrected);
-			return { action: "handled" };
-		}
-
 		return { action: "transform", text: corrected };
 	});
+}
+
+export default function squiggle(pi: ExtensionAPI): void {
+	registerSquiggle(pi);
 }
 
 function isHelpRequest(args: string): boolean {
