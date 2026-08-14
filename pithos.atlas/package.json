@@ -1,6 +1,6 @@
 {
   "name": "@pithos-kit/atlas",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Interactive commits, catalog, diagnostics, version checks, and .pithos configuration management for pithos-kit.",
   "keywords": [
     "pi-package",

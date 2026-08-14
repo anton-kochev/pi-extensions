@@ -39,7 +39,7 @@ pi install -l ./pithos.skills
 ```yaml
 pi:
   extensions:
-    "@pithos-kit/skills": "npm:0.3.2"
+    "@pithos-kit/skills": "npm:0.4.0"
 ```
 
 ## Usage
@@ -68,9 +68,10 @@ The help invocation is intercepted before the skill is expanded.
 
 ## Changelog
 
-### Unreleased
+### 0.4.0
 
 - Move `/commit` and the `conventional-commit` skill to `@pithos-kit/atlas`.
+- Use the controlled `create_plan` confirmation as the sole final approval gate once planning decisions are resolved.
 
 ### 0.3.2
 

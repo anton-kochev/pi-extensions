@@ -1,6 +1,6 @@
 {
   "name": "@pithos-kit/guild",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Standalone .NET and Angular Guild members for Pi.",
   "keywords": [
     "pi-package",

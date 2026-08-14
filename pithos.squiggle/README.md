@@ -39,7 +39,7 @@ pi -e ./pithos.squiggle
 ```yaml
 pi:
   extensions:
-    "@pithos-kit/squiggle": "npm:0.4.0"
+    "@pithos-kit/squiggle": "npm:0.4.1"
 ```
 
 ## Configuration

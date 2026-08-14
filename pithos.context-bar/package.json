@@ -1,6 +1,6 @@
 {
   "name": "@pithos-kit/context-bar",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A thin, stacked context-window composition bar for Pi.",
   "keywords": [
     "pi-package",

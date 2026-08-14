@@ -65,7 +65,7 @@
     },
     {
       "name": "@pithos-kit/atlas",
-      "version": "0.2.1",
+      "version": "0.3.0",
       "description": "Interactive commits, catalog, diagnostics, version checks, and .pithos configuration management for pithos-kit.",
       "pi": {
         "extensions": [
@@ -132,7 +132,7 @@
     },
     {
       "name": "@pithos-kit/context-bar",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "A thin, stacked context-window composition bar for Pi.",
       "pi": {
         "extensions": [
@@ -198,7 +198,7 @@
     },
     {
       "name": "@pithos-kit/guild",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "Standalone .NET and Angular Guild members for Pi.",
       "pi": {
         "extensions": [
@@ -264,7 +264,7 @@
     },
     {
       "name": "@pithos-kit/skills",
-      "version": "0.3.2",
+      "version": "0.4.0",
       "description": "Anton Kochev's Pi skills and prompt commands.",
       "pi": {
         "extensions": [
@@ -342,7 +342,7 @@
     },
     {
       "name": "@pithos-kit/squiggle",
-      "version": "0.4.0",
+      "version": "0.4.1",
       "description": "Quietly polish grammar and spelling in your Pi prompts.",
       "pi": {
         "extensions": [
