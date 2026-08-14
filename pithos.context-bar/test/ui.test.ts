@@ -235,6 +235,36 @@ describe("createContextBarComponent", () => {
     ]);
   });
 
+  it("separates every visible section when wider sections can fund the delimiters", () => {
+    const snapshot = {
+      categories: {
+        prompt: 0,
+        project: 0,
+        skills: 2,
+        tools: 5,
+        conversation: 1,
+        other: 1,
+        free: 11,
+      },
+      tokens: 9,
+      contextWindow: 20,
+      percent: 45,
+      basis: "local-estimate" as const,
+    };
+    const component = createContextBarComponent(
+      () => snapshot,
+      {
+        fg: (_color: string, text: string) => text,
+        getFgAnsi: () => "\u001b[38;2;38;56;61m",
+        getColorMode: () => "truecolor",
+      } as never,
+      () => (text: string) => text,
+    );
+
+    const visible = component.render(23)[0]!.replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, "");
+    assert.equal(visible, "▀ ▀▀▀▀ ▀ ▀ ─────────45%");
+  });
+
   it("keeps section interiors uninterrupted and shows only the total percentage", () => {
     const snapshot = {
       categories: {

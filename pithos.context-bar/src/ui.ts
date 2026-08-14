@@ -132,18 +132,32 @@ export function createContextBarComponent(
       const barWidth = Math.max(0, available - visiblePercentage.length);
       const cells = allocateSegmentCells(snapshot.categories, barWidth);
       const visibleCategories = CONTEXT_CATEGORY_ORDER.filter((category) => cells[category] > 0);
-      const lastVisibleCategory = visibleCategories.at(-1);
+      const boundaryCategories = visibleCategories.slice(0, -1);
+      const donorCategories = [...visibleCategories].reverse();
+      const contentCells = { ...cells };
+      const delimitedCategories = new Set<ContextCategory>();
+      for (const category of boundaryCategories) {
+        if (contentCells[category] <= 1) continue;
+        contentCells[category]--;
+        delimitedCategories.add(category);
+      }
+      for (const category of boundaryCategories) {
+        if (delimitedCategories.has(category)) continue;
+        const donor = donorCategories.find((candidate) => contentCells[candidate] > 1);
+        if (!donor) break;
+        contentCells[donor]--;
+        delimitedCategories.add(category);
+      }
+
       const bar = CONTEXT_CATEGORY_ORDER.map((category) => {
-        const segmentWidth = cells[category];
-        if (segmentWidth === 0) return "";
-        const hasDelimiter = category !== lastVisibleCategory && segmentWidth > 1;
-        const contentWidth = segmentWidth - (hasDelimiter ? 1 : 0);
+        const contentWidth = contentCells[category];
+        if (contentWidth === 0) return "";
         const glyph = category === "free" ? FREE_GLYPH : BAR_GLYPH;
         const text = glyph.repeat(contentWidth);
         const segment = category === "free"
           ? (getEditorBorderStyle?.()?.(text) ?? theme.fg(FREE_CATEGORY_COLOR, text))
           : colorizeContextCategory(theme, category, text);
-        return `${segment}${hasDelimiter ? " " : ""}`;
+        return `${segment}${delimitedCategories.has(category) ? " " : ""}`;
       }).join("");
       return [`${bar}${theme.fg("dim", visiblePercentage)}`];
     },

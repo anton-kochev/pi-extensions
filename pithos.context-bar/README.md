@@ -6,7 +6,7 @@ A thin, stacked context-window composition bar for [pi](https://github.com/earen
 ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀────────────────────────42%
 ```
 
-The real bar uses a harmonious theme-aware color progression and spans the terminal width. Used context renders as upper-half `▀` blocks, while free capacity renders as a thin `─` line matching the editor's current border color. Sections wider than one cell use a one-cell terminal-background delimiter; one-cell sections remain intact. This leaves balanced spacing around the input cursor. While enabled, context-bar removes Pi's separate top-border row; disabling the bar restores it. Its only inline text is the integer percentage at the far right showing total context used.
+The real bar uses a harmonious theme-aware color progression and spans the terminal width. Used context renders as upper-half `▀` blocks, while free capacity renders as a thin `─` line matching the editor's current border color. Whenever width permits, every visible section is separated by a one-cell terminal-background delimiter; wider sections contribute the space so one-cell sections remain intact. This leaves balanced spacing around the input cursor. While enabled, context-bar removes Pi's separate top-border row; disabling the bar restores it. Its only inline text is the integer percentage at the far right showing total context used.
 
 ## Install
 
