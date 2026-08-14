@@ -81,26 +81,15 @@ Both commands also accept `-h`; help returns before discovery, UI prompts, idle 
 
 ## Live transparency
 
-While Guild members are executing, the extension shows a themed, framed operations card above the editor:
+While Guild members are executing, the extension shows a compact active-run panel above the editor:
 
 ```text
-────────────────────────────────────────────────────────
-✦ Guild Operations  2 active
-
-● RUNNING  dotnet-architect · builtin · READ ONLY · 5s
-  ↳ Design order cancellation
-  ◇ openai-codex/gpt-5.6-sol · thinking xhigh · 2 turns
-  ⚙ read, grep, find, ls
-
-● RUNNING  angular-coder · project · WRITE ENABLED · 3s
-  ↳ Implement checkout loading state
-  ◇ openai-codex/gpt-5.6-sol · thinking xhigh
-  ⚙ read, grep, find, ls, edit, write, bash
-
-────────────────────────────────────────────────────────
+Guild · 2 active
+ ● dotnet-architect · 5s · 2 turns
+ ● angular-coder · 49m 38s
 ```
 
-Colors follow the active Pi theme: accent framing, amber running states, and muted metadata. `guild_handover` also has a custom tool-call card and a compact completion card whose full output is available through normal tool expansion.
+The panel intentionally keeps only live identity and timing that are useful while a handover runs. Task and output stay in the chat, while static run configuration is omitted from the transient panel. Text colors follow the active Pi theme, while a dedicated light/dark violet background distinguishes the Guild panel from standard pending-tool cards. The summary and each active run have their own truncated line, framed by half-block edges that create balanced half-row padding and a half-row visual gap before the editor. `guild_handover` also has a custom tool-call card and a compact completion card whose full output is available through normal tool expansion.
 
 Agent-invoked handovers use the aggregate dashboard shown above. A direct `/guild-handover` instead uses a compact, width-capped live card with a spinner, elapsed time, turns, current child-tool activity, and the configured cancellation hint:
 

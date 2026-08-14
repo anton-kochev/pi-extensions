@@ -3,6 +3,7 @@ import { VERSION, type ExtensionAPI, type ExtensionCommandContext } from "@earen
 import { Type } from "typebox";
 import { resolveActivePiVersion } from "./active-pi.ts";
 import { loadBundledCatalog } from "./bundled-catalog.ts";
+import registerCommitWorkflow from "./commit.ts";
 import type { Catalog, CatalogPackage } from "./catalog.ts";
 import { refreshCatalog, type RefreshedCatalog } from "./catalog-service.ts";
 import { commitConfig, readConfigSnapshot, type ConfigSnapshot } from "./config-transaction.ts";
@@ -15,11 +16,14 @@ import { runConfigWizard } from "./ui.ts";
 
 const MAX_OUTPUT_CHARS = 40_000;
 
-export const ATLAS_HELP = `Pithos Atlas configures reproducible toolchain, Pi, and pithos-kit package pins, and diagnoses the active environment.
+export const ATLAS_HELP = `Pithos Atlas creates confirmed Conventional Commits, configures reproducible toolchain, Pi, and package pins, and diagnoses the active environment.
 
 Usage: /pithos [command]
 
-Commands:
+Atlas workflow:
+  /commit [instructions]   Prepare a context-scoped commit with mandatory interactive confirmation
+
+Pithos commands:
   /pithos                  Open the interactive Atlas menu
   /pithos help             Show this help
   /pithos packages         List pithos-kit packages and capabilities
@@ -158,6 +162,8 @@ function formatDoctor(report: DiagnosticsReport, warnings: string[]): string {
 }
 
 export function registerAtlas(pi: ExtensionAPI): void {
+	registerCommitWorkflow(pi);
+
 	const activePiVersion = resolveActivePiVersion({ entrypoint: process.argv[1], fallbackVersion: VERSION });
 	const catalog = loadBundledCatalog();
 	const registry = new RegistryClient({ offline: isOfflineEnvironment() });

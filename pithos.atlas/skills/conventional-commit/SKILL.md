@@ -1,6 +1,8 @@
 ---
-description: Generate git commits following Conventional Commits 1.0.0.
-argument-hint: "[instructions]"
+name: conventional-commit
+description: "Create Conventional Commits from existing staged changes or a narrow staging set inferred from instructions and task context, with mandatory interactive confirmation. Use for /commit, git commit, or when committing changes."
+user-invocable: true
+disable-model-invocation: false
 ---
 
 # Git Commit Generator
@@ -81,18 +83,21 @@ When the user invokes `/commit`:
    ```
 
 2. **Determine commit scope**:
-   - If files are already staged, commit only staged files.
-   - If nothing is staged and the user provided a clear scope, stage only files matching that scope.
-     - Example: “changes to the /answer extension” means stage modified files under `pithos.answer/`.
-   - If nothing is staged and the scope is obvious from the working tree, stage the relevant modified tracked files.
-   - Do not stage unrelated untracked files, generated files, editor metadata, session logs, or local config unless explicitly requested.
-   - If the intended files are ambiguous, suggest the files to stage and ask for confirmation.
+   - If files are already staged, commit only staged files; do not add other changes unless the user explicitly asks.
+   - If nothing is staged, infer the intended scope from explicit `/commit` instructions first, then the current conversation and task context, and finally the working tree.
+   - If nothing is staged and the inferred scope is clear, stage only the relevant files.
+   - Include untracked files only when the instructions or task context clearly identify them as part of the intended change.
+   - Do not stage unrelated untracked files, generated files, editor metadata, session logs, or local configuration unless explicitly requested.
+   - If the intended files are ambiguous, show the exact proposed staging set and ask for confirmation before staging or committing.
 
 3. **Stage selected files when appropriate**:
 
    ```bash
-   git add <relevant-files>
+   git add -- <relevant-files>
+   git diff --cached
    ```
+
+   If the selected files produce no staged changes, report that state and stop.
 
 4. **Analyze staged changes** and determine:
    - Filter out trivial changes (see below)
@@ -101,35 +106,23 @@ When the user invokes `/commit`:
    - Scope if applicable (component, module, or file area)
    - Whether description paragraph or bullet points add value
 
-5. **Generate commit** using HEREDOC for proper formatting:
+5. **Request mandatory interactive confirmation and create the commit**:
+   - Call `create_commit` with the complete final commit message.
+   - The controlled tool shows the message and staged file set in an interactive confirmation dialog, then creates the commit only if the user approves.
+   - Never run `git commit` directly through bash or any other tool.
+   - If the user declines, the staged changes remain intact and the workflow stops.
 
-   ```bash
-   git commit -m "$(cat <<'EOF'
-   type(scope): subject
+6. **Report the controlled result**:
+   - `create_commit` verifies the new commit and returns its hash and subject.
+   - Report success only when the tool says `committed: true`; otherwise stop without claiming a commit was created.
 
-   Optional description paragraph.
+## Context-Based Staging Rules
 
-   - optional bullet
-   - optional bullet
-   EOF
-   )"
-   ```
-
-6. **Verify** the commit was created:
-
-   ```bash
-   git log -1
-   ```
-
-If no staged changes exist, infer and stage relevant files when the user’s intent is clear. If intent is unclear, show the proposed staging set and ask for confirmation.
-
-## Staging Rules
-
-- Prefer staged files when present; never add extra files to an already staged commit unless explicitly asked.
-- When auto-staging, stage only files relevant to the user’s stated scope.
-- Modified tracked files may be staged automatically when relevant.
-- Untracked files require stronger evidence before staging.
-- Never stage obvious local/session artifacts unless explicitly requested.
+- Existing staged changes always take precedence over inferred context.
+- Narrow scope using explicit instructions, named packages or paths, and the active task before considering broader working-tree patterns.
+- Never infer scope from modification time alone.
+- When multiple unrelated change groups remain plausible, ask instead of guessing.
+- Interactive approval through `create_commit` is mandatory even when the staging scope is unambiguous.
 
 ## Filtering Trivial Changes
 
@@ -205,11 +198,4 @@ instead of raw CSV. Clients must update parsing logic.
 ```
 
 **Multiple changes (pick primary):**
-
 When changes span multiple types, use the most significant one and mention others in body.
-
----
-
-Additional user instructions, if any:
-
-$ARGUMENTS

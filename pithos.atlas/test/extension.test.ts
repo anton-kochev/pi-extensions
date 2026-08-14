@@ -8,13 +8,17 @@ import atlas from "../extensions/index.ts";
 function createHarness() {
 	const commands = new Map<string, any>();
 	const tools = new Map<string, any>();
+	const handlers = new Map<string, any[]>();
+	const messages: Array<{ message: any; options: any }> = [];
 	atlas({
 		registerCommand(name: string, definition: any) { commands.set(name, definition); },
 		registerTool(definition: any) { tools.set(definition.name, definition); },
+		on(name: string, handler: any) { handlers.set(name, [...(handlers.get(name) ?? []), handler]); },
+		sendMessage(message: any, options: any) { messages.push({ message, options }); },
 		getCommands() { return []; },
 		getAllTools() { return []; },
 	} as never);
-	return { commands, tools };
+	return { commands, tools, handlers, messages };
 }
 
 describe("Atlas extension", () => {
@@ -23,8 +27,8 @@ describe("Atlas extension", () => {
 		globalThis.fetch = async () => { throw new Error("unexpected startup network request"); };
 		try {
 			const { commands, tools } = createHarness();
-			assert.deepEqual([...commands.keys()], ["pithos"]);
-			assert.deepEqual([...tools.keys()], ["pithos_info"]);
+			assert.deepEqual([...commands.keys()], ["commit", "pithos"]);
+			assert.deepEqual([...tools.keys()], ["create_commit", "pithos_info"]);
 			const schemaText = JSON.stringify(tools.get("pithos_info").parameters);
 			assert.doesNotMatch(schemaText, /write|apply|manage|update/i);
 			const result = await tools.get("pithos_info").execute("call", { action: "catalog" }, undefined, undefined, {
@@ -34,6 +38,61 @@ describe("Atlas extension", () => {
 		} finally {
 			globalThis.fetch = originalFetch;
 		}
+	});
+
+	it("starts the confirmed commit workflow without committing directly", async () => {
+		const { commands, messages } = createHarness();
+		const notifications: string[] = [];
+
+		await commands.get("commit").handler("Guild dashboard changes", {
+			isIdle: () => true,
+			hasUI: true,
+			sessionManager: { getBranch: () => [] },
+			ui: { notify: (message: string) => notifications.push(message) },
+		} as never);
+
+		assert.equal(notifications.length, 0);
+		assert.equal(messages.length, 1);
+		assert.equal(messages[0]?.message.customType, "atlas-commit-workflow");
+		assert.equal(messages[0]?.message.display, false);
+		assert.match(messages[0]?.message.content ?? "", /Guild dashboard changes/);
+		assert.match(messages[0]?.message.content ?? "", /create_commit/);
+		assert.deepEqual(messages[0]?.options, { triggerTurn: true });
+	});
+
+	it("shows /commit help without starting an agent turn", async () => {
+		const { commands, messages } = createHarness();
+		const notifications: string[] = [];
+
+		await commands.get("commit").handler("--help", {
+			isIdle: () => true,
+			hasUI: true,
+			sessionManager: { getBranch: () => [] },
+			ui: { notify: (message: string) => notifications.push(message) },
+		} as never);
+
+		assert.equal(messages.length, 0);
+		assert.equal(notifications.length, 1);
+		assert.match(notifications[0] ?? "", /Usage: \/commit \[instructions\]/);
+		assert.match(notifications[0] ?? "", /interactive confirmation/i);
+	});
+
+	it("refuses to start /commit while Plan mode is active", async () => {
+		const { commands, messages } = createHarness();
+		const notifications: string[] = [];
+
+		await commands.get("commit").handler("", {
+			isIdle: () => true,
+			hasUI: true,
+			sessionManager: {
+				getBranch: () => [{ type: "custom", customType: "plan-theme-state", data: { active: true } }],
+			},
+			ui: { notify: (message: string) => notifications.push(message) },
+		} as never);
+
+		assert.equal(messages.length, 0);
+		assert.equal(notifications.length, 1);
+		assert.match(notifications[0] ?? "", /commit.*unavailable.*Plan mode/i);
 	});
 
 	it("reports configured toolchains through the read-only config tool", async () => {
@@ -158,7 +217,10 @@ describe("Atlas extension", () => {
 		} as never);
 
 		assert.equal(notifications.length, 1);
-		assert.match(notifications[0] ?? "", /prompts: plan, commit, srs-generator/);
+		assert.match(notifications[0] ?? "", /commands: \/commit, \/pithos, \/skill:conventional-commit/);
+		assert.match(notifications[0] ?? "", /tools: create_commit \(internal\), pithos_info/);
+		assert.match(notifications[0] ?? "", /prompts: plan, srs-generator/);
+		assert.match(notifications[0] ?? "", /skills: conventional-commit/);
 		assert.match(notifications[0] ?? "", /skills: tdd/);
 		assert.match(notifications[0] ?? "", /themes: plan/);
 		assert.match(notifications[0] ?? "", /agents: dotnet-architect/);

@@ -1,14 +1,16 @@
 {
   "name": "@pithos-kit/atlas",
   "version": "0.2.1",
-  "description": "Interactive catalog, diagnostics, version checks, and .pithos configuration management for pithos-kit.",
+  "description": "Interactive commits, catalog, diagnostics, version checks, and .pithos configuration management for pithos-kit.",
   "keywords": [
     "pi-package",
     "pi-extension",
     "pithos",
     "atlas",
     "catalog",
-    "configuration"
+    "configuration",
+    "git",
+    "conventional-commits"
   ],
   "license": "MIT",
   "type": "module",
@@ -45,16 +47,21 @@
   },
   "pithosKit": {
     "displayName": "Atlas",
-    "summary": "Explore pithos-kit packages, check compatibility, and manage .pithos interactively.",
+    "summary": "Create confirmed commits, explore pithos-kit packages, check compatibility, and manage .pithos interactively.",
     "minimumPi": ">=0.83.0",
     "commands": [
-      { "name": "pithos", "usage": "/pithos [help|packages|versions|doctor|config]", "summary": "Open Atlas or run a catalog, diagnostic, or configuration action." }
+      { "name": "commit", "usage": "/commit [instructions]", "summary": "Create a context-scoped Conventional Commit with confirmation." },
+      { "name": "pithos", "usage": "/pithos [help|packages|versions|doctor|config]", "summary": "Open Atlas or run a catalog, diagnostic, or configuration action." },
+      { "name": "skill:conventional-commit", "usage": "/skill:conventional-commit [instructions]", "summary": "Load the confirmed, context-aware Conventional Commit workflow explicitly." }
     ],
     "tools": [
+      { "name": "create_commit", "summary": "Controlled git commit creator with mandatory interactive confirmation.", "internal": true },
       { "name": "pithos_info", "summary": "Read pithos-kit catalog, version, runtime, and configuration information." }
     ],
     "prompts": [],
-    "skills": [],
+    "skills": [
+      { "name": "conventional-commit", "summary": "Context-aware staging and confirmed Conventional Commit generation." }
+    ],
     "themes": [],
     "agents": [],
     "configuration": [
@@ -65,10 +72,14 @@
   "pi": {
     "extensions": [
       "./extensions"
+    ],
+    "skills": [
+      "./skills"
     ]
   },
   "files": [
     "extensions",
+    "skills",
     "src",
     "README.md"
   ]

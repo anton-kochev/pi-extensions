@@ -101,7 +101,6 @@ async function activatePlan(harness: ReturnType<typeof createHarness>) {
 describe("plan mode enforcement", () => {
 	it("intercepts package prompt and skill --help/-h before expansion", async () => {
 		for (const [command, usage] of [
-			["/commit", "Usage: /commit [instructions]"],
 			["/plan", "Usage: /plan <task>"],
 			["/srs", "Usage: /srs <request>"],
 			["/skill:tdd", "Usage: /skill:tdd [task context]"],

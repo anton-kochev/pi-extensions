@@ -19,24 +19,55 @@ const theme = {
 } as any;
 
 describe("Guild visual presentation", () => {
-  it("renders a framed aggregate operations panel with status and metadata", () => {
+  it("renders the summary and each live run on separate lines with balanced half-row edges", () => {
+    const backgrounds: string[] = [];
+    const panelTheme = {
+      name: "auric-light",
+      fg: (color: string, text: string) => `<${color}>${text}</${color}>`,
+      bg: (color: string, text: string) => {
+        backgrounds.push(color);
+        return text;
+      },
+      bold: (_text: string) => {
+        throw new Error("the aggregate dashboard should not request bold text");
+      },
+      getBgAnsi: () => "\u001b[48;2;223;236;243m",
+      getColorMode: () => "truecolor",
+    } as any;
     const panel = createGuildPanel([
       "Guild · 2 active",
-      "⏳ dotnet-architect · builtin · read-only · 5s",
-      "   Task: Design order cancellation",
-      "   Model: openai-codex/gpt-5.6-sol · thinking xhigh · 2 turns",
-      "   Tools: read, grep, find, ls",
-      "⏳ angular-coder · project · write-enabled · 3s",
-      "   Task: Implement loading state",
-    ], theme);
+      "⏳ dotnet-architect · 5s · 2 turns",
+      "⏳ angular-coder · 49m 38s",
+    ], panelTheme);
 
-    const rendered = panel.render(100).join("\n");
-    assert.match(rendered, /✦ Guild Operations/);
-    assert.match(rendered, /● RUNNING.*dotnet-architect/);
-    assert.match(rendered, /READ ONLY/);
-    assert.match(rendered, /● RUNNING.*angular-coder/);
-    assert.match(rendered, /WRITE ENABLED/);
-    assert.match(rendered, /─/);
+    const lines = panel.render(400);
+    const rendered = lines.join("\n");
+    assert.equal(lines.length, 5);
+    assert.match(lines[0] ?? "", /^\u001b\[38;2;233;221;242m▄+/);
+    assert.match(lines[1] ?? "", /^\u001b\[48;2;233;221;242m <accent>Guild<\/accent><muted> · 2 active<\/muted>/);
+    assert.match(lines[2] ?? "", /^\u001b\[48;2;233;221;242m <warning>●<\/warning> <accent>dotnet-architect<\/accent><dim> · 5s · 2 turns<\/dim>/);
+    assert.match(lines[3] ?? "", /^\u001b\[48;2;233;221;242m <warning>●<\/warning> <accent>angular-coder<\/accent><dim> · 49m 38s<\/dim>/);
+    assert.match(lines[4] ?? "", /^\u001b\[38;2;233;221;242m▀+/);
+    assert.deepEqual(backgrounds, []);
+    assert.doesNotMatch(rendered, /Running|Design order cancellation|openai-codex|read, grep|built-in|read only/);
+  });
+
+  it("uses a dedicated Guild background for dark themes", () => {
+    const panelTheme = {
+      name: "auric-dark",
+      fg: (_color: string, text: string) => text,
+      bg: () => {
+        throw new Error("the Guild panel should not use a standard theme background");
+      },
+      getBgAnsi: () => "\u001b[48;2;30;30;36m",
+      getColorMode: () => "truecolor",
+    } as any;
+
+    const lines = createGuildPanel(["Guild · 1 active", "⏳ csharp-coder · 3s"], panelTheme).render(80);
+    assert.match(lines[0] ?? "", /^\u001b\[38;2;45;37;56m▄+/);
+    assert.match(lines[1] ?? "", /^\u001b\[48;2;45;37;56m Guild · 1 active/);
+    assert.match(lines[2] ?? "", /^\u001b\[48;2;45;37;56m ● csharp-coder · 3s/);
+    assert.match(lines[3] ?? "", /^\u001b\[38;2;45;37;56m▀+/);
   });
 
   it("renders a fancy, width-capped lifecycle card with real Markdown", () => {

@@ -1,6 +1,5 @@
-import { DynamicBorder, getMarkdownTheme, keyHint, type Theme } from "@earendil-works/pi-coding-agent";
+import { getMarkdownTheme, keyHint, type Theme } from "@earendil-works/pi-coding-agent";
 import {
-	Box,
 	Container,
 	Markdown,
 	Spacer,
@@ -28,46 +27,64 @@ function compact(value: string, maxLength = 100): string {
 
 function styledPanelLine(line: string, theme: Theme): string {
 	if (line.startsWith("⏳ ")) {
-		const text = line
-			.replace(/^⏳\s*/, "● RUNNING  ")
-			.replace("read-only", "READ ONLY")
-			.replace("write-enabled", "WRITE ENABLED");
-		return theme.fg("warning", theme.bold(text));
-	}
-	if (line.trimStart().startsWith("Task:")) {
-		return theme.fg("text", line.replace("Task:", "↳"));
-	}
-	if (line.trimStart().startsWith("Model:")) {
-		return theme.fg("muted", line.replace("Model:", "◇"));
-	}
-	if (line.trimStart().startsWith("Tools:")) {
-		return theme.fg("dim", line.replace("Tools:", "⚙"));
+		const [member = "guild member", ...metadata] = line.slice("⏳ ".length).split(" · ");
+		return theme.fg("warning", "●") +
+			` ${theme.fg("accent", member)}` +
+			(metadata.length > 0 ? theme.fg("dim", ` · ${metadata.join(" · ")}`) : "");
 	}
 	return theme.fg("muted", line);
 }
 
-export function createGuildPanel(lines: string[], theme: Theme): Component {
-	const root = new Container();
-	root.addChild(new DynamicBorder((text: string) => theme.fg("borderAccent", text)));
+interface GuildPanelColor {
+	r: number;
+	g: number;
+	b: number;
+	ansi256: number;
+}
 
-	const box = new Box(1, 0, (text: string) => theme.bg("toolPendingBg", text));
-	const summary = lines[0]?.replace(/^Guild\s*·?\s*/, "") ?? "";
-	box.addChild(new Text(
-		theme.fg("accent", theme.bold(`✦ Guild Operations${summary ? `  ${summary}` : ""}`)),
-		0,
-		0,
-	));
+const GUILD_PANEL_LIGHT: GuildPanelColor = { r: 233, g: 221, b: 242, ansi256: 189 };
+const GUILD_PANEL_DARK: GuildPanelColor = { r: 45, g: 37, b: 56, ansi256: 236 };
 
-	for (const line of lines.slice(1)) {
-		if (line.startsWith("⏳ ")) {
-			box.addChild(new Spacer(1));
-		}
-		box.addChild(new Text(styledPanelLine(line, theme), 0, 0));
+function usesLightGuildPanel(theme: Theme): boolean {
+	const name = theme.name?.toLowerCase();
+	if (name?.includes("light")) return true;
+	if (name?.includes("dark")) return false;
+	const match = theme.getBgAnsi("toolPendingBg").match(/\[48;2;(\d+);(\d+);(\d+)m/);
+	if (!match) return false;
+	const [, red = "0", green = "0", blue = "0"] = match;
+	return 0.2126 * Number(red) + 0.7152 * Number(green) + 0.0722 * Number(blue) >= 128;
+}
+
+function guildPanelAnsi(theme: Theme): { background: string; foreground: string } {
+	const color = usesLightGuildPanel(theme) ? GUILD_PANEL_LIGHT : GUILD_PANEL_DARK;
+	if (typeof theme.getColorMode === "function" && theme.getColorMode() === "256color") {
+		return {
+			background: `\u001b[48;5;${color.ansi256}m`,
+			foreground: `\u001b[38;5;${color.ansi256}m`,
+		};
 	}
+	const channels = `${color.r};${color.g};${color.b}`;
+	return {
+		background: `\u001b[48;2;${channels}m`,
+		foreground: `\u001b[38;2;${channels}m`,
+	};
+}
 
-	root.addChild(box);
-	root.addChild(new DynamicBorder((text: string) => theme.fg("borderMuted", text)));
-	return root;
+export function createGuildPanel(lines: string[], theme: Theme): Component {
+	return {
+		invalidate(): void {},
+		render(width: number): string[] {
+			if (width <= 0) return [];
+			const summary = lines[0]?.replace(/^Guild\s*/, "") ?? "";
+			const title = theme.fg("accent", "Guild") + (summary ? theme.fg("muted", ` ${summary}`) : "");
+			const runs = lines.slice(1).map((line) => styledPanelLine(line, theme));
+			const { background, foreground } = guildPanelAnsi(theme);
+			const edge = (block: "▄" | "▀") => `${foreground}${block.repeat(width)}\u001b[39m`;
+			const content = [title, ...runs].map((line) =>
+				`${background}${padAnsi(` ${line}`, width)}\u001b[49m`);
+			return [edge("▄"), ...content, edge("▀")];
+		},
+	};
 }
 
 export function renderGuildCall(args: { member?: string; task?: string }, theme: Theme): Component {

@@ -34,11 +34,10 @@
   },
   "pithosKit": {
     "displayName": "Skills",
-    "summary": "Provide enforced planning, commit and SRS prompts, a Plan theme, and TDD guidance.",
+    "summary": "Provide enforced planning and SRS prompts, a Plan theme, and TDD guidance.",
     "minimumPi": ">=0.83.0",
     "commands": [
       { "name": "plan", "usage": "/plan <task>", "summary": "Enter an enforced read-only planning workflow." },
-      { "name": "commit", "usage": "/commit [instructions]", "summary": "Create a relevant Conventional Commit." },
       { "name": "srs", "usage": "/srs <request>", "summary": "Create an approved ISO 29148-style SRS." },
       { "name": "skill:tdd", "usage": "/skill:tdd [task context]", "summary": "Load the bundled TDD workflow explicitly." }
     ],
@@ -47,7 +46,6 @@
     ],
     "prompts": [
       { "name": "plan", "summary": "Enforced read-only planning workflow." },
-      { "name": "commit", "summary": "Conventional Commit workflow." },
       { "name": "srs-generator", "summary": "ISO 29148-style SRS workflow." }
     ],
     "skills": [

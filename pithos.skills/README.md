@@ -18,8 +18,6 @@ Plan creation requires an interactive UI. Without one, creation attempts are blo
 
 Plan mode prevents model-initiated project mutation through Pi's tool interface and intercepts manual user shell commands. It is extension-level enforcement, not an operating-system sandbox: slash commands and event handlers implemented by other extensions, direct filesystem or `pi.exec()` calls inside extension code, and external processes remain outside this boundary. Use an OS sandbox or container when no process may mutate the filesystem.
 
-Use `/commit` to stage relevant files when intent is clear and generate a Conventional Commits 1.0.0 message — problem-framed subjects, subject-only by default, with a body only when it earns its place.
-
 Use `/srs` to create an ISO/IEC/IEEE 29148:2018 Software Requirements Specification with EARS requirements, explicit approval gating, and a traceability matrix.
 
 Use the `tdd` skill when you want the agent to build or change non-trivial logic test-first with the red-green-refactor loop.
@@ -50,18 +48,16 @@ Invoke prompt commands directly:
 
 ```text
 /plan <your task>
-/commit [instructions]
 /srs <product or change description>
 /plan --help
-/commit --help
 /srs --help
 ```
 
 Each command accepts `--help` or `-h` before prompt expansion, so asking for help does not start an agent turn or activate Plan mode.
 
-These are prompt templates, so they are manual-only: they appear as slash commands rather than being auto-selected as skills.
+The `plan` and `srs` commands are prompt templates, so they are manual-only. The TDD workflow is packaged as a skill that Pi can load proactively for matching requests.
 
-The TDD workflow is packaged as a skill. Pi can load it proactively for matching requests, or you can force it with:
+Force the TDD skill with:
 
 ```text
 /skill:tdd <your task>
@@ -71,6 +67,10 @@ The TDD workflow is packaged as a skill. Pi can load it proactively for matching
 The help invocation is intercepted before the skill is expanded.
 
 ## Changelog
+
+### Unreleased
+
+- Move `/commit` and the `conventional-commit` skill to `@pithos-kit/atlas`.
 
 ### 0.3.2
 

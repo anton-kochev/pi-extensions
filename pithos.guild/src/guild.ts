@@ -249,12 +249,6 @@ export function registerGuild(pi: ExtensionAPI, dependencies: GuildDependencies 
 			activeRuns.start({
 				id: runId,
 				member: member.name,
-				source: member.source,
-				role: GUILD_MEMBER_POLICIES[member.name].role,
-				task,
-				model: inheritedModel,
-				thinkingLevel,
-				tools: member.tools,
 				startedAt,
 			});
 			ensureTicker(ctx);

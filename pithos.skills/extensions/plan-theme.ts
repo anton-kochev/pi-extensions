@@ -31,15 +31,9 @@ const PLAN_THEME_NAME = "plan";
 const FALLBACK_THEME_NAME = "dark";
 const PLAN_STATUS_MESSAGE_TYPE = "plan-mode-status";
 
-type PackageHelpCommand = "commit" | "plan" | "srs" | "skill:tdd";
+type PackageHelpCommand = "plan" | "srs" | "skill:tdd";
 
 const PACKAGE_COMMAND_HELP: Record<PackageHelpCommand, string> = {
-	commit: `Usage: /commit [instructions]
-
-Generate and create a Conventional Commit from the relevant repository changes. Optional instructions can narrow the intended scope.
-
-Options:
-  --help, -h  Show this help`,
 	plan: `Usage: /plan <task>
 
 Enter enforced read-only Plan mode for a task. Run /plan again while planning to approve creation of the generated plan.
@@ -61,7 +55,7 @@ Options:
 };
 
 function packageCommandHelp(input: string): string | undefined {
-	const match = input.trim().match(/^\/(commit|plan|srs|skill:tdd)\s+(?:--help|-h)$/);
+	const match = input.trim().match(/^\/(plan|srs|skill:tdd)\s+(?:--help|-h)$/);
 	return match ? PACKAGE_COMMAND_HELP[match[1] as PackageHelpCommand] : undefined;
 }
 

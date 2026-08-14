@@ -1,25 +1,23 @@
-import type { GuildMemberName, GuildMemberSource } from "./agents";
+import type { GuildMemberName } from "./agents";
 
 export interface ActiveGuildRun {
 	id: string;
 	member: GuildMemberName;
-	source: GuildMemberSource;
-	role: "architect" | "coder";
-	task: string;
-	model: string;
-	thinkingLevel: string;
-	tools: readonly string[];
 	startedAt: number;
 	turns?: number;
 }
 
-function compactTask(task: string, maxLength = 120): string {
-	const compact = task.replace(/\s+/g, " ").trim();
-	return compact.length <= maxLength ? compact : `${compact.slice(0, maxLength - 1)}…`;
-}
-
-function elapsedSeconds(startedAt: number, now: number): string {
-	return `${Math.max(0, Math.floor((now - startedAt) / 1000))}s`;
+function elapsedTime(startedAt: number, now: number): string {
+	let remainingSeconds = Math.max(0, Math.floor((now - startedAt) / 1000));
+	const hours = Math.floor(remainingSeconds / 3600);
+	remainingSeconds %= 3600;
+	const minutes = Math.floor(remainingSeconds / 60);
+	const seconds = remainingSeconds % 60;
+	const parts: string[] = [];
+	if (hours > 0) parts.push(`${hours}h`);
+	if (minutes > 0) parts.push(`${minutes}m`);
+	if (seconds > 0 || parts.length === 0) parts.push(`${seconds}s`);
+	return parts.join(" ");
 }
 
 export class GuildRunTracker {
@@ -31,7 +29,7 @@ export class GuildRunTracker {
 
 	start(run: ActiveGuildRun): void {
 		if (this.runs.has(run.id)) return;
-		this.runs.set(run.id, { ...run, tools: [...run.tools] });
+		this.runs.set(run.id, { ...run });
 	}
 
 	update(id: string, patch: Pick<ActiveGuildRun, "turns">): void {
@@ -52,12 +50,8 @@ export class GuildRunTracker {
 		if (this.runs.size === 0) return [];
 		const lines = [`Guild · ${this.runs.size} active`];
 		for (const run of this.runs.values()) {
-			const permissions = run.role === "architect" ? "read-only" : "write-enabled";
 			const turns = run.turns ? ` · ${run.turns} turn${run.turns === 1 ? "" : "s"}` : "";
-			lines.push(`⏳ ${run.member} · ${run.source} · ${permissions} · ${elapsedSeconds(run.startedAt, now)}`);
-			lines.push(`   Task: ${compactTask(run.task)}`);
-			lines.push(`   Model: ${run.model} · thinking ${run.thinkingLevel}${turns}`);
-			lines.push(`   Tools: ${run.tools.join(", ")}`);
+			lines.push(`⏳ ${run.member} · ${elapsedTime(run.startedAt, now)}${turns}`);
 		}
 		return lines;
 	}

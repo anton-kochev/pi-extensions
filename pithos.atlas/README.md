@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/@pithos-kit/atlas)](https://www.npmjs.com/package/@pithos-kit/atlas)
 
-Atlas is the interactive catalog, version checker, compatibility doctor, and `.pithos` configuration manager for pithos-kit. It combines a bundled offline catalog with explicit public npm registry checks and Pi runtime provenance.
+Atlas provides confirmed Conventional Commits alongside its interactive catalog, version checker, compatibility doctor, and `.pithos` configuration manager for pithos-kit. It combines a bundled offline catalog with explicit public npm registry checks and Pi runtime provenance.
 
 ## Install
 
@@ -35,6 +35,10 @@ The separate Pithos base image can preinstall Atlas so it remains available to d
 ## Commands
 
 ```text
+/commit [instructions]
+/commit --help
+/skill:conventional-commit [instructions]
+/skill:conventional-commit --help
 /pithos
 /pithos help
 /pithos packages
@@ -44,6 +48,8 @@ The separate Pithos base image can preinstall Atlas so it remains available to d
 /pithos config validate
 ```
 
+- `/commit` starts Atlas's context-aware Conventional Commit workflow. It can infer a narrow staging set, but creating the commit always requires interactive confirmation.
+- `/skill:conventional-commit` exposes the same workflow for explicit or proactive skill loading.
 - `/pithos` opens a focused About, Doctor, and Configure menu in TUI mode and prints help in non-interactive modes.
 - `/pithos help` is the single Atlas help page. Detailed package-command help remains with each package through its own `--help` or `-h`.
 - `packages` lists package-owned commands, tools, prompts, skills, themes, agents, and configuration from the bundled catalog, then adds runtime command/tool provenance without contacting npm.
@@ -51,6 +57,12 @@ The separate Pithos base image can preinstall Atlas so it remains available to d
 - `doctor` distinguishes the active Pi process, the Pi version configured for a future Pithos rebuild, configured package pins, runtime-detected packages, bundled versions, latest versions, and versions compatible with the configured Pi.
 - `config validate` reads and validates `.pithos` without changing it.
 - `config` opens the interactive manager described below.
+
+## Confirmed commits
+
+`/commit` uses existing staged changes when present. Otherwise it narrows the staging set from explicit instructions, named paths or packages, and the active task context. Ambiguous scopes require confirmation before staging, and unrelated untracked, generated, editor, session, and local-configuration files are excluded unless explicitly requested.
+
+The final message and staged file set are shown by Atlas's controlled `create_commit` tool. Declining leaves the index intact, missing UI fails closed, and a changed staged snapshot invalidates the approval. Atlas blocks direct model-issued `git commit` shell commands so the workflow cannot skip the dialog; normal Git hooks still run. `/commit` is unavailable while enforced Plan mode is active or indeterminate.
 
 ## Interactive configuration
 
@@ -86,7 +98,7 @@ Cancellation and pre-commit errors leave `.pithos` unchanged. After a successful
 
 ## Agent tool
 
-Atlas registers `pithos_info` with these read-only actions:
+Atlas registers the controlled `create_commit` tool and the read-only `pithos_info` tool. `pithos_info` supports these actions:
 
 - `catalog`
 - `versions`

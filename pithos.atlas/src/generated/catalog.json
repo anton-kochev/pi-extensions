@@ -66,31 +66,54 @@
     {
       "name": "@pithos-kit/atlas",
       "version": "0.2.1",
-      "description": "Interactive catalog, diagnostics, version checks, and .pithos configuration management for pithos-kit.",
+      "description": "Interactive commits, catalog, diagnostics, version checks, and .pithos configuration management for pithos-kit.",
       "pi": {
         "extensions": [
           "./extensions"
+        ],
+        "skills": [
+          "./skills"
         ]
       },
       "pithosKit": {
         "displayName": "Atlas",
-        "summary": "Explore pithos-kit packages, check compatibility, and manage .pithos interactively.",
+        "summary": "Create confirmed commits, explore pithos-kit packages, check compatibility, and manage .pithos interactively.",
         "minimumPi": ">=0.83.0",
         "commands": [
+          {
+            "name": "commit",
+            "summary": "Create a context-scoped Conventional Commit with confirmation.",
+            "usage": "/commit [instructions]"
+          },
           {
             "name": "pithos",
             "summary": "Open Atlas or run a catalog, diagnostic, or configuration action.",
             "usage": "/pithos [help|packages|versions|doctor|config]"
+          },
+          {
+            "name": "skill:conventional-commit",
+            "summary": "Load the confirmed, context-aware Conventional Commit workflow explicitly.",
+            "usage": "/skill:conventional-commit [instructions]"
           }
         ],
         "tools": [
+          {
+            "name": "create_commit",
+            "summary": "Controlled git commit creator with mandatory interactive confirmation.",
+            "internal": true
+          },
           {
             "name": "pithos_info",
             "summary": "Read pithos-kit catalog, version, runtime, and configuration information."
           }
         ],
         "prompts": [],
-        "skills": [],
+        "skills": [
+          {
+            "name": "conventional-commit",
+            "summary": "Context-aware staging and confirmed Conventional Commit generation."
+          }
+        ],
         "themes": [],
         "agents": [],
         "configuration": [
@@ -259,18 +282,13 @@
       },
       "pithosKit": {
         "displayName": "Skills",
-        "summary": "Provide enforced planning, commit and SRS prompts, a Plan theme, and TDD guidance.",
+        "summary": "Provide enforced planning and SRS prompts, a Plan theme, and TDD guidance.",
         "minimumPi": ">=0.83.0",
         "commands": [
           {
             "name": "plan",
             "summary": "Enter an enforced read-only planning workflow.",
             "usage": "/plan <task>"
-          },
-          {
-            "name": "commit",
-            "summary": "Create a relevant Conventional Commit.",
-            "usage": "/commit [instructions]"
           },
           {
             "name": "srs",
@@ -294,10 +312,6 @@
           {
             "name": "plan",
             "summary": "Enforced read-only planning workflow."
-          },
-          {
-            "name": "commit",
-            "summary": "Conventional Commit workflow."
           },
           {
             "name": "srs-generator",

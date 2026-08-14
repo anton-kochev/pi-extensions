@@ -470,7 +470,7 @@ describe("guild extension", () => {
     assert.equal("agentSource" in result.details, false);
   });
 
-  it("shows a live aggregate panel and clears it after the run completes", async () => {
+  it("shows a compact live aggregate panel and clears it after the run completes", async () => {
     const pi = fakePi();
     const widgetUpdates: Array<{ key: string; value: string[] | undefined }> = [];
     const statusUpdates: Array<{ key: string; value: string | undefined }> = [];
@@ -486,9 +486,8 @@ describe("guild extension", () => {
       discover: () => ({ members: [agent], warnings: [] }),
       run: async (options) => {
         const visible = [...widgetUpdates].reverse().find((update) => Array.isArray(update.value))?.value?.join("\n") ?? "";
-        assert.match(visible, /csharp-coder.*builtin.*write[ -]enabled/i);
-        assert.match(visible, /openai-codex\/gpt-5\.6-sol.*xhigh/);
-        assert.match(visible, /read, grep, find, ls, edit, write, bash/);
+        assert.match(visible, /csharp-coder/);
+        assert.doesNotMatch(visible, /Implement validation|built-in|write access|openai-codex|xhigh|read, grep/);
         options.onUpdate?.(successfulResult());
         return successfulResult();
       },
@@ -501,7 +500,12 @@ describe("guild extension", () => {
           const rendered = typeof value === "function"
             ? value(
               { requestRender: () => undefined },
-              { fg: (_color: string, text: string) => text, bg: (_color: string, text: string) => text, bold: (text: string) => text },
+              {
+                fg: (_color: string, text: string) => text,
+                bg: (_color: string, text: string) => text,
+                bold: (text: string) => text,
+                getBgAnsi: () => "\u001b[48;2;223;236;243m",
+              },
             ).render(120)
             : value;
           widgetUpdates.push({ key, value: rendered });

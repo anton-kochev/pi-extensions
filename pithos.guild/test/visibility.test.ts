@@ -3,52 +3,46 @@ import { describe, it } from "node:test";
 import { GuildRunTracker } from "../src/visibility";
 
 describe("Guild member run visibility", () => {
-  it("shows every concurrent run with identity, permissions, model, thinking, task, and elapsed time", () => {
+  it("shows every concurrent run with only identity, elapsed time, and turns", () => {
     const tracker = new GuildRunTracker();
     tracker.start({
       id: "run-1",
       member: "dotnet-architect",
-      source: "builtin",
-      role: "architect",
-      task: "Design order cancellation",
-      model: "openai-codex/gpt-5.6-sol",
-      thinkingLevel: "xhigh",
-      tools: ["read", "grep", "find", "ls"],
       startedAt: 1_000,
     });
     tracker.start({
       id: "run-2",
       member: "angular-coder",
-      source: "project",
-      role: "coder",
-      task: "Implement the checkout loading state",
-      model: "anthropic/claude-sonnet-4-5",
-      thinkingLevel: "high",
-      tools: ["read", "grep", "find", "ls", "edit", "write", "bash"],
       startedAt: 2_000,
     });
     tracker.update("run-1", { turns: 2 });
 
     const lines = tracker.formatLines(6_000);
-    const text = lines.join("\n");
 
-    assert.match(lines[0], /2 active/);
-    assert.match(text, /dotnet-architect.*builtin.*read-only.*5s/);
-    assert.match(text, /Design order cancellation/);
-    assert.match(text, /openai-codex\/gpt-5\.6-sol.*xhigh.*2 turns/);
-    assert.match(text, /angular-coder.*project.*write-enabled.*4s/);
-    assert.match(text, /read, grep, find, ls, edit, write, bash/);
+    assert.deepEqual(lines, [
+      "Guild · 2 active",
+      "⏳ dotnet-architect · 5s · 2 turns",
+      "⏳ angular-coder · 4s",
+    ]);
+  });
+
+  it("formats long elapsed times as readable units", () => {
+    const tracker = new GuildRunTracker();
+    tracker.start({
+      id: "long-run",
+      member: "angular-coder",
+      startedAt: 2_000,
+    });
+
+    const text = tracker.formatLines(2_980_000).join("\n");
+
+    assert.match(text, /angular-coder.*49m 38s/);
+    assert.doesNotMatch(text, /2978s/);
   });
 
   it("removes finished runs from the active-only display", () => {
     const tracker = new GuildRunTracker();
     const base = {
-      source: "builtin" as const,
-      role: "architect" as const,
-      task: "Task",
-      model: "model",
-      thinkingLevel: "low",
-      tools: ["read"],
       startedAt: 0,
     };
     tracker.start({ ...base, id: "one", member: "dotnet-architect" });
