@@ -12,6 +12,9 @@
 ## UI
 - [x] Allocate segment cells proportionally and deterministically in fixed order.
 - [x] Render used context as upper-half-cell `▀` blocks and free capacity as a thin `─` line matching the editor border, with a normal-size integer percentage.
+- [x] Preserve the violet → blue → teal → green → amber → gray category sequence with contrast-adapted light and dark variants instead of theme-dependent semantic hues.
+- [x] Separate adjacent sections with one terminal-background cell when the preceding section is wide enough, without erasing one-cell sections.
+- [x] Keep section interiors uninterrupted and show only the total-used percentage at the right edge.
 - [x] Remove the editor's separate top-border row while enabled, leaving matching half-row padding above and below the input cursor, and restore it when disabled.
 - [x] Fill exactly the terminal width, keeping percentage text at the right edge.
 - [x] Handle zero/narrow widths, zero/full/overflow usage, and tiny segments safely.

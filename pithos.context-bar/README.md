@@ -6,7 +6,7 @@ A thin, stacked context-window composition bar for [pi](https://github.com/earen
 ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀────────────────────────42%
 ```
 
-The real bar uses a harmonious theme-aware color progression and spans the terminal width. Used context renders as upper-half `▀` blocks, while free capacity renders as a thin `─` line matching the editor's current border color. This leaves balanced spacing around the input cursor. While enabled, context-bar removes Pi's separate top-border row; disabling the bar restores it. Its only inline text is a normal-size integer percentage at the far right.
+The real bar uses a harmonious theme-aware color progression and spans the terminal width. Used context renders as upper-half `▀` blocks, while free capacity renders as a thin `─` line matching the editor's current border color. Sections wider than one cell use a one-cell terminal-background delimiter; one-cell sections remain intact. This leaves balanced spacing around the input cursor. While enabled, context-bar removes Pi's separate top-border row; disabling the bar restores it. Its only inline text is the integer percentage at the far right showing total context used.
 
 ## Install
 
@@ -48,17 +48,17 @@ New sessions start enabled. Explicit changes are stored as non-context entries o
 
 Segments always appear in this order:
 
-| Segment | Includes | Pi theme color |
+| Segment | Includes | Color identity |
 |---|---|---|
-| **Prompt** | Pi's base prompt, custom/append prompts, working directory, and extension prompt changes | Violet (`customMessageLabel`) |
-| **Project context** | Loaded `AGENTS.md`, `CLAUDE.md`, and related project instruction context | Blue (`mdLink`) |
-| **Skills** | Skill catalogue metadata, explicit `/skill:*` expansions, and recognized skill-file read results | Teal (`accent`) |
-| **Tools** | Active definitions/schemas, prompt guidance, calls, arguments, results, and context-visible shell output | Green (`success`) |
-| **Conversation** | User content, prompt templates, images, assistant text/thinking, summaries, and custom context messages | Amber (`mdHeading`) |
-| **Other** | Provider framing, serialization differences, extension rewrites, and estimation residual | Gray (`muted`) |
+| **Prompt** | Pi's base prompt, custom/append prompts, working directory, and extension prompt changes | Violet |
+| **Project context** | Loaded `AGENTS.md`, `CLAUDE.md`, and related project instruction context | Blue |
+| **Skills** | Skill catalogue metadata, explicit `/skill:*` expansions, and recognized skill-file read results | Teal |
+| **Tools** | Active definitions/schemas, prompt guidance, calls, arguments, results, and context-visible shell output | Green |
+| **Conversation** | User content, prompt templates, images, assistant text/thinking, summaries, and custom context messages | Amber |
+| **Other** | Provider framing, serialization differences, extension rewrites, and estimation residual | Gray |
 | **Free** | Remaining context capacity | Thin line matching the current editor border (`borderMuted` fallback) |
 
-The violet → blue → teal → green → amber progression adapts to Pi's dark, light, and custom themes. Free capacity follows the editor border as its mode/thinking color changes. The percentage uses the same dim theme color as Pi's footer path; it does not change color at thresholds.
+The original violet → blue → teal → green → amber progression remains stable across themes. Context Bar selects darker or brighter variants from the active theme's foreground contrast instead of relying on semantic theme tokens whose hues may vary. Free capacity still follows the editor border as its mode/thinking color changes. The percentage uses the same `dim` theme color as Pi's footer path; it does not change color at thresholds.
 
 ## Accuracy
 

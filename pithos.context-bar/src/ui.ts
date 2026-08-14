@@ -6,6 +6,7 @@ import {
   type ContextCategoryCounts,
   type ContextSnapshot,
 } from "./context-model.ts";
+import { colorizeContextCategory } from "./category-colors.ts";
 
 export const CONTEXT_CATEGORY_LABELS = {
   prompt: "Prompt",
@@ -21,15 +22,7 @@ const BAR_GLYPH = "▀";
 const FREE_GLYPH = "─";
 const ANSI_ESCAPE = /\u001b\[[0-?]*[ -/]*[@-~]/g;
 
-export const CONTEXT_CATEGORY_COLORS = {
-  prompt: "customMessageLabel",
-  project: "mdLink",
-  skills: "accent",
-  tools: "success",
-  conversation: "mdHeading",
-  other: "muted",
-  free: "borderMuted",
-} as const satisfies Record<ContextCategory, Parameters<Theme["fg"]>[0]>;
+const FREE_CATEGORY_COLOR = "borderMuted" as const;
 
 export function allocateSegmentCells(
   categories: ContextCategoryCounts,
@@ -87,9 +80,9 @@ export function formatContextStatus(
   ];
   for (const category of CONTEXT_CATEGORY_ORDER) {
     const labelText = `${category === "free" ? FREE_GLYPH : BAR_GLYPH} ${CONTEXT_CATEGORY_LABELS[category]}`;
-    const label = category === "free" && editorBorderStyle
-      ? editorBorderStyle(labelText)
-      : theme.fg(CONTEXT_CATEGORY_COLORS[category], labelText);
+    const label = category === "free"
+      ? (editorBorderStyle?.(labelText) ?? theme.fg(FREE_CATEGORY_COLOR, labelText))
+      : colorizeContextCategory(theme, category, labelText);
     lines.push(`${label} · ≈${formatTokens(snapshot.categories[category])} tokens`);
   }
   return lines.join("\n");
@@ -138,15 +131,19 @@ export function createContextBarComponent(
       const visiblePercentage = percentage.slice(-available);
       const barWidth = Math.max(0, available - visiblePercentage.length);
       const cells = allocateSegmentCells(snapshot.categories, barWidth);
+      const visibleCategories = CONTEXT_CATEGORY_ORDER.filter((category) => cells[category] > 0);
+      const lastVisibleCategory = visibleCategories.at(-1);
       const bar = CONTEXT_CATEGORY_ORDER.map((category) => {
-        if (cells[category] === 0) return "";
+        const segmentWidth = cells[category];
+        if (segmentWidth === 0) return "";
+        const hasDelimiter = category !== lastVisibleCategory && segmentWidth > 1;
+        const contentWidth = segmentWidth - (hasDelimiter ? 1 : 0);
         const glyph = category === "free" ? FREE_GLYPH : BAR_GLYPH;
-        const text = glyph.repeat(cells[category]);
-        if (category === "free") {
-          return getEditorBorderStyle?.()?.(text)
-            ?? theme.fg(CONTEXT_CATEGORY_COLORS.free, text);
-        }
-        return theme.fg(CONTEXT_CATEGORY_COLORS[category], text);
+        const text = glyph.repeat(contentWidth);
+        const segment = category === "free"
+          ? (getEditorBorderStyle?.()?.(text) ?? theme.fg(FREE_CATEGORY_COLOR, text))
+          : colorizeContextCategory(theme, category, text);
+        return `${segment}${hasDelimiter ? " " : ""}`;
       }).join("");
       return [`${bar}${theme.fg("dim", visiblePercentage)}`];
     },
