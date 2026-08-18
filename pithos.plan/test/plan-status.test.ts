@@ -44,10 +44,52 @@ describe("createAnimatedPlanFooter", () => {
 
 		assert.equal(stopped, true);
 	});
+
+	it("shows the current canonical session name", () => {
+		let sessionName = "neon-grunge-reboot";
+		const footer = createAnimatedPlanFooter(
+			{ requestRender: () => {} },
+			{ fg: (_color: string, text: string) => text },
+			() => () => {},
+			() => sessionName,
+		);
+
+		assert.equal(footer.render(80)[0], "● planning · neon-grunge-reboot");
+
+		sessionName = "Manually Renamed Session";
+		assert.equal(footer.render(80)[0], "● planning · Manually Renamed Session");
+	});
+
+	it("renders extension-supplied names as safe single-line text", () => {
+		const footer = createAnimatedPlanFooter(
+			{ requestRender: () => {} },
+			{ fg: (_color: string, text: string) => text },
+			() => () => {},
+			() => "  Neon\u001b[31m\nGrunge\tReboot  ",
+		);
+
+		assert.equal(footer.render(80)[0], "● planning · Neon Grunge Reboot");
+	});
+
+	it("truncates names on grapheme boundaries and terminal columns", () => {
+		let sessionName = "🚀 Remix";
+		const footer = createAnimatedPlanFooter(
+			{ requestRender: () => {} },
+			{ fg: (_color: string, text: string) => text },
+			() => () => {},
+			() => sessionName,
+		);
+
+		assert.equal(footer.render(14)[0], "● planning · ");
+		assert.equal(footer.render(15)[0], "● planning · 🚀");
+
+		sessionName = "東京 Remix";
+		assert.equal(footer.render(15)[0], "● planning · 東");
+	});
 });
 
 describe("updatePlanStatus", () => {
-	it("replaces the standard footer with only a minimal planning indicator while active", () => {
+	it("replaces the standard footer with the planning indicator and current session name while active", () => {
 		let footerFactory: ((...args: any[]) => { render(width: number): string[]; dispose(): void }) | undefined;
 		const ui = {
 			setFooter: (factory: typeof footerFactory) => {
@@ -55,13 +97,15 @@ describe("updatePlanStatus", () => {
 			},
 		};
 
-		updatePlanStatus(ui, true);
+		updatePlanStatus(ui, true, () => "neon-grunge-reboot");
 
 		assert.ok(footerFactory);
 		const footer = footerFactory(undefined, {
 			fg: (color: string, text: string) => `<${color}>${text}</${color}>`,
 		});
-		assert.deepEqual(footer.render(80), ["<accent>●</accent><muted> planning</muted>"]);
+		assert.deepEqual(footer.render(80), [
+			"<accent>●</accent><muted> planning · neon-grunge-reboot</muted>",
+		]);
 		footer.dispose();
 	});
 

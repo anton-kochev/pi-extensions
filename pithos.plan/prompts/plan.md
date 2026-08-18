@@ -110,7 +110,10 @@ approval gate:
 
 The controlled creator preserves the readable name and atomically advances the
 timestamp on collision; it never overwrites an existing plan or adds a numeric
-suffix. Keep the plan tight and skimmable:
+suffix. The `# Plan:` title must concisely name the feature, bug, or outcome so it
+can become the contextual session name after a successful exit. Avoid generic
+titles such as `Implementation plan` or `Changes`. Keep the plan tight and
+skimmable:
 
 ```markdown
 # Plan: <short title>

@@ -11,7 +11,8 @@ A monorepo of independently published Pi extensions, skills, prompts, themes, an
 - [`pithos.aegis/`](./pithos.aegis) — protect Pi agent shell commands and file mutations with configurable rules. [![npm version](https://img.shields.io/npm/v/@pithos-kit/aegis.svg)](https://www.npmjs.com/package/@pithos-kit/aegis)
 - [`pithos.guild/`](./pithos.guild) — isolated .NET and Angular architecture and implementation Guild members. [![npm version](https://img.shields.io/npm/v/@pithos-kit/guild.svg)](https://www.npmjs.com/package/@pithos-kit/guild)
 - [`pithos.context-bar/`](./pithos.context-bar) — a thin, stacked context-window composition bar above the editor. [![npm version](https://img.shields.io/npm/v/@pithos-kit/context-bar.svg)](https://www.npmjs.com/package/@pithos-kit/context-bar)
-- [`pithos.skills/`](./pithos.skills) — enforced Plan mode, `/commit`, `/srs`, a theme, and TDD guidance. [![npm version](https://img.shields.io/npm/v/@pithos-kit/skills.svg)](https://www.npmjs.com/package/@pithos-kit/skills)
+- [`pithos.plan/`](./pithos.plan) — enforced read-only planning, approved plan creation, a Plan theme, and contextual session naming. [![npm version](https://img.shields.io/npm/v/@pithos-kit/plan.svg)](https://www.npmjs.com/package/@pithos-kit/plan)
+- [`pithos.skills/`](./pithos.skills) — an enforced SRS prompt and TDD guidance. [![npm version](https://img.shields.io/npm/v/@pithos-kit/skills.svg)](https://www.npmjs.com/package/@pithos-kit/skills)
 - [`pithos.themes/`](./pithos.themes) — accessible Auric light and dark themes with automatic appearance switching. [![npm version](https://img.shields.io/npm/v/@pithos-kit/themes.svg)](https://www.npmjs.com/package/@pithos-kit/themes)
 - [`pithos.atlas/`](./pithos.atlas) — name eligible new sessions after their first user message, create confirmed commits, explore package capabilities, diagnose compatibility, and manage `.pithos` interactively. [![npm version](https://img.shields.io/npm/v/@pithos-kit/atlas.svg)](https://www.npmjs.com/package/@pithos-kit/atlas)
 
@@ -28,6 +29,7 @@ pi install npm:@pithos-kit/telos
 pi install npm:@pithos-kit/aegis
 pi install npm:@pithos-kit/guild
 pi install npm:@pithos-kit/context-bar
+pi install npm:@pithos-kit/plan
 pi install npm:@pithos-kit/skills
 pi install npm:@pithos-kit/themes
 ```
@@ -75,6 +77,7 @@ pi install -l ./pithos.telos
 pi install -l ./pithos.aegis
 pi install -l ./pithos.guild
 pi install -l ./pithos.context-bar
+pi install -l ./pithos.plan
 pi install -l ./pithos.skills
 pi install -l ./pithos.themes
 pi install -l ./pithos.atlas
@@ -109,6 +112,7 @@ git push --follow-tags
 | `pithos.aegis` | `@pithos-kit/aegis` | `pithos-kit.aegis-v` | `publish-pithos.aegis.yml` |
 | `pithos.guild` | `@pithos-kit/guild` | `pithos-kit.guild-v` | `publish-pithos.guild.yml` |
 | `pithos.context-bar` | `@pithos-kit/context-bar` | `pithos-kit.context-bar-v` | `publish-pithos.context-bar.yml` |
+| `pithos.plan` | `@pithos-kit/plan` | `pithos-kit.plan-v` | `publish-pithos.plan.yml` |
 | `pithos.skills` | `@pithos-kit/skills` | `pithos-kit.skills-v` | `publish-pithos.skills.yml` |
 | `pithos.themes` | `@pithos-kit/themes` | `pithos-kit.themes-v` | `publish-pithos.themes.yml` |
 | `pithos.atlas` | `@pithos-kit/atlas` | `pithos-kit.atlas-v` | `publish-pithos.atlas.yml` |

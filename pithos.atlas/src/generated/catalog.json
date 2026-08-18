@@ -267,9 +267,9 @@
       }
     },
     {
-      "name": "@pithos-kit/skills",
-      "version": "0.4.0",
-      "description": "Anton Kochev's Pi skills and prompt commands.",
+      "name": "@pithos-kit/plan",
+      "version": "0.1.0",
+      "description": "Enforced read-only planning with approved plan creation and contextual session naming for Pi.",
       "pi": {
         "extensions": [
           "./extensions/plan-theme.ts"
@@ -277,32 +277,19 @@
         "prompts": [
           "./prompts"
         ],
-        "skills": [
-          "./skills"
-        ],
         "themes": [
           "./themes"
         ]
       },
       "pithosKit": {
-        "displayName": "Skills",
-        "summary": "Provide enforced planning and SRS prompts, a Plan theme, and TDD guidance.",
+        "displayName": "Plan",
+        "summary": "Provide enforced read-only planning, approved plan creation, a Plan theme, and contextual session naming.",
         "minimumPi": ">=0.83.0",
         "commands": [
           {
             "name": "plan",
             "summary": "Enter an enforced read-only planning workflow.",
             "usage": "/plan <task>"
-          },
-          {
-            "name": "srs",
-            "summary": "Create an approved ISO 29148-style SRS.",
-            "usage": "/srs <request>"
-          },
-          {
-            "name": "skill:tdd",
-            "summary": "Load the bundled TDD workflow explicitly.",
-            "usage": "/skill:tdd [task context]"
           }
         ],
         "tools": [
@@ -316,18 +303,9 @@
           {
             "name": "plan",
             "summary": "Enforced read-only planning workflow."
-          },
-          {
-            "name": "srs-generator",
-            "summary": "ISO 29148-style SRS workflow."
           }
         ],
-        "skills": [
-          {
-            "name": "tdd",
-            "summary": "Test-driven development through red-green-refactor."
-          }
-        ],
+        "skills": [],
         "themes": [
           {
             "name": "plan",
@@ -342,6 +320,55 @@
             "summary": "Approved generated implementation plans."
           }
         ]
+      }
+    },
+    {
+      "name": "@pithos-kit/skills",
+      "version": "0.4.0",
+      "description": "SRS prompting and test-driven development guidance for Pi.",
+      "pi": {
+        "extensions": [
+          "./extensions/help.ts"
+        ],
+        "prompts": [
+          "./prompts"
+        ],
+        "skills": [
+          "./skills"
+        ]
+      },
+      "pithosKit": {
+        "displayName": "Skills",
+        "summary": "Provide an enforced SRS prompt and test-driven development guidance.",
+        "minimumPi": ">=0.83.0",
+        "commands": [
+          {
+            "name": "srs",
+            "summary": "Create an approved ISO 29148-style SRS.",
+            "usage": "/srs <request>"
+          },
+          {
+            "name": "skill:tdd",
+            "summary": "Load the bundled TDD workflow explicitly.",
+            "usage": "/skill:tdd [task context]"
+          }
+        ],
+        "tools": [],
+        "prompts": [
+          {
+            "name": "srs-generator",
+            "summary": "ISO 29148-style SRS workflow."
+          }
+        ],
+        "skills": [
+          {
+            "name": "tdd",
+            "summary": "Test-driven development through red-green-refactor."
+          }
+        ],
+        "themes": [],
+        "agents": [],
+        "configuration": []
       }
     },
     {

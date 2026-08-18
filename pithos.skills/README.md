@@ -2,25 +2,13 @@
 
 [![npm version](https://img.shields.io/npm/v/@pithos-kit/skills)](https://www.npmjs.com/package/@pithos-kit/skills)
 
-Anton Kochev's Pi skills and prompt commands.
-
-## Plan mode
-
-Use `/plan` when you want the agent to explore before asking questions, reach explicit shared understanding, save a plan under `.pi/plans/`, and only then implement.
-
-While Plan mode is active, Pi exposes only the trusted built-in `read`, `grep`, `find`, and `ls` tools plus an internal `create_plan` tool. Source edits, model shell commands, custom tools, and manual `!`/`!!` shell commands are blocked. The internal plan creator is hidden outside Plan mode and uses exclusive file creation, so a plan that appears after path generation is never overwritten; the timestamp advances until an unused path is created.
-
-Each plan receives a sortable UTC timestamp and readable task-derived name, such as `2026-08-05-132751-save-plan-storage.md`. The bundled `plan` theme replaces the standard footer with a subtly fading `● planning` indicator, but enforcement remains active if the theme cannot load. When the agent has presented its synthesis and resolved all open decisions, it calls the controlled plan creator directly; no separate conversational “go ahead” is required. Pi then asks whether to create the plan and proceed to implementation or continue planning. Approval permits the controlled plan creation; declining keeps Plan mode read-only and active. After successful creation, Pi restores the previous theme and tools and implementation can begin.
-
-Plan creation requires an interactive UI. Without one, creation attempts are blocked and Plan mode remains active.
-
-### Enforcement boundary
-
-Plan mode prevents model-initiated project mutation through Pi's tool interface and intercepts manual user shell commands. It is extension-level enforcement, not an operating-system sandbox: slash commands and event handlers implemented by other extensions, direct filesystem or `pi.exec()` calls inside extension code, and external processes remain outside this boundary. Use an OS sandbox or container when no process may mutate the filesystem.
+SRS prompting and test-driven development guidance for Pi.
 
 Use `/srs` to create an ISO/IEC/IEEE 29148:2018 Software Requirements Specification with EARS requirements, explicit approval gating, and a traceability matrix.
 
 Use the `tdd` skill when you want the agent to build or change non-trivial logic test-first with the red-green-refactor loop.
+
+Plan mode is now published independently as [`@pithos-kit/plan`](https://www.npmjs.com/package/@pithos-kit/plan). Install that package for `/plan`, controlled plan creation, the Plan theme, and contextual session naming.
 
 ## Install
 
@@ -44,18 +32,14 @@ pi:
 
 ## Usage
 
-Invoke prompt commands directly:
+Invoke the SRS prompt directly:
 
 ```text
-/plan <your task>
 /srs <product or change description>
-/plan --help
 /srs --help
 ```
 
-Each command accepts `--help` or `-h` before prompt expansion, so asking for help does not start an agent turn or activate Plan mode.
-
-The `plan` and `srs` commands are prompt templates, so they are manual-only. The TDD workflow is packaged as a skill that Pi can load proactively for matching requests.
+The command accepts `--help` or `-h` before prompt expansion, so asking for help does not start an agent turn. The TDD workflow is packaged as a skill that Pi can load proactively for matching requests.
 
 Force the TDD skill with:
 

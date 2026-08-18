@@ -1,0 +1,68 @@
+{
+  "name": "@pithos-kit/plan",
+  "version": "0.1.0",
+  "description": "Enforced read-only planning with approved plan creation and contextual session naming for Pi.",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "pi-prompt-template",
+    "pithos",
+    "plan-mode",
+    "planning"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.ts"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anton-kochev/pithos-kit.git",
+    "directory": "pithos.plan"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "pithosKit": {
+    "displayName": "Plan",
+    "summary": "Provide enforced read-only planning, approved plan creation, a Plan theme, and contextual session naming.",
+    "minimumPi": ">=0.83.0",
+    "commands": [
+      { "name": "plan", "usage": "/plan <task>", "summary": "Enter an enforced read-only planning workflow." }
+    ],
+    "tools": [
+      { "name": "create_plan", "summary": "Internal controlled plan writer, active only during Plan mode.", "internal": true }
+    ],
+    "prompts": [
+      { "name": "plan", "summary": "Enforced read-only planning workflow." }
+    ],
+    "skills": [],
+    "themes": [
+      { "name": "plan", "summary": "Minimal planning-state theme." }
+    ],
+    "agents": [],
+    "configuration": [
+      { "kind": "directory", "key": ".pi/plans", "summary": "Approved generated implementation plans." }
+    ]
+  },
+  "pi": {
+    "extensions": [
+      "./extensions/plan-theme.ts"
+    ],
+    "prompts": [
+      "./prompts"
+    ],
+    "themes": [
+      "./themes"
+    ]
+  },
+  "files": [
+    "extensions",
+    "prompts",
+    "themes",
+    "README.md"
+  ]
+}

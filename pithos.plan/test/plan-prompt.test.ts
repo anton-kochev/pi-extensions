@@ -6,6 +6,11 @@ import { describe, it } from "node:test";
 const planPrompt = readFileSync(resolve(import.meta.dirname, "../prompts/plan.md"), "utf8");
 
 describe("Plan prompt approval workflow", () => {
+	it("requires an outcome-focused title suitable for contextual session naming", () => {
+		assert.match(planPrompt, /title must concisely name the feature, bug, or outcome/i);
+		assert.match(planPrompt, /avoid generic\s+titles/i);
+	});
+
 	it("uses the interactive create_plan confirmation as the sole final approval gate", () => {
 		assert.match(planPrompt, /interactive confirmation is the sole final\s+approval gate/i);
 		assert.match(planPrompt, /call\s+`create_plan` immediately/i);

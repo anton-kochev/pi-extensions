@@ -26,15 +26,19 @@ function createHarness(
 		branchEntries?: any[];
 		hasUI?: boolean;
 		cwd?: string;
+		sessionName?: string;
 	} = {},
 ) {
 	const handlers = new Map<string, (event: any, ctx: any) => Promise<any>>();
 	const branchEntries = options.branchEntries ?? [];
 	const allTools = ["read", "grep", "find", "ls", "write", "edit", "bash"].map(builtin);
 	let activeTools = allTools.map((tool) => tool.name);
+	let sessionName = options.sessionName;
+	const sessionNames: string[] = [];
 	const entries: Array<{ customType: string; data: any }> = [];
 	const registeredTools = new Map<string, any>();
 	const notifications: Array<{ message: string; level: string }> = [];
+	const footerFactories: unknown[] = [];
 	const pi = {
 		on(name: string, handler: (event: any, ctx: any) => Promise<any>) {
 			handlers.set(name, handler);
@@ -45,6 +49,11 @@ function createHarness(
 		sendMessage() {},
 		getActiveTools: () => [...activeTools],
 		getAllTools: () => allTools,
+		getSessionName: () => sessionName,
+		setSessionName(name: string) {
+			sessionName = name;
+			sessionNames.push(name);
+		},
 		setActiveTools(toolNames: string[]) {
 			activeTools = [...toolNames];
 		},
@@ -69,7 +78,9 @@ function createHarness(
 				options.themeSwitchSucceeds === false
 					? { success: false, error: "theme unavailable" }
 					: { success: true },
-			setFooter() {},
+			setFooter(factory: unknown) {
+				footerFactories.push(factory);
+			},
 			setStatus() {},
 			notify(message: string, level: string) {
 				notifications.push({ message, level });
@@ -86,6 +97,8 @@ function createHarness(
 		allTools,
 		registeredTools,
 		notifications,
+		footerFactories,
+		sessionNames,
 		getActiveTools: () => activeTools,
 		setActiveTools: (toolNames: string[]) => pi.setActiveTools(toolNames),
 	};
@@ -99,30 +112,53 @@ async function activatePlan(harness: ReturnType<typeof createHarness>) {
 }
 
 describe("plan mode enforcement", () => {
-	it("intercepts package prompt and skill --help/-h before expansion", async () => {
-		for (const [command, usage] of [
-			["/plan", "Usage: /plan <task>"],
-			["/srs", "Usage: /srs <request>"],
-			["/skill:tdd", "Usage: /skill:tdd [task context]"],
-		] as const) {
-			for (const alias of ["--help", "-h"]) {
-				const harness = createHarness();
-				const normalTools = harness.getActiveTools();
+	it("intercepts Plan --help/-h before prompt expansion", async () => {
+		for (const alias of ["--help", "-h"]) {
+			const harness = createHarness();
+			const normalTools = harness.getActiveTools();
 
-				const result = await harness.handlers.get("input")?.(
-					{ type: "input", source: "interactive", text: `${command} ${alias}` },
-					harness.ctx,
-				);
+			const result = await harness.handlers.get("input")?.(
+				{ type: "input", source: "interactive", text: `/plan ${alias}` },
+				harness.ctx,
+			);
 
-				assert.deepEqual(result, { action: "handled" });
-				assert.equal(harness.notifications.length, 1);
-				assert.equal(harness.notifications[0]?.level, "info");
-				assert.match(harness.notifications[0]?.message ?? "", new RegExp(usage.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
-				assert.match(harness.notifications[0]?.message ?? "", /--help, -h/);
-				assert.equal(harness.entries.length, 0);
-				assert.deepEqual(harness.getActiveTools(), normalTools);
-			}
+			assert.deepEqual(result, { action: "handled" });
+			assert.equal(harness.notifications.length, 1);
+			assert.equal(harness.notifications[0]?.level, "info");
+			assert.match(harness.notifications[0]?.message ?? "", /Usage: \/plan <task>/);
+			assert.match(harness.notifications[0]?.message ?? "", /--help, -h/);
+			assert.equal(harness.entries.length, 0);
+			assert.deepEqual(harness.getActiveTools(), normalTools);
 		}
+	});
+
+	it("does not own help for resources that remain in Skills", async () => {
+		for (const command of ["/srs --help", "/skill:tdd -h"]) {
+			const harness = createHarness();
+			const result = await harness.handlers.get("input")?.(
+				{ type: "input", source: "interactive", text: command },
+				harness.ctx,
+			);
+
+			assert.deepEqual(result, { action: "continue" });
+			assert.equal(harness.notifications.length, 0);
+		}
+	});
+
+	it("keeps the canonical session name visible in the active Plan footer", async () => {
+		const harness = createHarness({ sessionName: "neon-grunge-reboot" });
+
+		await activatePlan(harness);
+
+		const footerFactory = harness.footerFactories.at(-1) as ((...args: any[]) => any) | undefined;
+		assert.ok(footerFactory);
+		const footer = footerFactory(
+			{ requestRender: () => {} },
+			{ fg: (_color: string, text: string) => text },
+			undefined,
+		);
+		assert.equal(footer.render(80)[0], "● planning · neon-grunge-reboot");
+		footer.dispose();
 	});
 
 	it("refuses to activate Plan mode while another agent turn is running", async () => {
@@ -320,17 +356,18 @@ describe("plan mode enforcement", () => {
 		assert.equal(dialogs.length, 1);
 		assert.match(dialogs[0]?.join(" ") ?? "", /create.*plan/i);
 		assert.equal(harness.entries.at(-1)?.data.active, true);
+		assert.deepEqual(harness.sessionNames, []);
 	});
 
-	it("exits Plan mode and restores the previous tools after an approved plan is written", async () => {
-		const harness = createHarness({ confirm: async () => true });
+	it("exits Plan mode, restores prior tools, and applies the contextual session name after an approved plan is written", async () => {
+		const harness = createHarness({ confirm: async () => true, sessionName: "old-session-name" });
 		const previousTools = harness.getActiveTools();
 		await activatePlan(harness);
 		const call = {
 			type: "tool_call",
 			toolCallId: "create-plan",
 			toolName: "create_plan",
-			input: { content: "# Plan" },
+			input: { content: "# Plan: Protect project mutations" },
 		};
 
 		const result = await harness.handlers.get("tool_call")?.(call, harness.ctx);
@@ -339,6 +376,7 @@ describe("plan mode enforcement", () => {
 
 		assert.equal(harness.entries.at(-1)?.data.active, false);
 		assert.deepEqual(harness.getActiveTools(), previousTools);
+		assert.deepEqual(harness.sessionNames, ["protect-project-mutations"]);
 	});
 
 	it("atomically advances a late collision through the controlled plan creator", async () => {
@@ -523,6 +561,7 @@ describe("plan mode enforcement", () => {
 		assert.equal(readResult?.block, undefined);
 		assert.equal(harness.entries.at(-1)?.data.active, true);
 		assert.equal(harness.entries.at(-1)?.data.saveAuthorized, false);
+		assert.deepEqual(harness.sessionNames, []);
 	});
 
 	it("stays in Plan mode and retains approval when the plan write fails", async () => {
@@ -553,6 +592,7 @@ describe("plan mode enforcement", () => {
 		assert.equal(harness.entries.at(-1)?.data.active, true);
 		assert.equal(harness.entries.at(-1)?.data.saveAuthorized, true);
 		assert.deepEqual(harness.getActiveTools(), ["read", "grep", "find", "ls", "create_plan"]);
+		assert.deepEqual(harness.sessionNames, []);
 	});
 
 	it("blocks an overridden writer without asking it to create the plan", async () => {

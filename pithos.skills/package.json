@@ -1,14 +1,12 @@
 {
   "name": "@pithos-kit/skills",
   "version": "0.4.0",
-  "description": "Anton Kochev's Pi skills and prompt commands.",
+  "description": "SRS prompting and test-driven development guidance for Pi.",
   "keywords": [
     "pi-package",
     "pi-prompt-template",
     "pi-skill",
     "pithos",
-    "plan-mode",
-    "planning",
     "tdd",
     "test-driven-development",
     "srs",
@@ -34,50 +32,38 @@
   },
   "pithosKit": {
     "displayName": "Skills",
-    "summary": "Provide enforced planning and SRS prompts, a Plan theme, and TDD guidance.",
+    "summary": "Provide an enforced SRS prompt and test-driven development guidance.",
     "minimumPi": ">=0.83.0",
     "commands": [
-      { "name": "plan", "usage": "/plan <task>", "summary": "Enter an enforced read-only planning workflow." },
       { "name": "srs", "usage": "/srs <request>", "summary": "Create an approved ISO 29148-style SRS." },
       { "name": "skill:tdd", "usage": "/skill:tdd [task context]", "summary": "Load the bundled TDD workflow explicitly." }
     ],
-    "tools": [
-      { "name": "create_plan", "summary": "Internal controlled plan writer, active only during Plan mode.", "internal": true }
-    ],
+    "tools": [],
     "prompts": [
-      { "name": "plan", "summary": "Enforced read-only planning workflow." },
       { "name": "srs-generator", "summary": "ISO 29148-style SRS workflow." }
     ],
     "skills": [
       { "name": "tdd", "summary": "Test-driven development through red-green-refactor." }
     ],
-    "themes": [
-      { "name": "plan", "summary": "Minimal planning-state theme." }
-    ],
+    "themes": [],
     "agents": [],
-    "configuration": [
-      { "kind": "directory", "key": ".pi/plans", "summary": "Approved generated implementation plans." }
-    ]
+    "configuration": []
   },
   "pi": {
     "extensions": [
-      "./extensions/plan-theme.ts"
+      "./extensions/help.ts"
     ],
     "prompts": [
       "./prompts"
     ],
     "skills": [
       "./skills"
-    ],
-    "themes": [
-      "./themes"
     ]
   },
   "files": [
     "extensions",
     "prompts",
     "skills",
-    "themes",
     "README.md"
   ]
 }

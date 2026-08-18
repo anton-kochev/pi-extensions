@@ -14,6 +14,7 @@ import {
 	PLAN_CREATE_TOOL_NAME,
 	selectPlanModeTools,
 } from "./plan-policy.ts";
+import { derivePlanSessionName } from "./plan-session-name.ts";
 import { updatePlanStatus } from "./plan-status.ts";
 
 const CONFIG_DIR_NAME = ".pi";
@@ -31,32 +32,15 @@ const PLAN_THEME_NAME = "plan";
 const FALLBACK_THEME_NAME = "dark";
 const PLAN_STATUS_MESSAGE_TYPE = "plan-mode-status";
 
-type PackageHelpCommand = "plan" | "srs" | "skill:tdd";
-
-const PACKAGE_COMMAND_HELP: Record<PackageHelpCommand, string> = {
-	plan: `Usage: /plan <task>
+const PLAN_COMMAND_HELP = `Usage: /plan <task>
 
 Enter enforced read-only Plan mode for a task. Run /plan again while planning to approve creation of the generated plan.
 
 Options:
-  --help, -h  Show this help`,
-	srs: `Usage: /srs <request>
+  --help, -h  Show this help`;
 
-Elicit, draft, approve, and write an ISO/IEC/IEEE 29148-style Software Requirements Specification with EARS requirements.
-
-Options:
-  --help, -h  Show this help`,
-	"skill:tdd": `Usage: /skill:tdd [task context]
-
-Load the test-driven development workflow. Optional task context is appended to the skill instructions.
-
-Options:
-  --help, -h  Show this help`,
-};
-
-function packageCommandHelp(input: string): string | undefined {
-	const match = input.trim().match(/^\/(plan|srs|skill:tdd)\s+(?:--help|-h)$/);
-	return match ? PACKAGE_COMMAND_HELP[match[1] as PackageHelpCommand] : undefined;
+function planCommandHelp(input: string): string | undefined {
+	return /^\/plan\s+(?:--help|-h)$/.test(input.trim()) ? PLAN_COMMAND_HELP : undefined;
 }
 
 function emitPackageCommandHelp(ctx: ExtensionContext, help: string): void {
@@ -170,7 +154,7 @@ export default function planTheme(pi: ExtensionAPI): void {
 		pi.setActiveTools(selectPlanModeTools(pi.getAllTools(), PLAN_EXTENSION_PATH));
 		setThemeWithoutPersisting(ctx, PLAN_THEME_NAME);
 		persistState();
-		updatePlanStatus(ctx.ui, true);
+		updatePlanStatus(ctx.ui, true, () => pi.getSessionName());
 	}
 
 	function exitPlanMode(ctx: ExtensionContext, reason: PlanExitReason): void {
@@ -240,7 +224,7 @@ export default function planTheme(pi: ExtensionAPI): void {
 	pi.on("input", async (event, ctx) => {
 		if (event.source === "extension") return { action: "continue" as const };
 
-		const commandHelp = packageCommandHelp(event.text);
+		const commandHelp = planCommandHelp(event.text);
 		if (commandHelp) {
 			emitPackageCommandHelp(ctx, commandHelp);
 			return { action: "handled" as const };
@@ -335,7 +319,12 @@ export default function planTheme(pi: ExtensionAPI): void {
 			planSaveToolCallId = undefined;
 			return undefined;
 		}
-		if (event.toolName === PLAN_CREATE_TOOL_NAME) exitPlanMode(ctx, "saved");
+		if (event.toolName === PLAN_CREATE_TOOL_NAME) {
+			const content = (event.input as { content?: unknown }).content;
+			const sessionName = derivePlanSessionName(typeof content === "string" ? content : "", planPath);
+			exitPlanMode(ctx, "saved");
+			pi.setSessionName(sessionName);
+		}
 		return undefined;
 	});
 }
