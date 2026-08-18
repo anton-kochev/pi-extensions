@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/@pithos-kit/atlas)](https://www.npmjs.com/package/@pithos-kit/atlas)
 
-Atlas provides confirmed Conventional Commits alongside its interactive catalog, version checker, compatibility doctor, and `.pithos` configuration manager for pithos-kit. It combines a bundled offline catalog with explicit public npm registry checks and Pi runtime provenance.
+Atlas gives eligible new sessions readable synthetic names and provides confirmed Conventional Commits alongside its interactive catalog, version checker, compatibility doctor, and `.pithos` configuration manager for pithos-kit. It combines bounded model-assisted session naming and a bundled offline catalog with explicit public npm registry checks and Pi runtime provenance.
 
 ## Install
 
@@ -31,6 +31,16 @@ pi:
 ```
 
 The separate Pithos base image can preinstall Atlas so it remains available to diagnose a project configuration that would otherwise prevent project packages from loading.
+
+## Automatic session names
+
+After the first user message in an eligible new session, Atlas asks the cheapest authenticated, session-scoped, non-reasoning text model for one synthetic name containing 3–5 lowercase ASCII words in kebab-case, inspired by 1980s, 1990s, and 2000s pop culture. For example: `neon-pager-ringtone-reboot`. The static request includes no conversation, prompt, cwd, tools, session identifier, or other session-derived content.
+
+The request runs in the background with thinking disabled by model selection, no prompt caching, no retries, and a ten-second timeout. It may incur a small provider charge; Pi 0.83 does not include this background completion in session usage totals. Invalid output, missing credentials or a suitable model, provider failure, timeout, `PI_OFFLINE`, or session shutdown produces a local three-word kebab-case fallback. A manual or extension-provided rename while generation is pending cancels the attempt and remains authoritative.
+
+Automatic naming eligibility applies to a fresh startup whose allocated session file does not exist yet, `/new`, and unnamed in-process forks. Session startup alone never generates or assigns a name; Atlas waits for the session's first user message. Atlas preserves names supplied through `--name`, `/name`, inherited by a fork, or set by another extension. It leaves persisted legacy unnamed sessions and reloads untouched. Because Pi 0.83 does not expose initial CLI-fork provenance, `--fork` from an old unnamed session may remain unnamed.
+
+Pi persists the name as canonical session metadata and displays it in the native footer, terminal title, and session selector. The name remains until changed manually with `/name`; Pithos Plan mode also retains it in its minimal replacement footer. Ephemeral `--no-session` runs receive a runtime name but cannot persist beyond the process.
 
 ## Commands
 
@@ -112,7 +122,7 @@ The tool has no write, apply, update, install, or rebuild action. Only a user-co
 
 ## Registry and offline behavior
 
-Registry access is explicit: Atlas performs no network request during extension startup, command completion, `/pithos help`, or `/pithos packages`. Version, doctor, and configuration actions may query `https://registry.npmjs.org` with fixed-origin requests, short timeouts, cancellation, bounded responses, validated metadata, and successful-result session caching.
+Atlas performs no network request during extension registration, session startup, command completion, `/pithos help`, or `/pithos packages`. Only the first user message in an eligible new unnamed session may start the bounded synthetic-name model request described above. Version, doctor, and configuration actions may query `https://registry.npmjs.org` with fixed-origin requests, short timeouts, cancellation, bounded responses, validated metadata, and successful-result session caching.
 
 Set any of the following to disable registry requests:
 
@@ -122,7 +132,7 @@ PI_OFFLINE=true pi
 PI_OFFLINE=yes pi
 ```
 
-When offline, timed out, unpublished, or otherwise unavailable, Atlas uses its generated bundled catalog and clearly reports that latest registry data is unavailable. The interactive manager can still select bundled exact versions; registry-only versions are unavailable until a successful explicit check.
+When offline, session naming uses its local fallback. Registry operations that are timed out, unpublished, or otherwise unavailable use the generated bundled catalog and clearly report that latest registry data is unavailable. The interactive manager can still select bundled exact versions; registry-only versions are unavailable until a successful explicit check.
 
 ## Development
 

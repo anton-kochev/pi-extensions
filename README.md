@@ -13,7 +13,7 @@ A monorepo of independently published Pi extensions, skills, prompts, themes, an
 - [`pithos.context-bar/`](./pithos.context-bar) — a thin, stacked context-window composition bar above the editor. [![npm version](https://img.shields.io/npm/v/@pithos-kit/context-bar.svg)](https://www.npmjs.com/package/@pithos-kit/context-bar)
 - [`pithos.skills/`](./pithos.skills) — enforced Plan mode, `/commit`, `/srs`, a theme, and TDD guidance. [![npm version](https://img.shields.io/npm/v/@pithos-kit/skills.svg)](https://www.npmjs.com/package/@pithos-kit/skills)
 - [`pithos.themes/`](./pithos.themes) — accessible Auric light and dark themes with automatic appearance switching. [![npm version](https://img.shields.io/npm/v/@pithos-kit/themes.svg)](https://www.npmjs.com/package/@pithos-kit/themes)
-- [`pithos.atlas/`](./pithos.atlas) — explore package capabilities and versions, diagnose compatibility, and manage `.pithos` interactively. [![npm version](https://img.shields.io/npm/v/@pithos-kit/atlas.svg)](https://www.npmjs.com/package/@pithos-kit/atlas)
+- [`pithos.atlas/`](./pithos.atlas) — name eligible new sessions after their first user message, create confirmed commits, explore package capabilities, diagnose compatibility, and manage `.pithos` interactively. [![npm version](https://img.shields.io/npm/v/@pithos-kit/atlas.svg)](https://www.npmjs.com/package/@pithos-kit/atlas)
 
 ## Install
 

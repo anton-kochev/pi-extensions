@@ -1,7 +1,7 @@
 {
   "name": "@pithos-kit/atlas",
   "version": "0.3.0",
-  "description": "Interactive commits, catalog, diagnostics, version checks, and .pithos configuration management for pithos-kit.",
+  "description": "Model-generated session names, confirmed commits, catalog, diagnostics, version checks, and .pithos configuration for pithos-kit.",
   "keywords": [
     "pi-package",
     "pi-extension",
@@ -10,7 +10,9 @@
     "catalog",
     "configuration",
     "git",
-    "conventional-commits"
+    "conventional-commits",
+    "session-names",
+    "session-naming"
   ],
   "license": "MIT",
   "type": "module",
@@ -33,6 +35,7 @@
     "yaml": "^2.9.0"
   },
   "devDependencies": {
+    "@earendil-works/pi-ai": "0.83.0",
     "@earendil-works/pi-coding-agent": "0.83.0",
     "@earendil-works/pi-tui": "0.83.0",
     "@types/node": "^24.0.0",
@@ -41,13 +44,14 @@
     "typescript": "^5.9.0"
   },
   "peerDependencies": {
+    "@earendil-works/pi-ai": ">=0.83.0",
     "@earendil-works/pi-coding-agent": ">=0.83.0",
     "@earendil-works/pi-tui": ">=0.83.0",
     "typebox": "*"
   },
   "pithosKit": {
     "displayName": "Atlas",
-    "summary": "Create confirmed commits, explore pithos-kit packages, check compatibility, and manage .pithos interactively.",
+    "summary": "Name new sessions after their first message, create confirmed commits, explore packages, check compatibility, and manage .pithos.",
     "minimumPi": ">=0.83.0",
     "commands": [
       { "name": "commit", "usage": "/commit [instructions]", "summary": "Create a context-scoped Conventional Commit with confirmation." },
@@ -66,7 +70,7 @@
     "agents": [],
     "configuration": [
       { "kind": "file", "key": ".pithos", "summary": "Atlas manages toolchains, pi.version, and @pithos-kit entries under pi.extensions." },
-      { "kind": "environment", "key": "PI_OFFLINE", "summary": "Disable registry requests when true, yes, or 1." }
+      { "kind": "environment", "key": "PI_OFFLINE", "summary": "Disable registry and session-name model requests when true, yes, or 1." }
     ]
   },
   "pi": {

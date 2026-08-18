@@ -10,18 +10,47 @@ function createHarness() {
 	const tools = new Map<string, any>();
 	const handlers = new Map<string, any[]>();
 	const messages: Array<{ message: any; options: any }> = [];
+	const sessionNames: string[] = [];
 	atlas({
 		registerCommand(name: string, definition: any) { commands.set(name, definition); },
 		registerTool(definition: any) { tools.set(definition.name, definition); },
 		on(name: string, handler: any) { handlers.set(name, [...(handlers.get(name) ?? []), handler]); },
 		sendMessage(message: any, options: any) { messages.push({ message, options }); },
+		setSessionName(name: string) { sessionNames.push(name); },
+		getSessionName() { return sessionNames.at(-1); },
 		getCommands() { return []; },
 		getAllTools() { return []; },
 	} as never);
-	return { commands, tools, handlers, messages };
+	return { commands, tools, handlers, messages, sessionNames };
 }
 
 describe("Atlas extension", () => {
+	it("leaves a fresh session unnamed until the user sends its first message", async () => {
+		const { handlers, sessionNames } = createHarness();
+		const ctx = {
+			modelRegistry: { getAvailable: () => [] },
+			scopedModels: [],
+			sessionManager: {
+				getEntries: () => [
+					{ type: "model_change" },
+					{ type: "thinking_level_change" },
+				],
+				getSessionFile: () => "/does/not/exist/fresh.jsonl",
+			},
+		};
+
+		for (const handler of handlers.get("session_start") ?? []) {
+			await handler({ reason: "startup" }, ctx);
+		}
+		assert.deepEqual(sessionNames, []);
+
+		for (const handler of handlers.get("message_start") ?? []) {
+			await handler({ message: { role: "user" } }, ctx);
+		}
+		assert.equal(sessionNames.length, 1);
+		assert.match(sessionNames[0] ?? "", /^[a-z0-9]+(?:-[a-z0-9]+){2,4}$/u);
+	});
+
 	it("registers without network access and keeps pithos_info read-only", async () => {
 		const originalFetch = globalThis.fetch;
 		globalThis.fetch = async () => { throw new Error("unexpected startup network request"); };
@@ -236,6 +265,7 @@ describe("Atlas extension", () => {
 			ui: { notify: (message: string) => notifications.push(message) },
 		} as never);
 		assert.equal(notifications.length, 1);
+		assert.match(notifications[0], /3–5-word session names/);
 		assert.match(notifications[0], /Usage: \/pithos/);
 		assert.doesNotMatch(notifications[0], /\/pithos help </);
 	});

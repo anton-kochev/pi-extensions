@@ -11,12 +11,13 @@ import { buildDiagnostics, type DiagnosticsReport } from "./diagnostics.ts";
 import { parsePithosConfig, type ManagedPithosState } from "./pithos-config.ts";
 import { isOfflineEnvironment, RegistryClient } from "./registry.ts";
 import { observeRuntime, type ObservedRuntimePackage } from "./runtime.ts";
+import { registerSessionNaming } from "./session-name.ts";
 import { planModeState } from "./safety.ts";
 import { runConfigWizard } from "./ui.ts";
 
 const MAX_OUTPUT_CHARS = 40_000;
 
-export const ATLAS_HELP = `Pithos Atlas creates confirmed Conventional Commits, configures reproducible toolchain, Pi, and package pins, and diagnoses the active environment.
+export const ATLAS_HELP = `Pithos Atlas gives eligible new sessions readable 3–5-word session names after their first user message, creates confirmed Conventional Commits, configures reproducible toolchain, Pi, and package pins, and diagnoses the active environment.
 
 Usage: /pithos [command]
 
@@ -163,6 +164,7 @@ function formatDoctor(report: DiagnosticsReport, warnings: string[]): string {
 
 export function registerAtlas(pi: ExtensionAPI): void {
 	registerCommitWorkflow(pi);
+	registerSessionNaming(pi);
 
 	const activePiVersion = resolveActivePiVersion({ entrypoint: process.argv[1], fallbackVersion: VERSION });
 	const catalog = loadBundledCatalog();
