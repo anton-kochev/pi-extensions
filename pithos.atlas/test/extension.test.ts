@@ -51,13 +51,60 @@ describe("Atlas extension", () => {
 		assert.match(sessionNames[0] ?? "", /^[a-z0-9]+(?:-[a-z0-9]+){2,4}$/u);
 	});
 
+	it("renames the current session when the model is explicitly asked", async () => {
+		const { tools, sessionNames } = createHarness();
+
+		const result = await tools.get("rename_session").execute(
+			"call",
+			{ name: "deferred-session-naming" },
+			undefined,
+			undefined,
+			{},
+		);
+
+		assert.deepEqual(sessionNames, ["deferred-session-naming"]);
+		assert.equal(result.content[0].text, "Session renamed to: deferred-session-naming");
+		assert.deepEqual(result.details, { name: "deferred-session-naming" });
+		for (const invalidName of ["Deferred Session Naming", "   "]) {
+			await assert.rejects(
+				tools.get("rename_session").execute("call", { name: invalidName }, undefined, undefined, {}),
+				/Session name must use lowercase kebab-case/,
+			);
+		}
+		assert.deepEqual(sessionNames, ["deferred-session-naming"]);
+	});
+
+	it("canonicalizes names set through Pi's native rename paths", async () => {
+		const { handlers, sessionNames } = createHarness();
+		sessionNames.push("Native Session Name");
+
+		for (const handler of handlers.get("session_info_changed") ?? []) {
+			await handler({ name: "Native Session Name" }, {});
+		}
+
+		assert.equal(sessionNames.at(-1), "native-session-name");
+
+		sessionNames.push("🔥");
+		for (const handler of handlers.get("session_info_changed") ?? []) {
+			await handler({ name: "🔥" }, {});
+		}
+		assert.equal(sessionNames.at(-1), "unnamed-session");
+
+		const restored = createHarness();
+		restored.sessionNames.push("Inherited Session Name");
+		for (const handler of restored.handlers.get("session_start") ?? []) {
+			await handler({ reason: "resume" }, { sessionManager: {} });
+		}
+		assert.equal(restored.sessionNames.at(-1), "inherited-session-name");
+	});
+
 	it("registers without network access and keeps pithos_info read-only", async () => {
 		const originalFetch = globalThis.fetch;
 		globalThis.fetch = async () => { throw new Error("unexpected startup network request"); };
 		try {
 			const { commands, tools } = createHarness();
 			assert.deepEqual([...commands.keys()], ["commit", "pithos"]);
-			assert.deepEqual([...tools.keys()], ["create_commit", "pithos_info"]);
+			assert.deepEqual([...tools.keys()], ["create_commit", "rename_session", "pithos_info"]);
 			const schemaText = JSON.stringify(tools.get("pithos_info").parameters);
 			assert.doesNotMatch(schemaText, /write|apply|manage|update/i);
 			const result = await tools.get("pithos_info").execute("call", { action: "catalog" }, undefined, undefined, {
@@ -247,7 +294,7 @@ describe("Atlas extension", () => {
 
 		assert.equal(notifications.length, 1);
 		assert.match(notifications[0] ?? "", /commands: \/commit, \/pithos, \/skill:conventional-commit/);
-		assert.match(notifications[0] ?? "", /tools: create_commit \(internal\), pithos_info/);
+		assert.match(notifications[0] ?? "", /tools: create_commit \(internal\), rename_session, pithos_info/);
 		assert.match(notifications[0] ?? "", /prompts: plan, srs-generator/);
 		assert.match(notifications[0] ?? "", /skills: conventional-commit/);
 		assert.match(notifications[0] ?? "", /skills: tdd/);

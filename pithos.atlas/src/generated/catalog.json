@@ -103,6 +103,10 @@
             "internal": true
           },
           {
+            "name": "rename_session",
+            "summary": "Rename the current Pi session in lowercase kebab-case when explicitly requested."
+          },
+          {
             "name": "pithos_info",
             "summary": "Read pithos-kit catalog, version, runtime, and configuration information."
           }

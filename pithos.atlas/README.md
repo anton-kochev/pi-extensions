@@ -38,9 +38,11 @@ After the first user message in an eligible new session, Atlas asks the cheapest
 
 The request runs in the background with thinking disabled by model selection, no prompt caching, no retries, and a ten-second timeout. It may incur a small provider charge; Pi 0.83 does not include this background completion in session usage totals. Invalid output, missing credentials or a suitable model, provider failure, timeout, `PI_OFFLINE`, or session shutdown produces a local three-word kebab-case fallback. A manual or extension-provided rename while generation is pending cancels the attempt and remains authoritative.
 
-Automatic naming eligibility applies to a fresh startup whose allocated session file does not exist yet, `/new`, and unnamed in-process forks. Session startup alone never generates or assigns a name; Atlas waits for the session's first user message. Atlas preserves names supplied through `--name`, `/name`, inherited by a fork, or set by another extension. It leaves persisted legacy unnamed sessions and reloads untouched. Because Pi 0.83 does not expose initial CLI-fork provenance, `--fork` from an old unnamed session may remain unnamed.
+Automatic naming eligibility applies to a fresh startup whose allocated session file does not exist yet, `/new`, and unnamed in-process forks. Session startup alone never generates or assigns a name; Atlas waits for the session's first user message. Atlas preserves the intent of names supplied through `--name`, `/name`, inherited by a fork, or set by another extension, while canonicalizing any nonconforming value to lowercase kebab-case. It leaves persisted legacy unnamed sessions and reloads untouched. Because Pi 0.83 does not expose initial CLI-fork provenance, `--fork` from an old unnamed session may remain unnamed.
 
 Pi persists the name as canonical session metadata and displays it in the native footer, terminal title, and session selector. The name remains until changed manually with `/name`; Pithos Plan mode also retains it in its minimal replacement footer. Ephemeral `--no-session` runs receive a runtime name but cannot persist beyond the process.
+
+Atlas also provides the model-facing `rename_session` tool. Its tool guidance limits use to explicit user requests to name or rename the current session. Lowercase kebab-case is mandatory for every session name: Atlas validates tool input and canonicalizes names set through `/name`, `--name`, inheritance, or other extensions. Values with no ASCII letters or digits become `unnamed-session`.
 
 ## Commands
 

@@ -55,6 +55,28 @@ export function parseAtlasCommand(args: string): AtlasCommand {
 	throw new Error(ATLAS_HELP);
 }
 
+const KEBAB_CASE_SESSION_NAME_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
+
+function toKebabCaseSessionName(value: string): string {
+	return value
+		.normalize("NFKD")
+		.replace(/([a-z0-9])([A-Z])/gu, "$1-$2")
+		.replace(/[\u0300-\u036f]/gu, "")
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/gu, "-")
+		.replace(/^-+|-+$/gu, "")
+		|| "unnamed-session";
+}
+
+const RENAME_SESSION_PARAMETERS = Type.Object({
+	name: Type.String({
+		minLength: 1,
+		maxLength: 120,
+		pattern: KEBAB_CASE_SESSION_NAME_RE.source,
+		description: "New lowercase kebab-case display name for the current Pi session",
+	}),
+});
+
 const INFO_PARAMETERS = Type.Object({
 	action: Type.Union([
 		Type.Literal("catalog"),
@@ -67,6 +89,7 @@ const INFO_PARAMETERS = Type.Object({
 	refresh: Type.Optional(Type.Boolean({ description: "Bypass successful session registry caches" })),
 });
 
+type RenameSessionRequest = { name: string };
 type InfoRequest = { action: "catalog" | "versions" | "runtime" | "config" | "doctor"; package?: string; refresh?: boolean };
 
 interface ConfigObservation {
@@ -165,6 +188,33 @@ function formatDoctor(report: DiagnosticsReport, warnings: string[]): string {
 export function registerAtlas(pi: ExtensionAPI): void {
 	registerCommitWorkflow(pi);
 	registerSessionNaming(pi);
+
+	const enforceKebabCaseSessionName = (name: string | undefined): void => {
+		if (!name || KEBAB_CASE_SESSION_NAME_RE.test(name)) return;
+		pi.setSessionName(toKebabCaseSessionName(name));
+	};
+	pi.on("session_info_changed", (event) => enforceKebabCaseSessionName(event.name));
+	pi.on("session_start", () => enforceKebabCaseSessionName(pi.getSessionName()));
+
+	pi.registerTool({
+		name: "rename_session",
+		label: "Rename Session",
+		description: "Set a lowercase kebab-case display name for the current Pi session when the user explicitly asks for a rename.",
+		promptSnippet: "Rename the current Pi session in lowercase kebab-case when explicitly requested",
+		promptGuidelines: ["Use rename_session only when the user explicitly asks to name or rename the current Pi session, and always provide the name in lowercase kebab-case."],
+		parameters: RENAME_SESSION_PARAMETERS,
+		async execute(_toolCallId, request: RenameSessionRequest) {
+			const name = request.name.trim();
+			if (!KEBAB_CASE_SESSION_NAME_RE.test(name)) {
+				throw new Error("Session name must use lowercase kebab-case");
+			}
+			pi.setSessionName(name);
+			return {
+				content: [{ type: "text", text: `Session renamed to: ${name}` }],
+				details: { name },
+			};
+		},
+	});
 
 	const activePiVersion = resolveActivePiVersion({ entrypoint: process.argv[1], fallbackVersion: VERSION });
 	const catalog = loadBundledCatalog();
