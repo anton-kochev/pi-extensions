@@ -26,7 +26,7 @@ pi:
 
 ## Migrating from `@pithos-kit/skills`
 
-Plan mode is no longer bundled with Skills. Update Skills to a release containing the split and install Plan at the same time. Do not load this package alongside an older Skills release that still registers `/plan`, because both packages would handle the same command and Plan state.
+Plan mode is no longer bundled with Skills. Update Skills to 0.5.0 or later and install Plan at the same time. Do not load this package alongside Skills 0.4.0 or earlier, because both packages would handle the same `/plan` command and Plan state.
 
 ## Usage
 

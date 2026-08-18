@@ -65,7 +65,7 @@
     },
     {
       "name": "@pithos-kit/atlas",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "description": "Model-generated session names, confirmed commits, catalog, diagnostics, version checks, and .pithos configuration for pithos-kit.",
       "pi": {
         "extensions": [
@@ -324,7 +324,7 @@
     },
     {
       "name": "@pithos-kit/skills",
-      "version": "0.4.0",
+      "version": "0.5.0",
       "description": "SRS prompting and test-driven development guidance for Pi.",
       "pi": {
         "extensions": [
