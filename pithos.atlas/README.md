@@ -40,7 +40,7 @@ The request runs in the background with thinking disabled by model selection, no
 
 Automatic naming eligibility applies to a fresh startup whose allocated session file does not exist yet, `/new`, and unnamed in-process forks. Session startup alone never generates or assigns a name; Atlas waits for the session's first user message. Atlas preserves the intent of names supplied through `--name`, `/name`, inherited by a fork, or set by another extension, while canonicalizing any nonconforming value to lowercase kebab-case. It leaves persisted legacy unnamed sessions and reloads untouched. Because Pi 0.83 does not expose initial CLI-fork provenance, `--fork` from an old unnamed session may remain unnamed.
 
-Pi persists the name as canonical session metadata and displays it in the native footer, terminal title, and session selector. The name remains until changed manually with `/name`; Pithos Plan mode also retains it in its minimal replacement footer. Ephemeral `--no-session` runs receive a runtime name but cannot persist beyond the process.
+Pi persists the name as canonical session metadata and displays it in the native footer, terminal title, and session selector. The name remains until changed manually with `/name` or replaced after a successful approved save by [`@pithos-kit/plan`](https://www.npmjs.com/package/@pithos-kit/plan); while Plan mode is active, its minimal replacement footer retains the current name. Ephemeral `--no-session` runs receive a runtime name but cannot persist beyond the process.
 
 Atlas also provides the model-facing `rename_session` tool. Its tool guidance limits use to explicit user requests to name or rename the current session. Lowercase kebab-case is mandatory for every session name: Atlas validates tool input and canonicalizes names set through `/name`, `--name`, inheritance, or other extensions. Values with no ASCII letters or digits become `unnamed-session`.
 
@@ -74,7 +74,7 @@ Atlas also provides the model-facing `rename_session` tool. Its tool guidance li
 
 `/commit` uses existing staged changes when present. Otherwise it narrows the staging set from explicit instructions, named paths or packages, and the active task context. Ambiguous scopes require confirmation before staging, and unrelated untracked, generated, editor, session, and local-configuration files are excluded unless explicitly requested.
 
-The final message and staged file set are shown by Atlas's controlled `create_commit` tool. Declining leaves the index intact, missing UI fails closed, and a changed staged snapshot invalidates the approval. Atlas blocks direct model-issued `git commit` shell commands so the workflow cannot skip the dialog; normal Git hooks still run. `/commit` is unavailable while enforced Plan mode is active or indeterminate.
+The final message and staged file set are shown by Atlas's controlled `create_commit` tool. Declining leaves the index intact, missing UI fails closed, and a changed staged snapshot invalidates the approval. Atlas blocks direct model-issued `git commit` shell commands so the workflow cannot skip the dialog; normal Git hooks still run. `/commit` is unavailable while `@pithos-kit/plan` Plan mode is active or indeterminate.
 
 ## Interactive configuration
 
@@ -98,7 +98,7 @@ The toolchain and package selectors use `◆` for selected entries, `◇` for av
 A configuration transaction:
 
 1. requires a trusted TUI project and waits for the agent to become idle;
-2. refuses to run while pithos-kit Plan mode is active or indeterminate;
+2. refuses to run while `@pithos-kit/plan` Plan mode is active or indeterminate;
 3. reads only `<cwd>/.pithos` and rejects links, special files, aliases, duplicate keys, malformed managed nodes, and oversized input;
 4. stages exact Pi and npm versions in memory;
 5. shows a contextual diff;
@@ -108,9 +108,9 @@ A configuration transaction:
 
 Cancellation and pre-commit errors leave `.pithos` unchanged. After a successful write, rebuild/restart Pithos before expecting the selected Pi or package versions to be active.
 
-## Agent tool
+## Agent tools
 
-Atlas registers the controlled `create_commit` tool and the read-only `pithos_info` tool. `pithos_info` supports these actions:
+Atlas registers the controlled `create_commit` tool, the validated `rename_session` tool, and the read-only `pithos_info` tool. `pithos_info` supports these actions:
 
 - `catalog`
 - `versions`

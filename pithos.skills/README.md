@@ -8,7 +8,7 @@ Use `/srs` to create an ISO/IEC/IEEE 29148:2018 Software Requirements Specificat
 
 Use the `tdd` skill when you want the agent to build or change non-trivial logic test-first with the red-green-refactor loop.
 
-Plan mode is now published independently as [`@pithos-kit/plan`](https://www.npmjs.com/package/@pithos-kit/plan). Install that package for `/plan`, controlled plan creation, the Plan theme, and contextual session naming.
+Plan mode is now published independently as [`@pithos-kit/plan`](https://www.npmjs.com/package/@pithos-kit/plan). When adopting the split, update Skills to a release that no longer bundles Plan and install the Plan package at the same time; combining it with an older Skills release that still registers `/plan` creates duplicate handlers.
 
 ## Install
 
@@ -51,6 +51,8 @@ Force the TDD skill with:
 The help invocation is intercepted before the skill is expanded.
 
 ## Changelog
+
+The entries below describe historical Skills releases; versions through 0.4.0 bundled Plan mode before it moved to `@pithos-kit/plan`.
 
 ### 0.4.0
 
