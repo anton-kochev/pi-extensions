@@ -1,5 +1,6 @@
 import type { Catalog, CatalogPackage } from "./catalog.ts";
 import type { RegistryClient } from "./registry.ts";
+import { isRetiredPackage } from "./retired-packages.ts";
 
 export interface CatalogRefreshOptions {
 	signal?: AbortSignal;
@@ -25,14 +26,17 @@ export async function refreshCatalog(
 	options: CatalogRefreshOptions = {},
 ): Promise<RefreshedCatalog> {
 	const warnings: string[] = [];
-	const packageNames = new Set(bundled.packages.map(({ name }) => name));
+	const activeBundledPackages = bundled.packages.filter(({ name }) => !isRetiredPackage(name));
+	const packageNames = new Set(activeBundledPackages.map(({ name }) => name));
 	try {
-		for (const name of await registry.discover(options)) packageNames.add(name);
+		for (const name of await registry.discover(options)) {
+			if (!isRetiredPackage(name)) packageNames.add(name);
+		}
 	} catch (error) {
 		warnings.push(warning(error));
 	}
 
-	const packageByName = new Map(bundled.packages.map((pkg) => [pkg.name, pkg]));
+	const packageByName = new Map(activeBundledPackages.map((pkg) => [pkg.name, pkg]));
 	const publishedVersions: Record<string, CatalogPackage[]> = {};
 	const packageResults = await Promise.all([...packageNames].sort().map(async (name) => {
 		try {

@@ -2,6 +2,7 @@ import { createTwoFilesPatch } from "diff";
 import { gt, satisfies } from "semver";
 import type { CatalogPackage } from "./catalog.ts";
 import { isValidToolchainVersion, parsePithosConfig, stagePithosConfig } from "./pithos-config.ts";
+import { isRetiredPackage } from "./retired-packages.ts";
 
 const MAX_DIFF_DISPLAY_CHARS = 12_000;
 const PI_STEP_TITLE = "Configure 1/3 · Pi version";
@@ -69,7 +70,9 @@ interface WizardPackage {
 function wizardPackages(packages: CatalogPackage[], configured: Record<string, string>): WizardPackage[] {
 	const rows = new Map<string, WizardPackage>();
 	for (const pkg of packages) {
-		rows.set(pkg.name, { name: pkg.name, displayName: pkg.pithosKit.displayName, catalog: pkg });
+		if (!isRetiredPackage(pkg.name)) {
+			rows.set(pkg.name, { name: pkg.name, displayName: pkg.pithosKit.displayName, catalog: pkg });
+		}
 	}
 	for (const name of Object.keys(configured)) {
 		if (!rows.has(name)) rows.set(name, { name, displayName: name });
@@ -158,7 +161,9 @@ export async function runConfigWizard(ui: AtlasWizardUI, input: ConfigWizardInpu
 		desiredToolchains[toolchain.name] = version;
 	}
 
-	const desiredPackages = { ...current.packages };
+	const desiredPackages = Object.fromEntries(
+		Object.entries(current.packages).filter(([name]) => !isRetiredPackage(name)),
+	);
 	const packages = wizardPackages(input.packages, current.packages);
 
 	while (true) {

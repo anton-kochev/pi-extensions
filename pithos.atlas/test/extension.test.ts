@@ -110,7 +110,7 @@ describe("Atlas extension", () => {
 			const result = await tools.get("pithos_info").execute("call", { action: "catalog" }, undefined, undefined, {
 				cwd: "/project",
 			} as never);
-			assert.equal(result.details.packages.length, 11);
+			assert.equal(result.details.packages.length, 10);
 		} finally {
 			globalThis.fetch = originalFetch;
 		}
@@ -296,9 +296,8 @@ describe("Atlas extension", () => {
 		assert.match(notifications[0] ?? "", /commands: \/commit, \/pithos, \/skill:conventional-commit/);
 		assert.match(notifications[0] ?? "", /tools: create_commit \(internal\), rename_session, pithos_info/);
 		assert.match(notifications[0] ?? "", /prompts: plan/);
-		assert.match(notifications[0] ?? "", /prompts: srs-generator/);
-		assert.match(notifications[0] ?? "", /skills: conventional-commit/);
-		assert.match(notifications[0] ?? "", /skills: tdd/);
+		assert.doesNotMatch(notifications[0] ?? "", /srs-generator/);
+		assert.match(notifications[0] ?? "", /skills: conventional-commit, tdd/);
 		assert.match(notifications[0] ?? "", /themes: plan/);
 		assert.match(notifications[0] ?? "", /agents: dotnet-architect/);
 		assert.match(notifications[0] ?? "", /configuration: file \.pi\/aegis\.json/);

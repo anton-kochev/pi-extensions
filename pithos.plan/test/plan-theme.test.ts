@@ -132,8 +132,8 @@ describe("plan mode enforcement", () => {
 		}
 	});
 
-	it("does not own help for resources that remain in Skills", async () => {
-		for (const command of ["/srs --help", "/skill:tdd -h"]) {
+	it("does not intercept native skill input", async () => {
+		for (const command of ["/skill:tdd task context", "/skill:conventional-commit instructions"]) {
 			const harness = createHarness();
 			const result = await harness.handlers.get("input")?.(
 				{ type: "input", source: "interactive", text: command },

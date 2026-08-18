@@ -46,6 +46,27 @@ describe("Atlas catalog refresh", () => {
 		]);
 	});
 
+	it("does not rediscover retired packages from npm search", async () => {
+		const requested: string[] = [];
+		const registry = {
+			async discover() { return ["@pithos-kit/active", "@pithos-kit/skills"]; },
+			async latest(name: string) {
+				requested.push(name);
+				return { ...bundled.packages[0], name };
+			},
+			async latestPiVersion() { return "0.90.0"; },
+		};
+
+		const result = await refreshCatalog(bundled, registry as never);
+
+		assert.deepEqual(requested.sort(), ["@pithos-kit/active", "@pithos-kit/example"]);
+		assert.deepEqual(result.packages.map(({ name }) => name), [
+			"@pithos-kit/active",
+			"@pithos-kit/example",
+		]);
+		assert.equal(result.publishedVersions["@pithos-kit/skills"], undefined);
+	});
+
 	it("returns the bundled catalog with warnings when the registry is unavailable", async () => {
 		const registry = new RegistryClient({
 			fetch: async () => new Response("unavailable", { status: 503 }),

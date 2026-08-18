@@ -14,9 +14,8 @@ const packages = [
   { directory: "pithos.guild", shortName: "guild", version: "0.1.1", minimumPi: ">=0.83.0" },
   { directory: "pithos.context-bar", shortName: "context-bar", version: "0.1.1", minimumPi: ">=0.84.1" },
   { directory: "pithos.plan", shortName: "plan", version: "0.1.0", minimumPi: ">=0.83.0" },
-  { directory: "pithos.skills", shortName: "skills", version: "0.5.0", minimumPi: ">=0.83.0" },
   { directory: "pithos.themes", shortName: "themes", version: "0.1.0", minimumPi: ">=0.84.1" },
-  { directory: "pithos.atlas", shortName: "atlas", version: "0.4.0", minimumPi: ">=0.83.0" },
+  { directory: "pithos.atlas", shortName: "atlas", version: "0.5.0", minimumPi: ">=0.83.0" },
 ];
 
 const capabilityKinds = ["commands", "tools", "prompts", "skills", "themes", "agents"];

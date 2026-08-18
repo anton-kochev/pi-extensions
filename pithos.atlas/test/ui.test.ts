@@ -163,6 +163,32 @@ describe("Atlas configuration wizard", () => {
 		assert.ok(packageOptions.includes("◆ Context Bar · 0.1.0 · requires Pi >=0.84.1"));
 	});
 
+	it("stages removal of the retired Skills package instead of preserving its pin", async () => {
+		let packageOptions: string[] = [];
+		const result = await runConfigWizard({
+			async select(title, options) {
+				if (title === "Configure 1/3 · Pi version") return options[0];
+				if (title === "Configure 2/3 · Toolchains") return "Continue";
+				if (title === "Configure 3/3 · pithos-kit packages") {
+					packageOptions = options;
+					return "Review and Submit";
+				}
+				if (title.startsWith("Review .pithos changes")) return "Yes";
+				return undefined;
+			},
+			async input() { return undefined; },
+			notify() {},
+		}, {
+			source: "pi:\n  version: \"0.83.0\"\n  extensions:\n    \"@pithos-kit/atlas\": npm:0.1.0\n    \"@pithos-kit/skills\": npm:0.5.0\n",
+			activePiVersion: "0.83.0",
+			packages: [atlas],
+			publishedVersions: { "@pithos-kit/atlas": [atlas] },
+		});
+
+		assert.ok(packageOptions.includes("◈ @pithos-kit/skills · disabled"));
+		assert.deepEqual(parsePithosConfig(result ?? "").state.packages, { "@pithos-kit/atlas": "0.1.0" });
+	});
+
 	it("keeps a configured package visible when catalog metadata is unavailable", async () => {
 		const packageOptions = await listPackageOptions({
 			source: "pi:\n  version: \"0.83.0\"\n  extensions:\n    \"@pithos-kit/custom\": npm:1.2.3\n",

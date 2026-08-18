@@ -17,12 +17,13 @@ import { runConfigWizard } from "./ui.ts";
 
 const MAX_OUTPUT_CHARS = 40_000;
 
-export const ATLAS_HELP = `Pithos Atlas gives eligible new sessions readable 3–5-word session names after their first user message, creates confirmed Conventional Commits, configures reproducible toolchain, Pi, and package pins, and diagnoses the active environment.
+export const ATLAS_HELP = `Pithos Atlas gives eligible new sessions readable 3–5-word session names after their first user message, creates confirmed Conventional Commits, provides TDD guidance, configures reproducible toolchain, Pi, and package pins, and diagnoses the active environment.
 
 Usage: /pithos [command]
 
-Atlas workflow:
+Atlas workflows:
   /commit [instructions]   Prepare a context-scoped commit with mandatory interactive confirmation
+  /skill:tdd [context]     Load the test-driven development workflow
 
 Pithos commands:
   /pithos                  Open the interactive Atlas menu

@@ -54,7 +54,6 @@ describe("Atlas catalog manifest validation", () => {
 			"pithos.guild",
 			"pithos.context-bar",
 			"pithos.plan",
-			"pithos.skills",
 			"pithos.themes",
 			"pithos.atlas",
 		];

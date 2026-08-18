@@ -6,11 +6,8 @@ import { describe, it } from "node:test";
 import { buildCommitPrompt } from "../src/commit.ts";
 
 const atlasRoot = resolve(import.meta.dirname, "..");
-const repositoryRoot = resolve(atlasRoot, "..");
-const skillsRoot = resolve(repositoryRoot, "pithos.skills");
 const skillPath = resolve(atlasRoot, "skills/conventional-commit/SKILL.md");
 const atlasManifestPath = resolve(atlasRoot, "package.json");
-const skillsManifestPath = resolve(skillsRoot, "package.json");
 const skillSha256 = "359e49e229b0392788e8432d62a7c0a046115552f97578037df18f876c43c355";
 
 function assertContextBasedStagingWorkflow(content: string): void {
@@ -47,9 +44,8 @@ describe("Atlas Conventional Commit workflow", () => {
 		assert.ok(prompt.startsWith(stripFrontmatter(skill).trim()));
 	});
 
-	it("makes Atlas the sole package owner of /commit", () => {
+	it("makes Atlas the package owner of /commit", () => {
 		const atlas = JSON.parse(readFileSync(atlasManifestPath, "utf8"));
-		const skills = JSON.parse(readFileSync(skillsManifestPath, "utf8"));
 		const commitCommand = atlas.pithosKit.commands.find(({ name }: { name: string }) => name === "commit");
 		const commitSkill = atlas.pithosKit.skills.find(({ name }: { name: string }) => name === "conventional-commit");
 
@@ -58,8 +54,6 @@ describe("Atlas Conventional Commit workflow", () => {
 		assert.ok(atlas.pithosKit.commands.some(({ name }: { name: string }) => name === "skill:conventional-commit"));
 		assert.ok(atlas.pithosKit.tools.some(({ name }: { name: string }) => name === "create_commit"));
 		assert.ok(atlas.pi.skills.includes("./skills"));
-		assert.equal(skills.pithosKit.commands.some(({ name }: { name: string }) => name === "commit"), false);
-		assert.equal(skills.pithosKit.skills.some(({ name }: { name: string }) => name === "conventional-commit"), false);
-		assert.equal(existsSync(resolve(skillsRoot, "prompts/commit.md")), false);
+		assert.equal(existsSync(resolve(atlasRoot, "prompts/commit.md")), false);
 	});
 });

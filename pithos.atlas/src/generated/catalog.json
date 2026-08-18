@@ -65,8 +65,8 @@
     },
     {
       "name": "@pithos-kit/atlas",
-      "version": "0.4.0",
-      "description": "Model-generated session names, confirmed commits, catalog, diagnostics, version checks, and .pithos configuration for pithos-kit.",
+      "version": "0.5.0",
+      "description": "Model-generated session names, confirmed commits, TDD guidance, catalog, diagnostics, version checks, and .pithos configuration for pithos-kit.",
       "pi": {
         "extensions": [
           "./extensions"
@@ -77,7 +77,7 @@
       },
       "pithosKit": {
         "displayName": "Atlas",
-        "summary": "Name new sessions after their first message, create confirmed commits, explore packages, check compatibility, and manage .pithos.",
+        "summary": "Name new sessions, create confirmed commits, provide TDD guidance, explore packages, check compatibility, and manage .pithos.",
         "minimumPi": ">=0.83.0",
         "commands": [
           {
@@ -94,6 +94,11 @@
             "name": "skill:conventional-commit",
             "summary": "Load the confirmed, context-aware Conventional Commit workflow explicitly.",
             "usage": "/skill:conventional-commit [instructions]"
+          },
+          {
+            "name": "skill:tdd",
+            "summary": "Load the test-driven development workflow explicitly.",
+            "usage": "/skill:tdd [task context]"
           }
         ],
         "tools": [
@@ -116,6 +121,10 @@
           {
             "name": "conventional-commit",
             "summary": "Context-aware staging and confirmed Conventional Commit generation."
+          },
+          {
+            "name": "tdd",
+            "summary": "Test-driven development through red-green-refactor."
           }
         ],
         "themes": [],
@@ -320,55 +329,6 @@
             "summary": "Approved generated implementation plans."
           }
         ]
-      }
-    },
-    {
-      "name": "@pithos-kit/skills",
-      "version": "0.5.0",
-      "description": "SRS prompting and test-driven development guidance for Pi.",
-      "pi": {
-        "extensions": [
-          "./extensions/help.ts"
-        ],
-        "prompts": [
-          "./prompts"
-        ],
-        "skills": [
-          "./skills"
-        ]
-      },
-      "pithosKit": {
-        "displayName": "Skills",
-        "summary": "Provide an enforced SRS prompt and test-driven development guidance.",
-        "minimumPi": ">=0.83.0",
-        "commands": [
-          {
-            "name": "srs",
-            "summary": "Create an approved ISO 29148-style SRS.",
-            "usage": "/srs <request>"
-          },
-          {
-            "name": "skill:tdd",
-            "summary": "Load the bundled TDD workflow explicitly.",
-            "usage": "/skill:tdd [task context]"
-          }
-        ],
-        "tools": [],
-        "prompts": [
-          {
-            "name": "srs-generator",
-            "summary": "ISO 29148-style SRS workflow."
-          }
-        ],
-        "skills": [
-          {
-            "name": "tdd",
-            "summary": "Test-driven development through red-green-refactor."
-          }
-        ],
-        "themes": [],
-        "agents": [],
-        "configuration": []
       }
     },
     {

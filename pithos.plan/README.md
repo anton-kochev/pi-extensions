@@ -26,7 +26,7 @@ pi:
 
 ## Migrating from `@pithos-kit/skills`
 
-Plan mode is no longer bundled with Skills. Update Skills to 0.5.0 or later and install Plan at the same time. Do not load this package alongside Skills 0.4.0 or earlier, because both packages would handle the same `/plan` command and Plan state.
+`@pithos-kit/skills` is retired. Remove global and project installs (`pi remove npm:@pithos-kit/skills` and `pi remove -l npm:@pithos-kit/skills`) plus its `.pithos` pin, keep this standalone Plan package for `/plan`, and use `@pithos-kit/atlas` 0.5.0 or later for the relocated TDD skill. Historical Skills 0.4.0 and earlier must not be loaded alongside Plan because both packages handle the same `/plan` command and Plan state.
 
 ## Usage
 
