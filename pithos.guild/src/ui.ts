@@ -9,6 +9,7 @@ import {
 	wrapTextWithAnsi,
 	type Component,
 } from "@earendil-works/pi-tui";
+import type { GuildMemberRole } from "./agents";
 
 interface ToolResultLike {
 	content?: Array<{ type: string; text?: string }>;
@@ -151,7 +152,7 @@ function sourceLabel(source: string | undefined): string | undefined {
 }
 
 function permissionLabel(role: string | undefined): string | undefined {
-	return role === "architect" ? "read-only" : role === "coder" ? "write-enabled" : undefined;
+	return role === "architect" ? "read-only" : role === "reviewer" ? "read-only review" : role === "coder" ? "write-enabled" : undefined;
 }
 
 function memberSummary(
@@ -186,7 +187,7 @@ interface ProgressKeybindings {
 export interface GuildHandoverProgressOptions {
 	member: string;
 	memberSource: string;
-	role: "architect" | "coder";
+	role: GuildMemberRole;
 	task: string;
 	startedAt: number;
 }
@@ -391,7 +392,7 @@ export function renderGuildResult(
 
 	const metadata = [
 		details?.memberSource,
-		details?.role === "architect" ? "READ ONLY" : details?.role === "coder" ? "WRITE ENABLED" : undefined,
+		details?.role === "architect" ? "READ ONLY" : details?.role === "reviewer" ? "READ-ONLY REVIEW" : details?.role === "coder" ? "WRITE ENABLED" : undefined,
 		usageText(details),
 	].filter(Boolean).join(" · ");
 	if (metadata) container.addChild(new Text(theme.fg("dim", metadata), 0, 0));

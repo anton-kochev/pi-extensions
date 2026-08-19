@@ -9,21 +9,25 @@ export const GUILD_MEMBER_NAMES = [
 	"angular-coder",
 	"typescript-coder",
 	"rust-coder",
+	"code-reviewer",
 ] as const;
 
 export type GuildMemberName = (typeof GUILD_MEMBER_NAMES)[number];
 export type GuildMemberSource = "builtin" | "user" | "project";
+export type GuildMemberRole = "architect" | "coder" | "reviewer";
 
 const ARCHITECT_TOOLS = ["read", "grep", "find", "ls"] as const;
 const CODER_TOOLS = ["read", "grep", "find", "ls", "edit", "write", "bash"] as const;
+const REVIEWER_TOOLS = ["read", "grep", "find", "ls", "bash"] as const;
 
-export const GUILD_MEMBER_POLICIES: Record<GuildMemberName, { tools: readonly string[]; role: "architect" | "coder" }> = {
+export const GUILD_MEMBER_POLICIES: Record<GuildMemberName, { tools: readonly string[]; role: GuildMemberRole }> = {
 	"dotnet-architect": { tools: ARCHITECT_TOOLS, role: "architect" },
 	"frontend-architect": { tools: ARCHITECT_TOOLS, role: "architect" },
 	"csharp-coder": { tools: CODER_TOOLS, role: "coder" },
 	"angular-coder": { tools: CODER_TOOLS, role: "coder" },
 	"typescript-coder": { tools: CODER_TOOLS, role: "coder" },
 	"rust-coder": { tools: CODER_TOOLS, role: "coder" },
+	"code-reviewer": { tools: REVIEWER_TOOLS, role: "reviewer" },
 };
 
 export interface GuildMember {

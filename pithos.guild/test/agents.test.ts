@@ -47,6 +47,7 @@ describe("Guild member policies", () => {
       "angular-coder",
       "typescript-coder",
       "rust-coder",
+      "code-reviewer",
     ]);
     assert.deepEqual(GUILD_MEMBER_POLICIES["dotnet-architect"].tools, ["read", "grep", "find", "ls"]);
     assert.deepEqual(GUILD_MEMBER_POLICIES["frontend-architect"].tools, ["read", "grep", "find", "ls"]);
@@ -54,6 +55,8 @@ describe("Guild member policies", () => {
     assert.deepEqual(GUILD_MEMBER_POLICIES["angular-coder"].tools, ["read", "grep", "find", "ls", "edit", "write", "bash"]);
     assert.deepEqual(GUILD_MEMBER_POLICIES["typescript-coder"].tools, ["read", "grep", "find", "ls", "edit", "write", "bash"]);
     assert.deepEqual(GUILD_MEMBER_POLICIES["rust-coder"].tools, ["read", "grep", "find", "ls", "edit", "write", "bash"]);
+    assert.deepEqual(GUILD_MEMBER_POLICIES["code-reviewer"].tools, ["read", "grep", "find", "ls", "bash"]);
+    assert.equal(GUILD_MEMBER_POLICIES["code-reviewer"].role, "reviewer");
   });
 
   it("ships one valid built-in definition for every approved Guild member", () => {
@@ -234,6 +237,34 @@ describe("Guild member policies", () => {
     assert.doesNotMatch(prompt, /grimoire\.rust-coder|CLAUDE\.md|\bSkill\b|WebSearch|WebFetch|context7|TaskCreate|TaskUpdate|TaskList|TaskOutput|TaskStop|Persistent Agent Memory|\bLSP\b/i);
     assert.doesNotMatch(prompt, /Rust(?:\s+version)?\s+\d+(?:\.\d+)?/i);
     assert.doesNotMatch(prompt, /edition\s*=\s*["']?20\d{2}/i);
+  });
+
+  it("keeps the code reviewer read-only, language-aware, and findings-first", () => {
+    const builtInDir = resolve(import.meta.dirname, "../agents");
+    const member = discoverGuildMembers({ builtInDir }).members.find(({ name }) => name === "code-reviewer");
+
+    assert.ok(member);
+    assert.deepEqual(member.tools, ["read", "grep", "find", "ls", "bash"]);
+    const prompt = member.systemPrompt;
+    assert.match(prompt, /eligibility gate[\s\S]*code review[\s\S]*repository[\s\S]*refuse/i);
+    assert.match(prompt, /read-only[\s\S]{0,260}Never create, edit, or delete files/i);
+    assert.match(prompt, /bash[\s\S]{0,260}(?:read-only|non-mutating)[\s\S]{0,260}(?:git status|git diff)/i);
+    assert.match(prompt, /review scope[\s\S]*(?:git status|working tree)[\s\S]*git diff[\s\S]*(?:staged|cached|base)/i);
+    assert.match(prompt, /language[\s\S]*(?:file extensions|extensions)[\s\S]*(?:manifest|configuration)[\s\S]*framework[\s\S]*runtime[\s\S]*version/i);
+    assert.match(prompt, /Critical[\s\S]*High[\s\S]*Medium[\s\S]*Low/i);
+    assert.match(prompt, /findings-first[\s\S]*(?:severity|highest)[\s\S]*(?:path|file)[\s\S]*line[\s\S]*evidence[\s\S]*impact[\s\S]*(?:remediation|fix)/i);
+    assert.match(prompt, /correctness[\s\S]*security[\s\S]*(?:data loss|data integrity)[\s\S]*compatibility[\s\S]*(?:maintainability|performance|tests|style)/i);
+    assert.match(prompt, /high-confidence[\s\S]*(?:hypothetical|speculative|uncertain)/i);
+    assert.match(prompt, /changed code[\s\S]*affected context[\s\S]*(?:pre-existing|unrelated)/i);
+    assert.match(prompt, /untrusted[\s\S]*(?:authorization|authentication)[\s\S]*injection[\s\S]*secrets/i);
+    assert.match(prompt, /concurrency[\s\S]*async[\s\S]*(?:resource|cleanup)/i);
+    assert.match(prompt, /API[\s\S]*(?:schema|migration)[\s\S]*compatibility/i);
+    assert.match(prompt, /tests[\s\S]*(?:observable behavior|regression)[\s\S]*(?:missing|gap)/i);
+    assert.match(prompt, /performance[\s\S]*(?:evidence|measure)[\s\S]*(?:speculative|micro-optimization)/i);
+    assert.match(prompt, /Language\(s\)[\s\S]*Review Scope[\s\S]*Findings[\s\S]*Decision/i);
+    assert.match(prompt, /Request changes[\s\S]*Comment[\s\S]*Approve/i);
+    assert.match(prompt, /no findings[\s\S]*(?:residual|verification|limitations)/i);
+    assert.doesNotMatch(prompt, /grimoire\.code-reviewer|CLAUDE\.md|\bSkill\b|WebSearch|WebFetch|context7|TaskCreate|TaskUpdate|TaskList|TaskOutput|TaskStop|Persistent Agent Memory|\bLSP\b/i);
   });
 });
 

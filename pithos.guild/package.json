@@ -1,7 +1,7 @@
 {
   "name": "@pithos-kit/guild",
   "version": "0.1.1",
-  "description": "Standalone .NET, Angular, TypeScript, and Rust Guild members for Pi.",
+  "description": "Standalone Guild members for .NET, Angular, TypeScript, Rust, and language-agnostic code review.",
   "keywords": [
     "pi-package",
     "pi-extension",
@@ -12,7 +12,8 @@
     "angular",
     "typescript",
     "javascript",
-    "rust"
+    "rust",
+    "code-review"
   ],
   "license": "MIT",
   "type": "module",
@@ -37,7 +38,7 @@
   },
   "pithosKit": {
     "displayName": "Guild",
-    "summary": "Delegate focused .NET, Angular, TypeScript, and Rust work to isolated architecture and implementation members.",
+    "summary": "Delegate focused architecture, implementation, and language-agnostic code review to isolated members.",
     "minimumPi": ">=0.83.0",
     "commands": [
       { "name": "guild", "usage": "/guild [--help]", "summary": "List the active Guild roster." },
@@ -55,7 +56,8 @@
       { "name": "csharp-coder", "summary": "Scoped C# and .NET implementation." },
       { "name": "angular-coder", "summary": "Scoped Angular implementation." },
       { "name": "typescript-coder", "summary": "Scoped TypeScript and JavaScript implementation." },
-      { "name": "rust-coder", "summary": "Scoped Rust implementation." }
+      { "name": "rust-coder", "summary": "Scoped Rust implementation." },
+      { "name": "code-reviewer", "summary": "Read-only language-agnostic code review." }
     ],
     "configuration": [
       { "kind": "directory", "key": ".pi/agents", "summary": "Trusted project Guild member overrides." },

@@ -1,6 +1,6 @@
 # guild
 
-A standalone Guild of .NET, Angular, TypeScript, and Rust architecture and implementation members for [pi](https://github.com/earendil-works/pi-mono).
+A standalone Guild of .NET, Angular, TypeScript, and Rust architecture and implementation members plus language-agnostic code review for [pi](https://github.com/earendil-works/pi-mono).
 
 The extension adds an agent-callable `guild_handover` tool and an interactive `/guild-handover` command for direct user delegation. Every handover starts an isolated, ephemeral pi process with a focused system prompt and a hard tool allowlist. The child inherits the parent session's active provider, model, thinking level, working directory, and project-trust decision.
 
@@ -41,8 +41,9 @@ pi:
 | `angular-coder` | Scoped Angular implementation, related tests, type-checking, linting, and builds | `read`, `grep`, `find`, `ls`, `edit`, `write`, `bash` |
 | `typescript-coder` | Scoped TypeScript/JavaScript implementation, migration, tests, type-checking, linting, and builds | `read`, `grep`, `find`, `ls`, `edit`, `write`, `bash` |
 | `rust-coder` | Scoped Rust implementation, compiler-error resolution, tests, linting, and builds | `read`, `grep`, `find`, `ls`, `edit`, `write`, `bash` |
+| `code-reviewer` | Read-only, language-aware review of repository changes with severity-prioritized findings | `read`, `grep`, `find`, `ls`, `bash` |
 
-Architect members cannot edit files or run shell commands. Coder members own related tests and verification and must not report success when relevant checks fail.
+Architect members cannot edit files or run shell commands. The reviewer cannot edit files and uses shell access only for non-mutating repository inspection. Coder members own related tests and verification and must not report success when relevant checks fail.
 
 ## Usage
 
@@ -55,6 +56,7 @@ Use csharp-coder to implement the approved cancellation design.
 Use angular-coder to add the checkout loading and error states.
 Use typescript-coder to make the API client errors type-safe.
 Use rust-coder to resolve the parser's ownership errors.
+Use code-reviewer to review the current change for merge-blocking defects.
 ```
 
 The main agent invokes:
@@ -117,7 +119,7 @@ The first release intentionally supports one Guild member per invocation. Parall
 
 ## Guild member overrides
 
-The package always provides its six built-in definitions. You can override a definition by creating a Markdown agent file in:
+The package always provides its seven built-in definitions. You can override a definition by creating a Markdown agent file in:
 
 - User scope: `~/.pi/agent/agents/*.md`
 - Project scope: `.pi/agents/*.md` in the current directory or an ancestor
@@ -142,7 +144,7 @@ tools: read, grep, find, ls, edit, write, bash
 Your project-specific Guild member instructions.
 ```
 
-Names are limited to the bundled roster. Tool boundaries are hard policy: an override whose tools differ from the corresponding built-in role is ignored. This prevents an architect prompt from gaining write or shell access.
+Names are limited to the bundled roster. Tool boundaries are hard policy: an override whose tools differ from the corresponding built-in role is ignored. This prevents read-only roles from gaining write access and architects from gaining shell access.
 
 ## Isolation and resources
 

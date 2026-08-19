@@ -53,6 +53,7 @@ Members:
   angular-coder
   typescript-coder
   rust-coder
+  code-reviewer
 
 Options:
   --help, -h  Show this help`;
@@ -314,12 +315,13 @@ export function registerGuild(pi: ExtensionAPI, dependencies: GuildDependencies 
 		label: "Guild",
 		description: [
 			"Hand one task over to an isolated Guild member.",
-			"Available members: dotnet-architect, frontend-architect, csharp-coder, angular-coder, typescript-coder, rust-coder.",
-			"Architects are read-only. Coders can edit files and run verification commands.",
+			"Available members: dotnet-architect, frontend-architect, csharp-coder, angular-coder, typescript-coder, rust-coder, code-reviewer.",
+			"Architects and the reviewer are read-only. Coders can edit files and run verification commands.",
 		].join(" "),
-		promptSnippet: "Hand focused .NET, front-end, Angular, TypeScript, or Rust architecture and implementation tasks over to a Guild member",
+		promptSnippet: "Hand focused architecture, implementation, or code review work over to an isolated Guild member",
 		promptGuidelines: [
-			"Use guild_handover when a task clearly belongs to dotnet-architect, frontend-architect, csharp-coder, angular-coder, typescript-coder, or rust-coder; provide a self-contained task with scope and acceptance criteria.",
+			"Use guild_handover when a task clearly belongs to dotnet-architect, frontend-architect, csharp-coder, angular-coder, typescript-coder, rust-coder, or code-reviewer; provide a self-contained task with scope and acceptance criteria.",
+			"Use code-reviewer for repository-connected, language-agnostic review after a coherent code change or when the user explicitly requests review.",
 		],
 		parameters: Type.Object({
 			member: StringEnum(GUILD_MEMBER_NAMES, { description: "Guild member to receive the task" }),
@@ -440,7 +442,7 @@ export function registerGuild(pi: ExtensionAPI, dependencies: GuildDependencies 
 							`Run ID: ${runId}`,
 							`Member: ${prepared.member.name}`,
 							`Source: ${prepared.member.source}`,
-							`Permissions: ${GUILD_MEMBER_POLICIES[prepared.member.name].role === "architect" ? "read-only" : "write-enabled"}`,
+							`Permissions: ${GUILD_MEMBER_POLICIES[prepared.member.name].role === "coder" ? "write-enabled" : GUILD_MEMBER_POLICIES[prepared.member.name].role === "reviewer" ? "read-only review" : "read-only"}`,
 							`Model: ${inheritedModel}`,
 							`Thinking: ${thinkingLevel}`,
 							`Task: ${prepared.task}`,

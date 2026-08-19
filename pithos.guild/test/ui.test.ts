@@ -105,6 +105,28 @@ describe("Guild visual presentation", () => {
     assert.doesNotMatch(rendered, /###|\*\*|◇|◆/);
   });
 
+  it("labels reviewer handovers as read-only review", () => {
+    const rendered = renderGuildLifecycleMessage(
+      {
+        content: "lifecycle",
+        details: {
+          member: "code-reviewer",
+          memberSource: "builtin",
+          role: "reviewer",
+          status: "completed",
+          task: "Review the current change",
+          output: "No findings.",
+        },
+      },
+      { expanded: false },
+      theme,
+    ).render(100).join("\n");
+
+    assert.match(rendered, /code-reviewer/i);
+    assert.match(rendered, /read-only review/i);
+    assert.doesNotMatch(rendered, /write enabled/i);
+  });
+
   it("uses compact framed treatments for failed and cancelled handovers", () => {
     const base = {
       runId: "guild-command-123",
