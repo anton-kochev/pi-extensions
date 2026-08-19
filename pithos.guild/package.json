@@ -1,7 +1,7 @@
 {
   "name": "@pithos-kit/guild",
   "version": "0.1.1",
-  "description": "Standalone .NET, Angular, and TypeScript Guild members for Pi.",
+  "description": "Standalone .NET, Angular, TypeScript, and Rust Guild members for Pi.",
   "keywords": [
     "pi-package",
     "pi-extension",
@@ -11,7 +11,8 @@
     "dotnet",
     "angular",
     "typescript",
-    "javascript"
+    "javascript",
+    "rust"
   ],
   "license": "MIT",
   "type": "module",
@@ -36,7 +37,7 @@
   },
   "pithosKit": {
     "displayName": "Guild",
-    "summary": "Delegate focused .NET, Angular, and TypeScript work to isolated architecture and implementation members.",
+    "summary": "Delegate focused .NET, Angular, TypeScript, and Rust work to isolated architecture and implementation members.",
     "minimumPi": ">=0.83.0",
     "commands": [
       { "name": "guild", "usage": "/guild [--help]", "summary": "List the active Guild roster." },
@@ -53,7 +54,8 @@
       { "name": "frontend-architect", "summary": "Read-only front-end architecture and review." },
       { "name": "csharp-coder", "summary": "Scoped C# and .NET implementation." },
       { "name": "angular-coder", "summary": "Scoped Angular implementation." },
-      { "name": "typescript-coder", "summary": "Scoped TypeScript and JavaScript implementation." }
+      { "name": "typescript-coder", "summary": "Scoped TypeScript and JavaScript implementation." },
+      { "name": "rust-coder", "summary": "Scoped Rust implementation." }
     ],
     "configuration": [
       { "kind": "directory", "key": ".pi/agents", "summary": "Trusted project Guild member overrides." },

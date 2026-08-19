@@ -212,7 +212,7 @@
     {
       "name": "@pithos-kit/guild",
       "version": "0.1.1",
-      "description": "Standalone .NET, Angular, and TypeScript Guild members for Pi.",
+      "description": "Standalone .NET, Angular, TypeScript, and Rust Guild members for Pi.",
       "pi": {
         "extensions": [
           "./extensions"
@@ -220,7 +220,7 @@
       },
       "pithosKit": {
         "displayName": "Guild",
-        "summary": "Delegate focused .NET, Angular, and TypeScript work to isolated architecture and implementation members.",
+        "summary": "Delegate focused .NET, Angular, TypeScript, and Rust work to isolated architecture and implementation members.",
         "minimumPi": ">=0.83.0",
         "commands": [
           {
@@ -263,6 +263,10 @@
           {
             "name": "typescript-coder",
             "summary": "Scoped TypeScript and JavaScript implementation."
+          },
+          {
+            "name": "rust-coder",
+            "summary": "Scoped Rust implementation."
           }
         ],
         "configuration": [

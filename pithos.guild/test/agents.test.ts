@@ -46,12 +46,14 @@ describe("Guild member policies", () => {
       "csharp-coder",
       "angular-coder",
       "typescript-coder",
+      "rust-coder",
     ]);
     assert.deepEqual(GUILD_MEMBER_POLICIES["dotnet-architect"].tools, ["read", "grep", "find", "ls"]);
     assert.deepEqual(GUILD_MEMBER_POLICIES["frontend-architect"].tools, ["read", "grep", "find", "ls"]);
     assert.deepEqual(GUILD_MEMBER_POLICIES["csharp-coder"].tools, ["read", "grep", "find", "ls", "edit", "write", "bash"]);
     assert.deepEqual(GUILD_MEMBER_POLICIES["angular-coder"].tools, ["read", "grep", "find", "ls", "edit", "write", "bash"]);
     assert.deepEqual(GUILD_MEMBER_POLICIES["typescript-coder"].tools, ["read", "grep", "find", "ls", "edit", "write", "bash"]);
+    assert.deepEqual(GUILD_MEMBER_POLICIES["rust-coder"].tools, ["read", "grep", "find", "ls", "edit", "write", "bash"]);
   });
 
   it("ships one valid built-in definition for every approved Guild member", () => {
@@ -201,6 +203,37 @@ describe("Guild member policies", () => {
     assert.match(prompt, /Status[\s\S]*Summary[\s\S]*Files Changed[\s\S]*Verification/i);
     assert.doesNotMatch(prompt, /grimoire\.typescript-coder|CLAUDE\.md|\bSkill\b|WebSearch|WebFetch|context7|TaskCreate|TaskUpdate|TaskList|TaskOutput|TaskStop|Persistent Agent Memory|\bLSP\b/i);
     assert.doesNotMatch(prompt, /TypeScript(?:\s+version)?\s+\d+(?:\.\d+)?/i);
+  });
+
+  it("keeps the Rust coder repository-aware, safe, and compiler-driven", () => {
+    const builtInDir = resolve(import.meta.dirname, "../agents");
+    const member = discoverGuildMembers({ builtInDir }).members.find(({ name }) => name === "rust-coder");
+
+    assert.ok(member);
+    assert.deepEqual(member.tools, ["read", "grep", "find", "ls", "edit", "write", "bash"]);
+    const prompt = member.systemPrompt;
+    assert.match(prompt, /eligibility gate[\s\S]*Rust[\s\S]*(?:\.rs|Cargo\.toml)[\s\S]*refuse/i);
+    assert.match(prompt, /refuse[\s\S]{0,300}(?:outside|does not belong to)[\s\S]{0,120}Rust/i);
+    assert.match(prompt, /refuse[\s\S]{0,380}repository[\s\S]{0,240}(?:no relevant|does not contain)[\s\S]{0,120}Rust/i);
+    assert.match(prompt, /edit[^\n]*write[^\n]*file changes[\s\S]*bash[^\n]*(?:build|test|verification)/i);
+    assert.match(prompt, /Cargo\.toml[\s\S]*Cargo\.lock[\s\S]*(?:rust-toolchain|toolchain)[\s\S]*edition[\s\S]*(?:MSRV|minimum supported Rust version)[\s\S]*(?:features|target)/i);
+    assert.match(prompt, /repository-supported[\s\S]*(?:Rust|language|standard library)[\s\S]*(?:features|APIs)/i);
+    assert.match(prompt, /red-green-refactor/i);
+    assert.match(prompt, /ownership[\s\S]*borrowing[\s\S]*lifetimes[\s\S]*(?:clone|\.clone\(\))/i);
+    assert.match(prompt, /unsafe[\s\S]{0,320}(?:safety invariant|SAFETY)[\s\S]{0,260}(?:smallest|narrow|minimi)/i);
+    assert.match(prompt, /Result[\s\S]*panic![\s\S]*thiserror[\s\S]*anyhow[\s\S]*(?:repository|Cargo\.toml|existing)/i);
+    assert.match(prompt, /compiler[\s\S]*full (?:diagnostic|message)[\s\S]*(?:dependency order|root cause)[\s\S]*cargo check/i);
+    assert.match(prompt, /clippy[\s\S]*guidance[\s\S]*#\[allow[\s\S]*(?:reason|justif)/i);
+    assert.match(prompt, /Send[\s\S]*Sync[\s\S]*(?:async|await)[\s\S]*(?:lock|mutex)/i);
+    assert.match(prompt, /FFI[\s\S]*(?:repr\(C\)|ABI)[\s\S]*(?:ownership|lifetime)[\s\S]*(?:panic|unwind)/i);
+    assert.match(prompt, /untrusted[\s\S]*(?:validate|validation)[\s\S]*(?:boundary|boundaries)/i);
+    assert.match(prompt, /repository conventions and explicit user direction[\s\S]{0,280}(?:constraints|follow)[\s\S]{0,280}correctness[\s\S]{0,180}safety[\s\S]{0,180}maintainability/i);
+    assert.match(prompt, /conflicts[\s\S]{0,320}(?:explain|document)[\s\S]{0,200}smallest safer alternative/i);
+    assert.match(prompt, /Never report success[\s\S]{0,260}(?:cargo check|tests|build)[\s\S]{0,240}(?:fail|blocked)/i);
+    assert.match(prompt, /Status[\s\S]*Summary[\s\S]*Files Changed[\s\S]*Verification/i);
+    assert.doesNotMatch(prompt, /grimoire\.rust-coder|CLAUDE\.md|\bSkill\b|WebSearch|WebFetch|context7|TaskCreate|TaskUpdate|TaskList|TaskOutput|TaskStop|Persistent Agent Memory|\bLSP\b/i);
+    assert.doesNotMatch(prompt, /Rust(?:\s+version)?\s+\d+(?:\.\d+)?/i);
+    assert.doesNotMatch(prompt, /edition\s*=\s*["']?20\d{2}/i);
   });
 });
 

@@ -11,6 +11,8 @@ describe("Guild package metadata", () => {
     assert.equal(packageJson.repository.directory, "pithos.guild");
     assert.match(packageJson.description, /Guild members/);
     assert.match(packageJson.description, /TypeScript/i);
+    assert.match(packageJson.description, /Rust/i);
     assert.ok(packageJson.pithosKit.agents.some(({ name }: { name: string }) => name === "typescript-coder"));
+    assert.ok(packageJson.pithosKit.agents.some(({ name }: { name: string }) => name === "rust-coder"));
   });
 });
