@@ -19,15 +19,22 @@ export interface TranslateConfig {
 
 const CONFIG_KEYS = ["language", "mode", "model"];
 
+export function parseLanguage(value: unknown): string | undefined {
+  if (typeof value !== "string" || /[\r\n]/u.test(value)) return undefined;
+  const language = value.trim();
+  return language || undefined;
+}
+
 export function parseConfig(value: unknown): TranslateConfig | undefined {
   if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
   const record = value as Record<string, unknown>;
   if (Object.keys(record).sort().join("|") !== CONFIG_KEYS.join("|")) return undefined;
-  if (typeof record.language !== "string" || record.language.trim() === "") return undefined;
+  const language = parseLanguage(record.language);
+  if (!language) return undefined;
   if (typeof record.model !== "string" || !parseModelSpec(record.model)) return undefined;
   if (record.mode !== "manual" && record.mode !== "automatic") return undefined;
   return {
-    language: record.language.trim(),
+    language,
     model: record.model,
     mode: record.mode,
   };

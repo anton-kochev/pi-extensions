@@ -6,10 +6,10 @@
 - [x] Reject unsupported arguments with package-local usage.
 
 ## Scoped configuration
-- [x] Strictly validate language, exact `provider/model-id`, model IDs containing further slashes, and manual/automatic mode.
+- [x] Strictly validate a non-empty single-line language, exact `provider/model-id`, model IDs containing further slashes, and manual/automatic mode.
 - [x] Resolve this command's canonical user/project/temporary source scope and fail closed on ambiguous provenance.
 - [x] Load and atomically persist only `~/.pi/agent/translate.json` or `<cwd>/.pi/translate.json` for the active scope; keep source/cwd-isolated temporary settings for the process lifetime.
-- [x] Complete or cancel a language/model wizard using authenticated available models without partial writes.
+- [x] Complete or cancel a language/model wizard using a compact labeled single-line language field with an example placeholder and authenticated available models, without partial writes.
 - [x] Treat `/translate off` without valid configuration as already off, without launching setup or writing state.
 
 ## Assistant selection and Markdown safety
@@ -20,7 +20,7 @@
 
 ## Translation model boundary
 - [x] Resolve only the exact configured authenticated model; never fall back to the active model.
-- [x] Build a faithful translation prompt, propagate cancellation, normalize failures, and preserve usage from success and model-returned failure responses without inventing it for pre-response failures.
+- [x] Build a faithful translation-only prompt that treats source instructions as data, forbids additions or omissions, safely quotes the target language, propagates cancellation, normalizes failures, and preserves usage from success and model-returned failure responses without inventing it for pre-response failures.
 
 ## Manual behavior
 - [x] Append a durable context-free themed Markdown card for a successful manual translation.

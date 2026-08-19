@@ -37,7 +37,7 @@ pi:
 | `/translate config` | Choose the target language and authenticated translation model again |
 | `/translate --help` | Show package-local help (`-h` also works) |
 
-The first command that needs configuration opens a required language and model wizard, then continues the requested operation. Cancelling the wizard makes no partial change. `/translate off` never needs configuration: when no valid configuration exists, it simply reports that automatic translation is already off and writes nothing.
+The first command that needs configuration opens a required language and model wizard, then continues the requested operation. Its target-language step is a compact labeled single-line field with an example placeholder; reconfiguration prefills the current language. Cancelling the wizard makes no partial change. `/translate off` never needs configuration: when no valid configuration exists, it simply reports that automatic translation is already off and writes nothing.
 
 ## Scoped configuration
 

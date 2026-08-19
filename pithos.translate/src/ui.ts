@@ -1,5 +1,6 @@
 import { BorderedLoader, type ExtensionCommandContext, type ExtensionContext } from "@earendil-works/pi-coding-agent";
-import type { TranslateConfig } from "./config.ts";
+import { parseLanguage, type TranslateConfig } from "./config.ts";
+import { TARGET_LANGUAGE_PLACEHOLDER, TargetLanguageInput } from "./language-input.ts";
 import type { TranslationResult } from "./translation.ts";
 
 export async function runTranslationWithUi(
@@ -46,10 +47,18 @@ export async function runConfigWizard(
 
   let language: string | undefined;
   while (!language) {
-    const answer = await ctx.ui.input("Translation target language", current?.language ?? "e.g. French, Japanese");
+    const answer = typeof ctx.ui.custom === "function"
+      ? await ctx.ui.custom<string | undefined>((tui, theme, _keybindings, done) =>
+          new TargetLanguageInput(tui, theme, current?.language, done))
+      : await ctx.ui.input("Target language", TARGET_LANGUAGE_PLACEHOLDER);
     if (answer === undefined) return undefined;
-    language = answer.trim();
-    if (!language) ctx.ui.notify("Target language is required.", "warning");
+    language = parseLanguage(answer);
+    if (!language) {
+      ctx.ui.notify(
+        /[\r\n]/u.test(answer) ? "Target language must be a single line." : "Target language is required.",
+        "warning",
+      );
+    }
   }
 
   const models = ctx.modelRegistry
