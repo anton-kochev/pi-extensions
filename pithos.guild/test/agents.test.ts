@@ -116,6 +116,30 @@ describe("Guild member policies", () => {
     assert.doesNotMatch(prompt, /angular-coder|vue-coder/i);
     assert.doesNotMatch(prompt, /grimoire\.frontend-architect|CLAUDE\.md|\bBash\b|\bSkill\b|WebSearch|WebFetch|context7/i);
   });
+
+  it("keeps the C# coder repository-aware, test-driven, and implementation-focused", () => {
+    const builtInDir = resolve(import.meta.dirname, "../agents");
+    const member = discoverGuildMembers({ builtInDir }).members.find(({ name }) => name === "csharp-coder");
+
+    assert.ok(member);
+    assert.deepEqual(member.tools, ["read", "grep", "find", "ls", "edit", "write", "bash"]);
+    const prompt = member.systemPrompt;
+    assert.match(prompt, /eligibility gate[\s\S]*C#[\s\S]*(?:\.sln|\.csproj)[\s\S]*refuse/i);
+    assert.match(prompt, /refuse[\s\S]{0,300}(?:outside|does not belong to)[\s\S]{0,120}(?:C#|\.NET)/i);
+    assert.match(prompt, /refuse[\s\S]{0,360}repository[\s\S]{0,220}(?:no relevant|does not contain)[\s\S]{0,120}(?:C#|\.NET)/i);
+    assert.match(prompt, /edit[^\n]*write[^\n]*file changes[\s\S]*bash[^\n]*(?:build|test|verification)/i);
+    assert.match(prompt, /target frameworks[\s\S]*language version[\s\S]*nullable/i);
+    assert.match(prompt, /repository-supported[\s\S]*(?:language|framework) features/i);
+    assert.match(prompt, /red-green-refactor/i);
+    assert.match(prompt, /CancellationToken[\s\S]*\.Result[\s\S]*\.Wait\(\)/i);
+    assert.match(prompt, /repository conventions and explicit user direction[\s\S]{0,260}(?:constraints|follow)[\s\S]{0,260}correctness[\s\S]{0,180}security[\s\S]{0,180}maintainability/i);
+    assert.match(prompt, /conflicts[\s\S]{0,300}(?:explain|document)[\s\S]{0,180}smallest safer alternative/i);
+    assert.match(prompt, /Never report success[\s\S]{0,220}(?:compilation|tests)[\s\S]{0,220}(?:fail|blocked)/i);
+    assert.match(prompt, /Status[\s\S]*Summary[\s\S]*Files Changed[\s\S]*Verification/i);
+    assert.doesNotMatch(prompt, /grimoire\.csharp-coder|CLAUDE\.md|\bSkill\b|WebSearch|WebFetch|context7|TaskCreate|TaskUpdate|TaskList|TaskOutput|TaskStop/i);
+    assert.doesNotMatch(prompt, /(?:\.NET|C#)\s*(?:8|9|10|11|12|13)(?:\+|\.0|\s+or\s+(?:later|newer)|\s+and\s+(?:later|newer))/i);
+    assert.doesNotMatch(prompt, /No primary constructors/i);
+  });
 });
 
 describe("agent discovery", () => {
