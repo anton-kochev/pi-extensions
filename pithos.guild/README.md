@@ -41,6 +41,7 @@ pi:
 | `angular-coder` | Scoped Angular implementation, related tests, type-checking, linting, and builds | `read`, `grep`, `find`, `ls`, `edit`, `write`, `bash` |
 | `typescript-coder` | Scoped TypeScript/JavaScript implementation, migration, tests, type-checking, linting, and builds | `read`, `grep`, `find`, `ls`, `edit`, `write`, `bash` |
 | `rust-coder` | Scoped Rust implementation, compiler-error resolution, tests, linting, and builds | `read`, `grep`, `find`, `ls`, `edit`, `write`, `bash` |
+| `rust-architect` | Read-only Rust architecture, structural reviews, contracts, refactoring plans, and implementation handoffs | `read`, `grep`, `find`, `ls` |
 | `code-reviewer` | Read-only, language-aware review of repository changes with severity-prioritized findings | `read`, `grep`, `find`, `ls`, `bash` |
 
 Architect members cannot edit files or run shell commands. The reviewer cannot edit files and uses shell access only for non-mutating repository inspection. Coder members own related tests and verification and must not report success when relevant checks fail.
@@ -56,6 +57,7 @@ Use csharp-coder to implement the approved cancellation design.
 Use angular-coder to add the checkout loading and error states.
 Use typescript-coder to make the API client errors type-safe.
 Use rust-coder to resolve the parser's ownership errors.
+Use rust-architect to redesign the workspace crate boundaries.
 Use code-reviewer to review the current change for merge-blocking defects.
 ```
 
@@ -115,11 +117,11 @@ A direct handover records a user-initiated `started` event and exactly one corre
 
 Guild is independent of Pi's native specialist facility and does not observe its tool lifecycle or messages.
 
-The first release intentionally supports one Guild member per invocation. Parallel tasks, chains, persistent member memory, and dedicated reviewer/test-writer members are out of scope.
+The first release intentionally supports one Guild member per invocation. Parallel tasks, chains, persistent member memory, and dedicated test-writer members are out of scope.
 
 ## Guild member overrides
 
-The package always provides its seven built-in definitions. You can override a definition by creating a Markdown agent file in:
+The package always provides its eight built-in definitions. You can override a definition by creating a Markdown agent file in:
 
 - User scope: `~/.pi/agent/agents/*.md`
 - Project scope: `.pi/agents/*.md` in the current directory or an ancestor

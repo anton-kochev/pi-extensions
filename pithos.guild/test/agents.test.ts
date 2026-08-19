@@ -47,6 +47,7 @@ describe("Guild member policies", () => {
       "angular-coder",
       "typescript-coder",
       "rust-coder",
+      "rust-architect",
       "code-reviewer",
     ]);
     assert.deepEqual(GUILD_MEMBER_POLICIES["dotnet-architect"].tools, ["read", "grep", "find", "ls"]);
@@ -55,6 +56,8 @@ describe("Guild member policies", () => {
     assert.deepEqual(GUILD_MEMBER_POLICIES["angular-coder"].tools, ["read", "grep", "find", "ls", "edit", "write", "bash"]);
     assert.deepEqual(GUILD_MEMBER_POLICIES["typescript-coder"].tools, ["read", "grep", "find", "ls", "edit", "write", "bash"]);
     assert.deepEqual(GUILD_MEMBER_POLICIES["rust-coder"].tools, ["read", "grep", "find", "ls", "edit", "write", "bash"]);
+    assert.deepEqual(GUILD_MEMBER_POLICIES["rust-architect"].tools, ["read", "grep", "find", "ls"]);
+    assert.equal(GUILD_MEMBER_POLICIES["rust-architect"].role, "architect");
     assert.deepEqual(GUILD_MEMBER_POLICIES["code-reviewer"].tools, ["read", "grep", "find", "ls", "bash"]);
     assert.equal(GUILD_MEMBER_POLICIES["code-reviewer"].role, "reviewer");
   });
@@ -235,6 +238,39 @@ describe("Guild member policies", () => {
     assert.match(prompt, /Never report success[\s\S]{0,260}(?:cargo check|tests|build)[\s\S]{0,240}(?:fail|blocked)/i);
     assert.match(prompt, /Status[\s\S]*Summary[\s\S]*Files Changed[\s\S]*Verification/i);
     assert.doesNotMatch(prompt, /grimoire\.rust-coder|CLAUDE\.md|\bSkill\b|WebSearch|WebFetch|context7|TaskCreate|TaskUpdate|TaskList|TaskOutput|TaskStop|Persistent Agent Memory|\bLSP\b/i);
+    assert.doesNotMatch(prompt, /Rust(?:\s+version)?\s+\d+(?:\.\d+)?/i);
+    assert.doesNotMatch(prompt, /edition\s*=\s*["']?20\d{2}/i);
+  });
+
+  it("keeps the Rust architect read-only, repository-aware, and at architecture altitude", () => {
+    const builtInDir = resolve(import.meta.dirname, "../agents");
+    const member = discoverGuildMembers({ builtInDir }).members.find(({ name }) => name === "rust-architect");
+
+    assert.ok(member);
+    assert.deepEqual(member.tools, ["read", "grep", "find", "ls"]);
+    const prompt = member.systemPrompt;
+    assert.match(prompt, /read-only[\s\S]*Never create, edit, or delete files, run shell commands/i);
+    assert.match(prompt, /eligibility gate[\s\S]*Rust[\s\S]*(?:\.rs|Cargo\.toml)[\s\S]*refuse/i);
+    assert.match(prompt, /refuse[\s\S]{0,320}(?:outside|does not belong to)[\s\S]{0,140}Rust/i);
+    assert.match(prompt, /refuse[\s\S]{0,420}repository[\s\S]{0,280}(?:no relevant|does not contain)[\s\S]{0,140}Rust/i);
+    assert.match(prompt, /architecture altitude[\s\S]*contract snippet declares members; it does not implement them/i);
+    assert.match(prompt, /Cargo\.toml[\s\S]*Cargo\.lock[\s\S]*(?:rust-toolchain|toolchain)[\s\S]*edition[\s\S]*(?:MSRV|minimum supported Rust version)[\s\S]*(?:features|targets|crate types)/i);
+    assert.match(prompt, /module boundaries[\s\S]*dependency direction[\s\S]*public API/i);
+    assert.match(prompt, /trait[\s\S]*associated types[\s\S]*generics[\s\S]*trait objects[\s\S]*(?:coherence|object safety)/i);
+    assert.match(prompt, /ownership[\s\S]*borrowing[\s\S]*lifetimes[\s\S]*Arc[\s\S]*Rc[\s\S]*interior mutability[\s\S]*(?:Clone|cloning)/i);
+    assert.match(prompt, /custom error enums[\s\S]*thiserror[\s\S]*anyhow[\s\S]*(?:library|application)/i);
+    assert.match(prompt, /workspace[\s\S]*crate boundaries[\s\S]*feature flags[\s\S]*(?:dependency|compile time)/i);
+    assert.match(prompt, /unsafe[\s\S]*(?:safety invariant|SAFETY)[\s\S]*(?:encapsulat|smallest)[\s\S]*FFI/i);
+    assert.match(prompt, /refactor[\s\S]*(?:intermediate|sequence)[\s\S]*(?:compile|cargo check)[\s\S]*tests/i);
+    assert.match(prompt, /red-green-refactor/i);
+    assert.match(prompt, /Project best practice[\s\S]*Local convention[\s\S]*Questionable pattern[\s\S]*Anti-pattern/i);
+    assert.match(prompt, /repository conventions and explicit user direction[\s\S]{0,280}(?:constraints|follow)[\s\S]{0,280}correctness[\s\S]{0,180}safety[\s\S]{0,180}maintainability/i);
+    assert.match(prompt, /When either conflicts[\s\S]{0,280}explain[\s\S]{0,180}smallest safer alternative/i);
+    assert.match(prompt, /Summary[\s\S]*Findings[\s\S]*Recommendations[\s\S]*Trade-offs[\s\S]*Test Plan[\s\S]*Handoff/i);
+    assert.match(prompt, /affected paths or areas[\s\S]*implementation order[\s\S]*acceptance criteria[\s\S]*constraints/i);
+    assert.match(prompt, /Never[\s\S]{0,120}claim(?:ed)? to have implemented/i);
+    assert.doesNotMatch(prompt, /rust-coder/i);
+    assert.doesNotMatch(prompt, /grimoire\.rust-architect|CLAUDE\.md|\bBash\b|\bSkill\b|WebSearch|WebFetch|context7|TaskCreate|TaskUpdate|TaskList|TaskOutput|TaskStop|Persistent Agent Memory|\bLSP\b/i);
     assert.doesNotMatch(prompt, /Rust(?:\s+version)?\s+\d+(?:\.\d+)?/i);
     assert.doesNotMatch(prompt, /edition\s*=\s*["']?20\d{2}/i);
   });

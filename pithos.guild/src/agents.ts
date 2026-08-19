@@ -9,6 +9,7 @@ export const GUILD_MEMBER_NAMES = [
 	"angular-coder",
 	"typescript-coder",
 	"rust-coder",
+	"rust-architect",
 	"code-reviewer",
 ] as const;
 
@@ -27,6 +28,7 @@ export const GUILD_MEMBER_POLICIES: Record<GuildMemberName, { tools: readonly st
 	"angular-coder": { tools: CODER_TOOLS, role: "coder" },
 	"typescript-coder": { tools: CODER_TOOLS, role: "coder" },
 	"rust-coder": { tools: CODER_TOOLS, role: "coder" },
+	"rust-architect": { tools: ARCHITECT_TOOLS, role: "architect" },
 	"code-reviewer": { tools: REVIEWER_TOOLS, role: "reviewer" },
 };
 

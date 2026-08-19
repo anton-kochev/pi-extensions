@@ -269,6 +269,10 @@
             "summary": "Scoped Rust implementation."
           },
           {
+            "name": "rust-architect",
+            "summary": "Read-only Rust architecture and structural review."
+          },
+          {
             "name": "code-reviewer",
             "summary": "Read-only language-agnostic code review."
           }
