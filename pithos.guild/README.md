@@ -1,6 +1,6 @@
 # guild
 
-A standalone Guild of .NET, Angular, TypeScript, and Rust architecture and implementation members, language-agnostic code review, confirmed Conventional Commits, and test-driven development guidance for [pi](https://github.com/earendil-works/pi-mono).
+A standalone Guild of .NET, Angular, TypeScript, and Rust architecture and implementation members, language-agnostic code review standards, confirmed Conventional Commits, and test-driven development guidance for [pi](https://github.com/earendil-works/pi-mono).
 
 The extension adds agent-callable `guild_handover` and controlled `create_commit` tools, plus interactive `/guild-handover` and `/commit` commands. Every handover starts an isolated, ephemeral pi process with a focused system prompt and a hard tool allowlist. The child inherits the parent session's active provider, model, thinking level, working directory, and project-trust decision.
 
@@ -45,6 +45,18 @@ pi:
 | `code-reviewer` | Read-only, language-aware review of repository changes with severity-prioritized findings | `read`, `grep`, `find`, `ls`, `bash` |
 
 Architect members cannot edit files or run shell commands. The reviewer cannot edit files and uses shell access only for non-mutating repository inspection. Coder members own related tests and verification and must not report success when relevant checks fail.
+
+## Code-review standards skill
+
+Guild owns the language-neutral `code-review-standards` skill for focused, evidence-based reviews with impact-calibrated severity and deterministic Request changes, Comment, or Approve decisions. When Guild is installed and this resource is enabled, Pi-native model-visible discovery lets the main agent and Guild child processes load it proactively without requiring explicit skill invocation. A temporary parent-only `pi -e` run does not guarantee child discovery unless Guild is also installed and enabled for the child. The skill can also be loaded directly when desired:
+
+```text
+/skill:code-review-standards [review scope]
+```
+
+The methodology honors explicit commits and ranges or inspects staged, unstaged, and relevant untracked changes; detects supported languages, frameworks, and runtimes from repository evidence; and produces the same findings-first report as `code-reviewer`. It never treats an inspected scope as proof of perfect code or claims verification that was not run.
+
+Use `pi config` or `pi config -l` to disable this resource, then run `/reload`. The `code-reviewer` remains self-contained when the skill is disabled: its built-in prompt retains the hard read-only boundary, severity framework, scope discovery, and deterministic report contract.
 
 ## Test-driven development skill
 

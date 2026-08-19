@@ -180,7 +180,7 @@
     {
       "name": "@pithos-kit/guild",
       "version": "0.3.0",
-      "description": "Software-development Guild members, confirmed Conventional Commits, and TDD guidance for .NET, Angular, TypeScript, Rust, and language-agnostic code review.",
+      "description": "Software-development Guild members, code-review standards, confirmed Conventional Commits, and TDD guidance for .NET, Angular, TypeScript, Rust, and language-agnostic review.",
       "pi": {
         "extensions": [
           "./extensions"
@@ -218,6 +218,11 @@
             "name": "skill:tdd",
             "summary": "Load the test-driven development workflow explicitly.",
             "usage": "/skill:tdd [task context]"
+          },
+          {
+            "name": "skill:code-review-standards",
+            "summary": "Load the evidence-based code-review methodology explicitly.",
+            "usage": "/skill:code-review-standards [review scope]"
           }
         ],
         "tools": [
@@ -240,6 +245,10 @@
           {
             "name": "tdd",
             "summary": "Test-driven development through red-green-refactor."
+          },
+          {
+            "name": "code-review-standards",
+            "summary": "Evidence-based review severity and deterministic merge decisions."
           }
         ],
         "themes": [],

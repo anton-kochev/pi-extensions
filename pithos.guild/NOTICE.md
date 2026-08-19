@@ -4,4 +4,6 @@ The built-in `dotnet-architect`, `frontend-architect`, `csharp-coder`, `angular-
 
 The adaptations replace Claude Code-specific tools and behavior with pi-native tool boundaries, isolated subprocess execution, parent model/thinking inheritance, standardized verification responsibilities, and pi user/project override semantics.
 
+The `code-review-standards` skill is adapted from the corresponding MIT-licensed Grimoire methodology. The Guild adaptation uses pi-native skill discovery, repository-evidenced capability detection, impact-calibrated severity, and the code-reviewer's deterministic findings-first report while preserving its read-only boundary.
+
 The `conventional-commit` skill and controlled commit workflow were transferred from `@pithos-kit/atlas` to keep software-development workflows under Guild ownership. Commit messages follow the Conventional Commits 1.0.0 specification.

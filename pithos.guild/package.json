@@ -1,7 +1,7 @@
 {
   "name": "@pithos-kit/guild",
   "version": "0.3.0",
-  "description": "Software-development Guild members, confirmed Conventional Commits, and TDD guidance for .NET, Angular, TypeScript, Rust, and language-agnostic code review.",
+  "description": "Software-development Guild members, code-review standards, confirmed Conventional Commits, and TDD guidance for .NET, Angular, TypeScript, Rust, and language-agnostic review.",
   "keywords": [
     "pi-package",
     "pi-extension",
@@ -49,7 +49,8 @@
       { "name": "guild-handover", "usage": "/guild-handover [member] [task]", "summary": "Delegate directly from the interactive TUI." },
       { "name": "commit", "usage": "/commit [instructions]", "summary": "Create a context-scoped Conventional Commit with confirmation." },
       { "name": "skill:conventional-commit", "usage": "/skill:conventional-commit [instructions]", "summary": "Load the confirmed, context-aware Conventional Commit workflow explicitly." },
-      { "name": "skill:tdd", "usage": "/skill:tdd [task context]", "summary": "Load the test-driven development workflow explicitly." }
+      { "name": "skill:tdd", "usage": "/skill:tdd [task context]", "summary": "Load the test-driven development workflow explicitly." },
+      { "name": "skill:code-review-standards", "usage": "/skill:code-review-standards [review scope]", "summary": "Load the evidence-based code-review methodology explicitly." }
     ],
     "tools": [
       { "name": "guild_handover", "summary": "Hand focused work to an isolated Guild member." },
@@ -58,7 +59,8 @@
     "prompts": [],
     "skills": [
       { "name": "conventional-commit", "summary": "Context-aware staging and confirmed Conventional Commit generation." },
-      { "name": "tdd", "summary": "Test-driven development through red-green-refactor." }
+      { "name": "tdd", "summary": "Test-driven development through red-green-refactor." },
+      { "name": "code-review-standards", "summary": "Evidence-based review severity and deterministic merge decisions." }
     ],
     "themes": [],
     "agents": [
