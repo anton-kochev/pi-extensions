@@ -114,7 +114,7 @@ describe("guild extension", () => {
     assert.match(handover.description, /directly/i);
     assert.deepEqual(
       handover.getArgumentCompletions("").map((item: any) => item.value),
-      ["dotnet-architect", "frontend-architect", "csharp-coder", "angular-coder"],
+      ["dotnet-architect", "frontend-architect", "csharp-coder", "angular-coder", "typescript-coder"],
     );
     assert.deepEqual(
       handover.getArgumentCompletions("csharp").map((item: any) => item.value),

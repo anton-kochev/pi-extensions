@@ -51,6 +51,7 @@ Members:
   frontend-architect
   csharp-coder
   angular-coder
+  typescript-coder
 
 Options:
   --help, -h  Show this help`;
@@ -312,12 +313,12 @@ export function registerGuild(pi: ExtensionAPI, dependencies: GuildDependencies 
 		label: "Guild",
 		description: [
 			"Hand one task over to an isolated Guild member.",
-			"Available members: dotnet-architect, frontend-architect, csharp-coder, angular-coder.",
+			"Available members: dotnet-architect, frontend-architect, csharp-coder, angular-coder, typescript-coder.",
 			"Architects are read-only. Coders can edit files and run verification commands.",
 		].join(" "),
-		promptSnippet: "Hand focused .NET or Angular architecture and implementation tasks over to a Guild member",
+		promptSnippet: "Hand focused .NET, front-end, Angular, or TypeScript architecture and implementation tasks over to a Guild member",
 		promptGuidelines: [
-			"Use guild_handover when a task clearly belongs to dotnet-architect, frontend-architect, csharp-coder, or angular-coder; provide a self-contained task with scope and acceptance criteria.",
+			"Use guild_handover when a task clearly belongs to dotnet-architect, frontend-architect, csharp-coder, angular-coder, or typescript-coder; provide a self-contained task with scope and acceptance criteria.",
 		],
 		parameters: Type.Object({
 			member: StringEnum(GUILD_MEMBER_NAMES, { description: "Guild member to receive the task" }),

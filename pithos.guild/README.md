@@ -1,6 +1,6 @@
 # guild
 
-A standalone Guild of .NET and Angular architecture and implementation members for [pi](https://github.com/earendil-works/pi-mono).
+A standalone Guild of .NET, Angular, and TypeScript architecture and implementation members for [pi](https://github.com/earendil-works/pi-mono).
 
 The extension adds an agent-callable `guild_handover` tool and an interactive `/guild-handover` command for direct user delegation. Every handover starts an isolated, ephemeral pi process with a focused system prompt and a hard tool allowlist. The child inherits the parent session's active provider, model, thinking level, working directory, and project-trust decision.
 
@@ -39,6 +39,7 @@ pi:
 | `frontend-architect` | Read-only front-end architecture, state ownership, boundaries, routing, rendering, and API contracts | `read`, `grep`, `find`, `ls` |
 | `csharp-coder` | Scoped C#/.NET implementation, related tests, builds, and verification | `read`, `grep`, `find`, `ls`, `edit`, `write`, `bash` |
 | `angular-coder` | Scoped Angular implementation, related tests, type-checking, linting, and builds | `read`, `grep`, `find`, `ls`, `edit`, `write`, `bash` |
+| `typescript-coder` | Scoped TypeScript/JavaScript implementation, migration, tests, type-checking, linting, and builds | `read`, `grep`, `find`, `ls`, `edit`, `write`, `bash` |
 
 Architect members cannot edit files or run shell commands. Coder members own related tests and verification and must not report success when relevant checks fail.
 
@@ -51,6 +52,7 @@ Use dotnet-architect to design the order cancellation workflow.
 Use frontend-architect to define state ownership for checkout.
 Use csharp-coder to implement the approved cancellation design.
 Use angular-coder to add the checkout loading and error states.
+Use typescript-coder to make the API client errors type-safe.
 ```
 
 The main agent invokes:
@@ -113,7 +115,7 @@ The first release intentionally supports one Guild member per invocation. Parall
 
 ## Guild member overrides
 
-The package always provides its four built-in definitions. You can override a definition by creating a Markdown agent file in:
+The package always provides its five built-in definitions. You can override a definition by creating a Markdown agent file in:
 
 - User scope: `~/.pi/agent/agents/*.md`
 - Project scope: `.pi/agents/*.md` in the current directory or an ancestor

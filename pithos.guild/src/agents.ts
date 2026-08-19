@@ -7,6 +7,7 @@ export const GUILD_MEMBER_NAMES = [
 	"frontend-architect",
 	"csharp-coder",
 	"angular-coder",
+	"typescript-coder",
 ] as const;
 
 export type GuildMemberName = (typeof GUILD_MEMBER_NAMES)[number];
@@ -20,6 +21,7 @@ export const GUILD_MEMBER_POLICIES: Record<GuildMemberName, { tools: readonly st
 	"frontend-architect": { tools: ARCHITECT_TOOLS, role: "architect" },
 	"csharp-coder": { tools: CODER_TOOLS, role: "coder" },
 	"angular-coder": { tools: CODER_TOOLS, role: "coder" },
+	"typescript-coder": { tools: CODER_TOOLS, role: "coder" },
 };
 
 export interface GuildMember {

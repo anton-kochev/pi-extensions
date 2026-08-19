@@ -10,5 +10,7 @@ describe("Guild package metadata", () => {
     assert.equal(packageJson.name, "@pithos-kit/guild");
     assert.equal(packageJson.repository.directory, "pithos.guild");
     assert.match(packageJson.description, /Guild members/);
+    assert.match(packageJson.description, /TypeScript/i);
+    assert.ok(packageJson.pithosKit.agents.some(({ name }: { name: string }) => name === "typescript-coder"));
   });
 });
