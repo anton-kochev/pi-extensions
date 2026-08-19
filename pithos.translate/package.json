@@ -1,6 +1,6 @@
 {
   "name": "@pithos-kit/translate",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "Faithful manual and display-only automatic assistant translation for Pi.",
   "keywords": [
     "pi-package",

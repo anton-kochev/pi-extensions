@@ -42,5 +42,5 @@
 - [x] Make no manual or automatic translation model call outside interactive TUI mode.
 
 ## Package
-- [x] Publish `@pithos-kit/translate` v0.1.0 for Pi >=0.84.0 with the documented extension entry, scripts, and packed files.
+- [x] Publish `@pithos-kit/translate` v0.0.0 for Pi >=0.84.0 with the documented extension entry, scripts, and packed files.
 - [x] Document that Translate neither enforces English nor modifies Pi prompts/context; language policy remains in user/project instructions.

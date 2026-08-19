@@ -15,7 +15,7 @@ const packages = [
   { directory: "pithos.context-bar", shortName: "context-bar", version: "0.1.1", minimumPi: ">=0.84.1" },
   { directory: "pithos.plan", shortName: "plan", version: "0.1.0", minimumPi: ">=0.83.0" },
   { directory: "pithos.themes", shortName: "themes", version: "0.1.0", minimumPi: ">=0.84.1" },
-  { directory: "pithos.translate", shortName: "translate", version: "0.1.0", minimumPi: ">=0.84.0" },
+  { directory: "pithos.translate", shortName: "translate", version: "0.0.0", minimumPi: ">=0.84.0" },
   { directory: "pithos.atlas", shortName: "atlas", version: "0.6.0", minimumPi: ">=0.83.0" },
 ];
 

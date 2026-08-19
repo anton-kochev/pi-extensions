@@ -23,7 +23,7 @@ pi install -l ./pithos.translate
 ```yaml
 pi:
   extensions:
-    "@pithos-kit/translate": "npm:0.1.0"
+    "@pithos-kit/translate": "npm:0.0.0"
 ```
 
 ## Commands
