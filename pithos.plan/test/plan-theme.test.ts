@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
@@ -25,6 +26,7 @@ function createHarness(
 		isIdle?: boolean;
 		branchEntries?: any[];
 		hasUI?: boolean;
+		mode?: "tui" | "rpc" | "json" | "print";
 		cwd?: string;
 		sessionName?: string;
 	} = {},
@@ -38,6 +40,7 @@ function createHarness(
 	const entries: Array<{ customType: string; data: any }> = [];
 	const registeredTools = new Map<string, any>();
 	const notifications: Array<{ message: string; level: string }> = [];
+	const autocompleteFactories: unknown[] = [];
 	const footerFactories: unknown[] = [];
 	const pi = {
 		on(name: string, handler: (event: any, ctx: any) => Promise<any>) {
@@ -65,14 +68,34 @@ function createHarness(
 			});
 		},
 	};
+	const previewTheme = {
+		name: "dark",
+		bold: (text: string) => text,
+		italic: (text: string) => text,
+		strikethrough: (text: string) => text,
+		underline: (text: string) => text,
+		fg: (_color: string, text: string) => text,
+	};
+	const previewKeybindings = {
+		matches: (data: string, action: string) =>
+			(action === "tui.select.confirm" && data === "enter") ||
+			(action === "tui.select.cancel" && data === "escape") ||
+			(action === "tui.select.up" && data === "up") ||
+			(action === "tui.select.down" && data === "down") ||
+			(action === "tui.select.pageUp" && data === "pageUp") ||
+			(action === "tui.select.pageDown" && data === "pageDown"),
+	};
 	const ctx = {
 		cwd: options.cwd ?? "/tmp/pi-plan-theme-test-project",
-		mode: "tui",
+		mode: options.mode ?? "tui",
 		hasUI: options.hasUI ?? true,
 		isIdle: () => options.isIdle ?? true,
 		sessionManager: { getBranch: () => branchEntries },
 		ui: {
-			theme: { name: "dark" },
+			theme: previewTheme,
+			addAutocompleteProvider(factory: unknown) {
+				autocompleteFactories.push(factory);
+			},
 			getTheme: (name: string) => ({ name }),
 			setTheme: () =>
 				options.themeSwitchSucceeds === false
@@ -86,6 +109,24 @@ function createHarness(
 				notifications.push({ message, level });
 			},
 			confirm: options.confirm ?? (async () => false),
+			async custom(factory: any) {
+				let selected: string | undefined;
+				const component = factory(
+					{ terminal: { rows: 24 }, requestRender() {} },
+					previewTheme,
+					previewKeybindings,
+					(value: string) => {
+						selected = value;
+					},
+				);
+				const approved = await (options.confirm ?? (async () => false))(
+					"Review plan draft",
+					component.render(80).join("\n"),
+				);
+				if (approved) component.handleInput("down");
+				component.handleInput("enter");
+				return selected;
+			},
 		},
 	};
 	planTheme(pi as never);
@@ -97,6 +138,7 @@ function createHarness(
 		allTools,
 		registeredTools,
 		notifications,
+		autocompleteFactories,
 		footerFactories,
 		sessionNames,
 		getActiveTools: () => activeTools,
@@ -125,11 +167,22 @@ describe("plan mode enforcement", () => {
 			assert.deepEqual(result, { action: "handled" });
 			assert.equal(harness.notifications.length, 1);
 			assert.equal(harness.notifications[0]?.level, "info");
-			assert.match(harness.notifications[0]?.message ?? "", /Usage: \/plan <task>/);
+			assert.match(harness.notifications[0]?.message ?? "", /Usage: \/plan \[task \| exit \| cancel \| --help\]/);
+			assert.match(harness.notifications[0]?.message ?? "", /no argument.*finalize/i);
 			assert.match(harness.notifications[0]?.message ?? "", /--help, -h/);
+			assert.match(harness.notifications[0]?.message ?? "", /exit.*without creating/i);
+			assert.match(harness.notifications[0]?.message ?? "", /cancel.*alias/i);
 			assert.equal(harness.entries.length, 0);
 			assert.deepEqual(harness.getActiveTools(), normalTools);
 		}
+	});
+
+	it("registers Plan argument autocomplete in the TUI", async () => {
+		const harness = createHarness();
+
+		await harness.handlers.get("session_start")?.({ type: "session_start" }, harness.ctx);
+
+		assert.equal(harness.autocompleteFactories.length, 1);
 	});
 
 	it("does not intercept native skill input", async () => {
@@ -191,6 +244,42 @@ describe("plan mode enforcement", () => {
 		assert.equal(harness.entries.some((entry) => entry.data.active), false);
 	});
 
+	it("exits active Plan mode without creating a plan through explicit command aliases", async () => {
+		for (const command of ["/plan exit", "/plan cancel"]) {
+			const harness = createHarness();
+			const normalTools = harness.getActiveTools();
+			await activatePlan(harness);
+
+			const result = await harness.handlers.get("input")?.(
+				{ type: "input", source: "interactive", text: command },
+				harness.ctx,
+			);
+
+			assert.deepEqual(result, { action: "handled" });
+			assert.equal(harness.entries.at(-1)?.data.active, false);
+			assert.equal(harness.entries.at(-1)?.data.cancelled, true);
+			assert.deepEqual(harness.getActiveTools(), normalTools);
+			assert.match(harness.notifications.at(-1)?.message ?? "", /exited Plan mode.*no plan.*created/i);
+		}
+	});
+
+	it("does not start a new plan when an exit alias is used outside Plan mode", async () => {
+		for (const command of ["/plan exit", "/plan cancel"]) {
+			const harness = createHarness();
+			const normalTools = harness.getActiveTools();
+
+			const result = await harness.handlers.get("input")?.(
+				{ type: "input", source: "interactive", text: command },
+				harness.ctx,
+			);
+
+			assert.deepEqual(result, { action: "handled" });
+			assert.equal(harness.entries.length, 0);
+			assert.deepEqual(harness.getActiveTools(), normalTools);
+			assert.match(harness.notifications.at(-1)?.message ?? "", /Plan mode is not active/i);
+		}
+	});
+
 	it("keeps the internal plan creator hidden outside Plan mode", async () => {
 		const harness = createHarness();
 		harness.setActiveTools([...harness.getActiveTools(), "create_plan"]);
@@ -231,8 +320,13 @@ describe("plan mode enforcement", () => {
 		assert.deepEqual(harness.getActiveTools(), ["read", "grep", "find", "ls", "create_plan"]);
 	});
 
-	it("does not restore the internal plan creator from legacy active state", async () => {
+	it("revokes legacy blanket save authorization and reviews the restored draft", async () => {
+		let confirmations = 0;
 		const harness = createHarness({
+			confirm: async () => {
+				confirmations += 1;
+				return false;
+			},
 			branchEntries: [
 				{
 					type: "custom",
@@ -255,14 +349,17 @@ describe("plan mode enforcement", () => {
 			input: { content: "# Restored plan" },
 		};
 
-		await harness.handlers.get("tool_call")?.(call, harness.ctx);
-		await harness.handlers.get("tool_result")?.({ ...call, type: "tool_result", isError: false }, harness.ctx);
+		const result = await harness.handlers.get("tool_call")?.(call, harness.ctx);
 
-		assert.equal(harness.getActiveTools().includes("create_plan"), false);
+		assert.equal(result?.block, true);
+		assert.equal(confirmations, 1);
+		assert.equal(harness.getActiveTools().includes("create_plan"), true);
 	});
 
-	it("restores prior tools and save authorization with an active Plan session", async () => {
+	it("restores prior tools and exact-draft authorization with an active Plan session", async () => {
 		let confirmations = 0;
+		const content = "# Restored plan";
+		const approvedContentDigest = createHash("sha256").update(content).digest("hex");
 		const harness = createHarness({
 			confirm: async () => {
 				confirmations += 1;
@@ -277,7 +374,7 @@ describe("plan mode enforcement", () => {
 					planPath: ".pi/plans/restored.md",
 					previousThemeName: "dark",
 					previousToolNames: ["read", "bash"],
-					saveAuthorized: true,
+					approvedContentDigest,
 				},
 			},
 		],
@@ -287,7 +384,7 @@ describe("plan mode enforcement", () => {
 			type: "tool_call",
 			toolCallId: "create-restored-plan",
 			toolName: "create_plan",
-			input: { content: "# Restored plan" },
+			input: { content },
 		};
 
 		const result = await harness.handlers.get("tool_call")?.(call, harness.ctx);
@@ -296,6 +393,46 @@ describe("plan mode enforcement", () => {
 		assert.equal(result?.block, undefined);
 		assert.equal(confirmations, 0);
 		assert.deepEqual(harness.getActiveTools(), ["read", "bash"]);
+	});
+
+	it("blocks restored exact-draft approval when interactive UI is unavailable", async () => {
+		let confirmations = 0;
+		const content = "# Restored plan";
+		const approvedContentDigest = createHash("sha256").update(content).digest("hex");
+		const harness = createHarness({
+			hasUI: false,
+			confirm: async () => {
+				confirmations += 1;
+				return true;
+			},
+			branchEntries: [
+				{
+					type: "custom",
+					customType: "plan-theme-state",
+					data: {
+						active: true,
+						planPath: ".pi/plans/restored.md",
+						previousThemeName: "dark",
+						approvedContentDigest,
+					},
+				},
+			],
+		});
+		await harness.handlers.get("session_start")?.({ type: "session_start" }, harness.ctx);
+
+		const result = await harness.handlers.get("tool_call")?.(
+			{
+				type: "tool_call",
+				toolCallId: "create-restored-plan",
+				toolName: "create_plan",
+				input: { content },
+			},
+			harness.ctx,
+		);
+
+		assert.equal(result?.block, true);
+		assert.match(result?.reason ?? "", /interactive approval/i);
+		assert.equal(confirmations, 0);
 	});
 
 	it("remains enforced when switching to the Plan theme fails", async () => {
@@ -379,10 +516,17 @@ describe("plan mode enforcement", () => {
 		assert.deepEqual(harness.sessionNames, ["protect-project-mutations"]);
 	});
 
-	it("atomically advances a late collision through the controlled plan creator", async () => {
+	it("resolves a known collision before exact-path review", async () => {
 		const cwd = await mkdtemp(join(tmpdir(), "pi-plan-theme-"));
 		try {
-			const harness = createHarness({ confirm: async () => true, cwd });
+			const dialogs: string[] = [];
+			const harness = createHarness({
+				confirm: async (_title, message) => {
+					dialogs.push(message);
+					return true;
+				},
+				cwd,
+			});
 			await activatePlan(harness);
 			const generatedPath = harness.entries.at(-1)?.data.planPath as string;
 			await mkdir(dirname(join(cwd, generatedPath)), { recursive: true });
@@ -399,8 +543,51 @@ describe("plan mode enforcement", () => {
 			const result = await tool.execute(call.toolCallId, call.input, undefined, undefined, harness.ctx);
 
 			assert.notEqual(result.details.path, generatedPath);
+			assert.match(dialogs[0] ?? "", new RegExp(result.details.path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 			assert.equal(await readFile(join(cwd, generatedPath), "utf8"), "existing plan");
 			assert.equal(await readFile(join(cwd, result.details.path), "utf8"), "# New plan");
+		} finally {
+			await rm(cwd, { recursive: true, force: true });
+		}
+	});
+
+	it("revokes approval when the reviewed destination collides before publication", async () => {
+		const cwd = await mkdtemp(join(tmpdir(), "pi-plan-theme-"));
+		try {
+			let confirmations = 0;
+			const harness = createHarness({
+				confirm: async () => {
+					confirmations += 1;
+					return true;
+				},
+				cwd,
+			});
+			await activatePlan(harness);
+			const call = {
+				type: "tool_call",
+				toolCallId: "create-plan-1",
+				toolName: "create_plan",
+				input: { content: "# New plan" },
+			};
+			await harness.handlers.get("tool_call")?.(call, harness.ctx);
+			const reviewedPath = harness.entries.at(-1)?.data.planPath as string;
+			await mkdir(dirname(join(cwd, reviewedPath)), { recursive: true });
+			await symlink("missing-racing-plan.md", join(cwd, reviewedPath));
+
+			const tool = harness.registeredTools.get("create_plan");
+			await assert.rejects(tool.execute(call.toolCallId, call.input, undefined, undefined, harness.ctx), {
+				code: "EEXIST",
+			});
+			const nextPath = harness.entries.at(-1)?.data.planPath as string;
+			assert.notEqual(nextPath, reviewedPath);
+			assert.equal(harness.entries.at(-1)?.data.approvedContentDigest, undefined);
+
+			const retry = await harness.handlers.get("tool_call")?.(
+				{ ...call, toolCallId: "create-plan-2" },
+				harness.ctx,
+			);
+			assert.equal(retry?.block, undefined);
+			assert.equal(confirmations, 2);
 		} finally {
 			await rm(cwd, { recursive: true, force: true });
 		}
@@ -427,7 +614,7 @@ describe("plan mode enforcement", () => {
 		assert.equal(harness.entries.at(-1)?.data.active, true);
 	});
 
-	it("re-running the Plan command authorizes the next plan write without asking twice", async () => {
+	it("re-running the Plan command defers its only approval to exact-draft review", async () => {
 		let confirmations = 0;
 		const harness = createHarness({
 			confirm: async () => {
@@ -496,7 +683,9 @@ describe("plan mode enforcement", () => {
 			{ type: "tool_call", toolCallId: "create-plan-2", toolName: "create_plan", input: { content: "# Plan" } },
 			harness.ctx,
 		);
-		await new Promise((resolve) => setImmediate(resolve));
+		for (let attempts = 0; attempts < 20 && confirmations === 0; attempts += 1) {
+			await new Promise((resolve) => setImmediate(resolve));
+		}
 		resolveConfirmation?.(true);
 
 		assert.equal(confirmations, 1);
@@ -560,7 +749,7 @@ describe("plan mode enforcement", () => {
 
 		assert.equal(readResult?.block, undefined);
 		assert.equal(harness.entries.at(-1)?.data.active, true);
-		assert.equal(harness.entries.at(-1)?.data.saveAuthorized, false);
+		assert.equal(harness.entries.at(-1)?.data.approvedContentDigest, undefined);
 		assert.deepEqual(harness.sessionNames, []);
 	});
 
@@ -590,9 +779,46 @@ describe("plan mode enforcement", () => {
 		assert.equal(retry?.block, undefined);
 		assert.equal(confirmations, 1);
 		assert.equal(harness.entries.at(-1)?.data.active, true);
-		assert.equal(harness.entries.at(-1)?.data.saveAuthorized, true);
+		assert.equal(
+			harness.entries.at(-1)?.data.approvedContentDigest,
+			createHash("sha256").update("# Plan").digest("hex"),
+		);
 		assert.deepEqual(harness.getActiveTools(), ["read", "grep", "find", "ls", "create_plan"]);
 		assert.deepEqual(harness.sessionNames, []);
+	});
+
+	it("requires another review when a failed write is retried with changed content", async () => {
+		let confirmations = 0;
+		const decisions = [true, false];
+		const harness = createHarness({
+			confirm: async () => {
+				confirmations += 1;
+				return decisions.shift() ?? false;
+			},
+		});
+		await activatePlan(harness);
+		const firstCall = {
+			type: "tool_call",
+			toolCallId: "create-plan-1",
+			toolName: "create_plan",
+			input: { content: "# Plan: First draft" },
+		};
+
+		await harness.handlers.get("tool_call")?.(firstCall, harness.ctx);
+		await harness.handlers.get("tool_result")?.({ ...firstCall, type: "tool_result", isError: true }, harness.ctx);
+		const changedRetry = await harness.handlers.get("tool_call")?.(
+			{
+				...firstCall,
+				toolCallId: "create-plan-2",
+				input: { content: "# Plan: Changed draft" },
+			},
+			harness.ctx,
+		);
+
+		assert.equal(changedRetry?.block, true);
+		assert.match(changedRetry?.reason ?? "", /continue planning/i);
+		assert.equal(confirmations, 2);
+		assert.equal(harness.entries.at(-1)?.data.approvedContentDigest, undefined);
 	});
 
 	it("blocks an overridden writer without asking it to create the plan", async () => {

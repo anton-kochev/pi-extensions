@@ -1,10 +1,13 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
+import { createPlanArgumentAutocompleteProvider } from "./plan-autocomplete.ts";
 import {
 	buildPlanCancellationMessage,
 	buildPlanSystemPrompt,
-	createPlanFile,
+	createPlanFileAtPath,
 	generatePlanPath,
+	resolveAvailablePlanPath,
 	resolvePlanCancellation,
 } from "./plan-files.ts";
 import { confirmPlanCreation, handleActivePlanCommand } from "./plan-exit.ts";
@@ -28,16 +31,19 @@ const CREATE_PLAN_PARAMETERS = {
 	additionalProperties: false,
 } as const;
 const PLAN_COMMAND_RE = /^\/plan(?:\s|$)/;
+const PLAN_EXIT_COMMAND_RE = /^\/plan\s+(?:exit|cancel)$/;
 const PLAN_THEME_NAME = "plan";
 const FALLBACK_THEME_NAME = "dark";
 const PLAN_STATUS_MESSAGE_TYPE = "plan-mode-status";
 
-const PLAN_COMMAND_HELP = `Usage: /plan <task>
+const PLAN_COMMAND_HELP = `Usage: /plan [task | exit | cancel | --help]
 
-Enter enforced read-only Plan mode for a task. Run /plan again while planning to approve creation of the generated plan.
-
-Options:
-  --help, -h  Show this help`;
+Arguments:
+  no argument  Finalize the active plan and open exact-draft review.
+  task         Enter enforced read-only Plan mode for the given task.
+  exit         Exit active Plan mode without creating a plan.
+  cancel       Alias for exit.
+  --help, -h   Show this help.`;
 
 function planCommandHelp(input: string): string | undefined {
 	return /^\/plan\s+(?:--help|-h)$/.test(input.trim()) ? PLAN_COMMAND_HELP : undefined;
@@ -58,15 +64,19 @@ type PlanThemeState = {
 	previousThemeName?: string;
 	previousToolNames?: string[];
 	planPath?: string;
-	saveAuthorized?: boolean;
+	approvedContentDigest?: string;
 };
+
+function planContentDigest(content: string): string {
+	return createHash("sha256").update(content, "utf8").digest("hex");
+}
 
 type PlanExitReason = "cancelled" | "saved";
 
 export default function planTheme(pi: ExtensionAPI): void {
 	let active = false;
 	let cancelled = false;
-	let saveAuthorized = false;
+	let approvedContentDigest: string | undefined;
 	let planSaveToolCallId: string | undefined;
 	let previousThemeName: string | undefined;
 	let previousToolNames: string[] | undefined;
@@ -79,17 +89,30 @@ export default function planTheme(pi: ExtensionAPI): void {
 		parameters: CREATE_PLAN_PARAMETERS as never,
 		executionMode: "sequential",
 		async execute(toolCallId, params, _signal, _onUpdate, ctx) {
-			if (!active || !saveAuthorized || toolCallId !== planSaveToolCallId || !planPath) {
-				throw new Error("Plan creation is not currently authorized.");
-			}
 			const content = (params as unknown as { content: string }).content;
-			const createdPath = await createPlanFile(ctx.cwd, planPath, content);
-			planPath = createdPath;
-			persistState();
-			return {
-				content: [{ type: "text", text: `Created plan at ${createdPath}` }],
-				details: { path: createdPath },
-			};
+			if (
+				!active ||
+				toolCallId !== planSaveToolCallId ||
+				!planPath ||
+				approvedContentDigest !== planContentDigest(content)
+			) {
+				throw new Error("Plan creation is not currently authorized for this draft.");
+			}
+			try {
+				const createdPath = await createPlanFileAtPath(ctx.cwd, planPath, content);
+				return {
+					content: [{ type: "text", text: `Created plan at ${createdPath}` }],
+					details: { path: createdPath },
+				};
+			} catch (error) {
+				if (typeof error === "object" && error !== null && "code" in error && error.code === "EEXIST") {
+					planPath = await resolveAvailablePlanPath(ctx.cwd, planPath);
+					approvedContentDigest = undefined;
+					planSaveToolCallId = undefined;
+					persistState();
+				}
+				throw error;
+			}
 		},
 	});
 
@@ -100,7 +123,7 @@ export default function planTheme(pi: ExtensionAPI): void {
 			previousThemeName,
 			previousToolNames,
 			planPath,
-			saveAuthorized,
+			approvedContentDigest,
 		});
 	}
 
@@ -136,7 +159,7 @@ export default function planTheme(pi: ExtensionAPI): void {
 		generatedPlanPath: string,
 		themeToRestore?: string,
 		toolsToRestore?: string[],
-		restoredSaveAuthorization = false,
+		restoredApprovedContentDigest?: string,
 	): void {
 		if (active) return;
 
@@ -146,7 +169,7 @@ export default function planTheme(pi: ExtensionAPI): void {
 			(currentThemeName && currentThemeName !== PLAN_THEME_NAME ? currentThemeName : FALLBACK_THEME_NAME);
 
 		cancelled = false;
-		saveAuthorized = restoredSaveAuthorization;
+		approvedContentDigest = restoredApprovedContentDigest;
 		planSaveToolCallId = undefined;
 		active = true;
 		planPath = generatedPlanPath;
@@ -165,7 +188,7 @@ export default function planTheme(pi: ExtensionAPI): void {
 
 		active = false;
 		cancelled = reason === "cancelled";
-		saveAuthorized = false;
+		approvedContentDigest = undefined;
 		planSaveToolCallId = undefined;
 		if (previousToolNames) pi.setActiveTools(withoutInternalPlanCreator(previousToolNames));
 		previousToolNames = undefined;
@@ -177,6 +200,8 @@ export default function planTheme(pi: ExtensionAPI): void {
 	}
 
 	pi.on("session_start", async (_event, ctx) => {
+		if (ctx.mode === "tui") ctx.ui.addAutocompleteProvider(createPlanArgumentAutocompleteProvider);
+
 		if (active) {
 			if (previousToolNames) pi.setActiveTools(withoutInternalPlanCreator(previousToolNames));
 			if (previousThemeName) setThemeWithoutPersisting(ctx, previousThemeName);
@@ -194,7 +219,7 @@ export default function planTheme(pi: ExtensionAPI): void {
 		previousThemeName = state?.previousThemeName;
 		previousToolNames = state?.previousToolNames;
 		planPath = state?.planPath;
-		saveAuthorized = state?.saveAuthorized ?? false;
+		approvedContentDigest = state?.approvedContentDigest;
 
 		if (active) {
 			active = false;
@@ -203,7 +228,7 @@ export default function planTheme(pi: ExtensionAPI): void {
 				planPath ?? (await generatePlanPath(ctx.cwd, CONFIG_DIR_NAME, "plan")),
 				previousThemeName,
 				previousToolNames,
-				saveAuthorized,
+				approvedContentDigest,
 			);
 		} else {
 			if (state && state.cancelled === undefined) persistState();
@@ -235,6 +260,15 @@ export default function planTheme(pi: ExtensionAPI): void {
 			ctx.ui.notify("Wait for the current agent turn to finish before changing Plan mode.", "warning");
 			return { action: "handled" as const };
 		}
+		if (PLAN_EXIT_COMMAND_RE.test(text)) {
+			if (active) {
+				exitPlanMode(ctx, "cancelled");
+				if (ctx.hasUI) ctx.ui.notify("Exited Plan mode; no plan was created.", "info");
+			} else if (ctx.hasUI) {
+				ctx.ui.notify("Plan mode is not active.", "info");
+			}
+			return { action: "handled" as const };
+		}
 		if (active && text === "/plan") {
 			if (!ctx.hasUI) {
 				ctx.ui.notify("Creating the plan requires interactive approval; continuing Plan mode.", "warning");
@@ -244,11 +278,10 @@ export default function planTheme(pi: ExtensionAPI): void {
 				exitPlanMode(ctx, "cancelled");
 				return { action: "handled" as const };
 			}
-			return handleActivePlanCommand(ctx.ui, planPath, (authorized) => {
-				saveAuthorized = authorized;
-				planSaveToolCallId = undefined;
-				persistState();
-			});
+			approvedContentDigest = undefined;
+			planSaveToolCallId = undefined;
+			persistState();
+			return handleActivePlanCommand(planPath);
 		}
 
 		if (!active && PLAN_COMMAND_RE.test(text)) {
@@ -273,15 +306,35 @@ export default function planTheme(pi: ExtensionAPI): void {
 		const isTrustedRead = isTrustedPlanReadTool(allTools, event.toolName);
 		if (isTrustedRead) return undefined;
 		if (isPlanCreation) {
-			if (!saveAuthorized) {
+			const content = (event.input as { content?: unknown }).content;
+			if (typeof content !== "string") {
+				return { block: true, reason: "The plan draft must be complete Markdown text." };
+			}
+			if (!ctx.hasUI) {
+				planSaveToolCallId = undefined;
+				return { block: true, reason: "Creating the plan requires interactive approval." };
+			}
+			planSaveToolCallId = event.toolCallId;
+			let availablePlanPath: string;
+			try {
+				availablePlanPath = await resolveAvailablePlanPath(ctx.cwd, planPath);
+			} catch {
+				planSaveToolCallId = undefined;
+				return { block: true, reason: "The plan destination could not be resolved safely." };
+			}
+			if (availablePlanPath !== planPath) {
+				planPath = availablePlanPath;
+				approvedContentDigest = undefined;
+				persistState();
+			}
+			const contentDigest = planContentDigest(content);
+			if (approvedContentDigest !== contentDigest) {
+				approvedContentDigest = undefined;
 				planSaveToolCallId = event.toolCallId;
-				if (!ctx.hasUI) {
-					planSaveToolCallId = undefined;
-					return { block: true, reason: "Creating the plan requires interactive approval." };
-				}
+				persistState();
 				let decision;
 				try {
-					decision = await confirmPlanCreation(ctx.ui, planPath);
+					decision = await confirmPlanCreation(ctx, planPath, content);
 				} catch {
 					planSaveToolCallId = undefined;
 					return { block: true, reason: "Interactive plan approval failed; the plan was not created." };
@@ -290,7 +343,7 @@ export default function planTheme(pi: ExtensionAPI): void {
 					planSaveToolCallId = undefined;
 					return { block: true, reason: "The user chose to continue planning; the plan was not created." };
 				}
-				saveAuthorized = true;
+				approvedContentDigest = contentDigest;
 				persistState();
 			}
 			planSaveToolCallId = event.toolCallId;

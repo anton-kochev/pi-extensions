@@ -16,7 +16,12 @@
     "test": "node --test test/*.test.ts"
   },
   "peerDependencies": {
-    "@earendil-works/pi-coding-agent": "*"
+    "@earendil-works/pi-coding-agent": ">=0.83.0",
+    "@earendil-works/pi-tui": ">=0.83.0"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "0.83.0",
+    "@earendil-works/pi-tui": "0.83.0"
   },
   "repository": {
     "type": "git",
@@ -28,13 +33,13 @@
   },
   "pithosKit": {
     "displayName": "Plan",
-    "summary": "Provide enforced read-only planning, approved plan creation, a Plan theme, and contextual session naming.",
+    "summary": "Provide enforced read-only planning, exact-draft approval, a Plan theme, and contextual session naming.",
     "minimumPi": ">=0.83.0",
     "commands": [
-      { "name": "plan", "usage": "/plan <task>", "summary": "Enter an enforced read-only planning workflow." }
+      { "name": "plan", "usage": "/plan [task | exit | cancel | --help]", "summary": "Enter, finalize, or explicitly exit an enforced read-only planning workflow." }
     ],
     "tools": [
-      { "name": "create_plan", "summary": "Internal controlled plan writer, active only during Plan mode.", "internal": true }
+      { "name": "create_plan", "summary": "Review and atomically create an approved plan during Plan mode.", "internal": true }
     ],
     "prompts": [
       { "name": "plan", "summary": "Enforced read-only planning workflow." }

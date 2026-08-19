@@ -330,19 +330,19 @@
       },
       "pithosKit": {
         "displayName": "Plan",
-        "summary": "Provide enforced read-only planning, approved plan creation, a Plan theme, and contextual session naming.",
+        "summary": "Provide enforced read-only planning, exact-draft approval, a Plan theme, and contextual session naming.",
         "minimumPi": ">=0.83.0",
         "commands": [
           {
             "name": "plan",
-            "summary": "Enter an enforced read-only planning workflow.",
-            "usage": "/plan <task>"
+            "summary": "Enter, finalize, or explicitly exit an enforced read-only planning workflow.",
+            "usage": "/plan [task | exit | cancel | --help]"
           }
         ],
         "tools": [
           {
             "name": "create_plan",
-            "summary": "Internal controlled plan writer, active only during Plan mode.",
+            "summary": "Review and atomically create an approved plan during Plan mode.",
             "internal": true
           }
         ],

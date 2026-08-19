@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
@@ -7,8 +7,10 @@ import {
 	buildPlanCancellationMessage,
 	buildPlanSystemPrompt,
 	createPlanFile,
+	createPlanFileAtPath,
 	generatePlanPath,
 	preparePlanMutation,
+	resolveAvailablePlanPath,
 	resolvePlanCancellation,
 } from "../extensions/plan-files.ts";
 
@@ -70,6 +72,41 @@ describe("createPlanFile", () => {
 			assert.equal(await readFile(join(cwd, createdPath), "utf8"), "new plan");
 		});
 	});
+
+	it("resolves the destination before approval without creating it", async () => {
+		await withTempDirectory(async (cwd) => {
+			const originalPath = ".pi/plans/2026-06-29-231507-improve-auth.md";
+			await mkdir(join(cwd, ".pi", "plans"), { recursive: true });
+			await writeFile(join(cwd, originalPath), "existing plan");
+
+			const availablePath = await resolveAvailablePlanPath(cwd, originalPath);
+
+			assert.equal(availablePath, ".pi/plans/2026-06-29-231508-improve-auth.md");
+			await assert.rejects(readFile(join(cwd, availablePath), "utf8"), { code: "ENOENT" });
+		});
+	});
+
+	it("skips a dangling symlink when resolving the destination", async () => {
+		await withTempDirectory(async (cwd) => {
+			const originalPath = ".pi/plans/2026-06-29-231507-improve-auth.md";
+			await mkdir(join(cwd, ".pi", "plans"), { recursive: true });
+			await symlink("missing-plan.md", join(cwd, originalPath));
+
+			const availablePath = await resolveAvailablePlanPath(cwd, originalPath);
+
+			assert.equal(availablePath, ".pi/plans/2026-06-29-231508-improve-auth.md");
+		});
+	});
+
+	it("publishes only at the exact approved destination", async () => {
+		await withTempDirectory(async (cwd) => {
+			const approvedPath = ".pi/plans/2026-06-29-231507-improve-auth.md";
+			await createPlanFileAtPath(cwd, approvedPath, "approved plan");
+
+			await assert.rejects(createPlanFileAtPath(cwd, approvedPath, "changed plan"), { code: "EEXIST" });
+			assert.equal(await readFile(join(cwd, approvedPath), "utf8"), "approved plan");
+		});
+	});
 });
 
 describe("resolvePlanCancellation", () => {
@@ -116,8 +153,8 @@ describe("buildPlanSystemPrompt", () => {
 
 		assert.match(prompt ?? "", /read-only Plan mode is enforced/i);
 		assert.match(prompt ?? "", /read, grep, find, and ls/i);
-		assert.match(prompt ?? "", /interactive approval/i);
-		assert.match(prompt ?? "", /continue planning/i);
+		assert.match(prompt ?? "", /review the exact Markdown draft/i);
+		assert.match(prompt ?? "", /Continue planning.*safe default/i);
 	});
 
 	it("supplies the generated plan path while planning remains active", () => {

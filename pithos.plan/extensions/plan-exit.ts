@@ -1,38 +1,66 @@
+import type { ExtensionUIContext } from "@earendil-works/pi-coding-agent";
+import { PlanPreview, type PlanPreviewDecision } from "./plan-preview.ts";
+
 export type PlanCreationUI = {
-	confirm(title: string, message: string): Promise<boolean>;
+	confirm: ExtensionUIContext["confirm"];
+	custom?: ExtensionUIContext["custom"];
 };
 
-export type PlanCreationDecision =
-	| { action: "create"; instruction: string }
-	| { action: "continue" };
+export type PlanCreationContext = {
+	mode: "tui" | "rpc" | "json" | "print";
+	hasUI: boolean;
+	ui: PlanCreationUI;
+};
 
-export type ActivePlanCommandResult =
-	| { action: "transform"; text: string }
-	| { action: "handled" };
+export type PlanCreationDecision = { action: "create" } | { action: "continue" };
 
-export async function confirmPlanCreation(ui: PlanCreationUI, planPath: string): Promise<PlanCreationDecision> {
-	const shouldCreate = await ui.confirm(
-		"Create plan and exit Plan mode",
-		"Create the plan, exit read-only Plan mode, and begin implementation? Choose No to continue planning.",
-	);
-	if (!shouldCreate) return { action: "continue" };
+export type ActivePlanCommandResult = { action: "transform"; text: string };
 
-	return {
-		action: "create",
-		instruction: `Finalize the current plan and call create_plan with its complete Markdown content for \`${planPath}\`. Once creation succeeds, implement the saved plan.`,
-	};
+function buildRpcReviewMessage(planPath: string, content: string): string {
+	return [
+		`Target: \`${planPath}\``,
+		"",
+		"Review the exact plan draft below. Approving creates this content, exits read-only Plan mode, and starts implementation.",
+		"",
+		"--- plan draft ---",
+		content,
+		"--- end plan draft ---",
+	].join("\n");
 }
 
-export async function handleActivePlanCommand(
-	ui: PlanCreationUI,
+export async function confirmPlanCreation(
+	context: PlanCreationContext,
 	planPath: string,
-	setSaveAuthorization: (authorized: boolean) => void,
-): Promise<ActivePlanCommandResult> {
-	const decision = await confirmPlanCreation(ui, planPath);
-	if (decision.action === "create") {
-		setSaveAuthorization(true);
-		return { action: "transform", text: decision.instruction };
+	content: string,
+): Promise<PlanCreationDecision> {
+	if (!context.hasUI) return { action: "continue" };
+
+	if (context.mode === "tui" && context.ui.custom) {
+		const result = await context.ui.custom<PlanPreviewDecision>((tui, theme, keybindings, done) =>
+			new PlanPreview({
+				content,
+				planPath,
+				terminalRows: () => tui.terminal.rows,
+				theme,
+				keybindings,
+				onDecision: done,
+				onRender: () => tui.requestRender(),
+			}),
+		);
+		return result === "create" ? { action: "create" } : { action: "continue" };
 	}
-	setSaveAuthorization(false);
-	return { action: "handled" };
+
+	if (context.mode === "rpc") {
+		const shouldCreate = await context.ui.confirm("Review plan draft", buildRpcReviewMessage(planPath, content));
+		return shouldCreate ? { action: "create" } : { action: "continue" };
+	}
+
+	return { action: "continue" };
+}
+
+export function handleActivePlanCommand(planPath: string): ActivePlanCommandResult {
+	return {
+		action: "transform",
+		text: `Finalize the current plan and call create_plan with its complete Markdown content for \`${planPath}\`. Pi will show the exact draft for approval before creating it. Once creation succeeds, implement the saved plan.`,
+	};
 }

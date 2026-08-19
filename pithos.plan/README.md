@@ -32,16 +32,21 @@ pi:
 
 ```text
 /plan <task>
+/plan
+/plan exit
+/plan cancel
 /plan --help
 ```
 
-`--help` and `-h` are handled before prompt expansion, so help does not start an agent turn or activate Plan mode.
+After `/plan `, press Tab to list `exit`, `cancel`, `--help`, and `-h`, or start typing an argument to filter them; arbitrary task text remains free-form. The command description explains that bare `/plan` finalizes the active draft. `--help` and `-h` print the same argument summary before prompt expansion, so help does not start an agent turn or activate Plan mode. While Plan mode is active, `/plan exit` and its `/plan cancel` alias immediately restore the previous theme and tools without creating a plan; outside Plan mode they report that there is nothing to exit. Bare `/plan` retains its finalization behavior and opens exact-draft review once the agent submits the draft.
 
-Plan mode explores the codebase with trusted read-only tools, resolves design decisions, and creates an approved implementation plan under `.pi/plans/`. The controlled `create_plan` tool uses exclusive file creation and exits Plan mode only after a successful approved save. Plan creation requires an interactive UI; without one, the write is blocked and Plan mode remains active.
+Plan mode explores the codebase with trusted read-only tools, resolves design decisions, and creates an approved implementation plan under `.pi/plans/`. When `create_plan` receives the final draft, the TUI opens a bounded, read-only Markdown reviewer showing the exact content and target path; terminal control and Unicode formatting characters are shown as visible `U+…` markers while their original bytes remain bound to approval and persistence. Page through the draft, use the arrow keys to choose an action, and press Enter; **Continue planning** is selected by default and Escape also continues planning. Running bare `/plan` while active requests finalization and opens this review rather than pre-authorizing an unseen draft.
+
+The controlled creator binds approval to the reviewed content and destination, publishes the completed file atomically without overwriting, and exits Plan mode only after a successful save. Known path collisions are resolved before review; a collision that races publication advances the path and requires a new review. An identical retry after another kind of failed write may reuse approval, but changed content must be reviewed again. RPC clients receive the complete draft and target path in their confirmation request. Without interactive UI support, the write is blocked and Plan mode remains active.
 
 While active, Plan mode exposes trusted built-in `read`, `grep`, `find`, and `ls` plus the internal plan creator. It blocks model mutations and manual `!`/`!!` shell commands, temporarily applies the bundled Plan theme, and shows the canonical session name in its footer.
 
-After a successful save, Plan mode restores the previous theme and tools and replaces the current session name—including a manually assigned name—with the approved plan's outcome-focused title in lowercase kebab-case. A missing or generic title falls back to the task-derived plan filename. Declined, continued, cancelled, and failed plan creation does not rename the session.
+After a successful save, Plan mode restores the previous theme and tools and replaces the current session name—including a manually assigned name—with the approved plan's outcome-focused title in lowercase kebab-case. A missing or generic title falls back to the task-derived plan filename. Declined, continued, cancelled, and failed plan creation does not rename the session. Plan approval does not force compaction; Pi's existing automatic or user-triggered compaction policy remains unchanged.
 
 ### Enforcement boundary
 

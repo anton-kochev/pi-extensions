@@ -1,4 +1,5 @@
-import { access, mkdir, writeFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
+import { access, link, lstat, mkdir, rm, writeFile } from "node:fs/promises";
 import { basename, dirname, join, normalize, resolve } from "node:path";
 
 const MAX_PLAN_NAME_LENGTH = 64;
@@ -24,6 +25,16 @@ async function pathExists(path: string): Promise<boolean> {
 	}
 }
 
+async function pathEntryExists(path: string): Promise<boolean> {
+	try {
+		await lstat(path);
+		return true;
+	} catch (error) {
+		if (typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT") return false;
+		throw error;
+	}
+}
+
 function formatTimestamp(date: Date): string {
 	return date.toISOString().slice(0, 19).replace("T", "-").replace(/:/g, "");
 }
@@ -40,7 +51,7 @@ export async function generatePlanPath(
 	while (true) {
 		const filename = `${formatTimestamp(candidateTime)}-${readableName}.md`;
 		const relativePath = join(configDirectoryName, "plans", filename);
-		if (!(await pathExists(resolve(cwd, relativePath)))) return relativePath;
+		if (!(await pathEntryExists(resolve(cwd, relativePath)))) return relativePath;
 		candidateTime = new Date(candidateTime.getTime() + 1_000);
 	}
 }
@@ -56,14 +67,32 @@ function advanceGeneratedPlanPath(planPath: string): string {
 	return join(dirname(planPath), `${formatTimestamp(timestamp)}-${readableName}.md`);
 }
 
+export async function resolveAvailablePlanPath(cwd: string, generatedPlanPath: string): Promise<string> {
+	let candidatePath = generatedPlanPath;
+	while (await pathEntryExists(resolve(cwd, candidatePath))) candidatePath = advanceGeneratedPlanPath(candidatePath);
+	return candidatePath;
+}
+
+export async function createPlanFileAtPath(cwd: string, planPath: string, content: string): Promise<string> {
+	const absolutePath = resolve(cwd, planPath);
+	const directory = dirname(absolutePath);
+	await mkdir(directory, { recursive: true });
+	const temporaryPath = join(directory, `.${basename(planPath)}.${randomUUID()}.tmp`);
+
+	try {
+		await writeFile(temporaryPath, content, { encoding: "utf8", flag: "wx" });
+		await link(temporaryPath, absolutePath);
+		return planPath;
+	} finally {
+		await rm(temporaryPath, { force: true }).catch(() => undefined);
+	}
+}
+
 export async function createPlanFile(cwd: string, generatedPlanPath: string, content: string): Promise<string> {
 	let candidatePath = generatedPlanPath;
-	await mkdir(dirname(resolve(cwd, candidatePath)), { recursive: true });
-
 	while (true) {
 		try {
-			await writeFile(resolve(cwd, candidatePath), content, { encoding: "utf8", flag: "wx" });
-			return candidatePath;
+			return await createPlanFileAtPath(cwd, candidatePath, content);
 		} catch (error) {
 			if (!(typeof error === "object" && error !== null && "code" in error && error.code === "EEXIST")) throw error;
 			candidatePath = advanceGeneratedPlanPath(candidatePath);
@@ -100,7 +129,7 @@ export type PlanPromptState = {
 
 export function buildPlanSystemPrompt(systemPrompt: string, state: PlanPromptState): string | undefined {
 	if (state.active && state.planPath) {
-		return `${systemPrompt}\n\nRead-only Plan mode is enforced. Use only the trusted read, grep, find, and ls tools while exploring. Do not modify project files, run shell commands, or invoke custom tools. When the plan is ready, call create_plan with its complete Markdown content; Pi will request interactive approval before atomically creating it at \`${state.planPath}\` without overwriting an existing plan. If the user chooses to continue planning, keep Plan mode active and do not create the file. Approval to create the plan authorizes exiting Plan mode and implementing it after creation succeeds.`;
+		return `${systemPrompt}\n\nRead-only Plan mode is enforced. Use only the trusted read, grep, find, and ls tools while exploring. Do not modify project files, run shell commands, or invoke custom tools. When the plan is ready, call create_plan with its complete Markdown content; Pi will let the user review the exact Markdown draft and target path before atomically creating it at \`${state.planPath}\` without overwriting an existing plan. Continue planning is the safe default and keeps Plan mode active without creating the file. Approval to create the reviewed draft authorizes exiting Plan mode and implementing it after creation succeeds.`;
 	}
 	if (state.cancelled) {
 		return `${systemPrompt}\n\nPlan mode is inactive because the user cancelled it. Ignore any earlier Plan Mode workflow instructions in the conversation history. Respond normally unless the user invokes /plan again.`;
