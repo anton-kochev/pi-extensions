@@ -166,23 +166,25 @@ describe("controlled commit tool", () => {
 		assert.equal(tool.parameters.properties.noVerify.type, "boolean");
 	});
 
-	it("shows the complete staged diff and file summary before leaving declined changes intact", async () => {
-		const fullDiff = "diff --git a/file.ts b/file.ts\n--- a/file.ts\n+++ b/file.ts\n@@ -1 +1 @@\n-old\n+new\n";
+	it("shows the complete message and only the staged files before leaving declined changes intact", async () => {
+		const message = "fix: example\n\nExplain the complete reason.";
+		const patchContent = "SECRET_PATCH_CONTENT";
 		const harness = createHarness({
 			confirm: async () => false,
-			exec: stagedExec({ fullDiff }),
+			exec: stagedExec({ fullDiff: patchContent }),
 		});
 		const tool = harness.tools.get(CREATE_COMMIT_TOOL_NAME);
 
-		const response = await tool.execute("commit-1", { message: "fix: example" }, undefined, undefined, harness.ctx);
+		const response = await tool.execute("commit-1", { message }, undefined, undefined, harness.ctx);
 
 		assert.equal(response.details.committed, false);
 		assert.match(response.content[0].text, /cancelled/i);
 		assert.equal(harness.confirmations.length, 1);
 		assert.match(harness.confirmations[0]?.title ?? "", /create.*commit/i);
-		assert.match(harness.confirmations[0]?.message ?? "", /fix: example/);
+		assert.ok(harness.confirmations[0]?.message.includes(message));
+		assert.match(harness.confirmations[0]?.message ?? "", /staged files/i);
 		assert.match(harness.confirmations[0]?.message ?? "", /M\s+file\.ts/);
-		assert.ok(harness.confirmations[0]?.message.includes(fullDiff.trimEnd()));
+		assert.doesNotMatch(harness.confirmations[0]?.message ?? "", /SECRET_PATCH_CONTENT/);
 		assert.equal(harness.execCalls.some(({ args }) => args[0] === "commit"), false);
 	});
 
@@ -217,9 +219,8 @@ describe("controlled commit tool", () => {
 		assert.ok(harness.execCalls.some(({ args }) => args.join(" ") === "cat-file commit abc123456789"));
 	});
 
-	it("binds an A→B→A approval display to immutable baseline and index trees", async () => {
+	it("binds the approval file list to immutable baseline and index trees", async () => {
 		let mutableIndex = "tree-a";
-		const immutableDiff = "diff --git a/file.ts b/file.ts\n-old-a\n+new-a\n";
 		const harness = createHarness({
 			confirm: async () => false,
 			exec: async (_command, args) => {
@@ -231,21 +232,17 @@ describe("controlled commit tool", () => {
 				if (command === "write-tree") return result(`${mutableIndex}\n`);
 				if (command === "diff --name-status tree-head-a tree-a") {
 					mutableIndex = "tree-b";
-					return result("M\tfile.ts\n");
-				}
-				if (command === "diff --binary --no-ext-diff tree-head-a tree-a") {
-					mutableIndex = "tree-a";
-					return result(immutableDiff);
+					return result("M\tapproved-a.ts\n");
 				}
 				throw new Error(`Unexpected git args: ${command}`);
 			},
 		});
 		const tool = harness.tools.get(CREATE_COMMIT_TOOL_NAME);
 
-		const response = await tool.execute("commit-aba", { message: "fix: immutable approval" }, undefined, undefined, harness.ctx);
+		const response = await tool.execute("commit-immutable-files", { message: "fix: immutable approval" }, undefined, undefined, harness.ctx);
 
 		assert.equal(response.details.reason, "cancelled");
-		assert.ok(harness.confirmations[0]?.message.includes(immutableDiff.trimEnd()));
+		assert.match(harness.confirmations[0]?.message ?? "", /M\s+approved-a\.ts/);
 		assert.equal(harness.execCalls.some(({ args }) => args.includes("--cached")), false);
 	});
 

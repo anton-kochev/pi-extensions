@@ -232,11 +232,11 @@ function reconciliationRequired(target: string, hash: string | undefined, detail
 	};
 }
 
-function approvalMessage(message: string, stagedSummary: string, stagedDiff: string, noVerify: boolean): string {
+function approvalMessage(message: string, stagedFiles: string, noVerify: boolean): string {
 	const hookWarning = noVerify
 		? "⚠ HOOKS WILL BE BYPASSED (--no-verify) because this was explicitly requested.\n\n"
 		: "";
-	return `${hookWarning}Commit message:\n\n${message}\n\nStaged file summary:\n${stagedSummary.trimEnd()}\n\nComplete staged diff:\n${stagedDiff.trimEnd()}`;
+	return `${hookWarning}Commit message:\n\n${message}\n\nStaged files:\n${stagedFiles.trimEnd()}`;
 }
 
 function stripFrontmatter(content: string): string {
@@ -327,29 +327,22 @@ export default function registerCommitWorkflow(pi: ExtensionAPI): void {
 			const capturedTarget = approvedHead.kind === "symbolic" ? approvedHead.ref : "HEAD";
 			const baselineTree = await readBaselineTree(pi, ctx, approvedHead.hash, signal);
 			const approvedTree = await readStagedTree(pi, ctx, signal);
-			const stagedSummary = await readTreeDiff(
+			const stagedFiles = await readTreeDiff(
 				pi,
 				ctx,
-				"Reading staged changes",
+				"Reading staged files",
 				["--name-status", baselineTree, approvedTree],
 				signal,
 			);
-			if (!stagedSummary.trim()) {
+			if (!stagedFiles.trim()) {
 				return notCommitted("Commit not created: there is nothing staged.", "nothing-staged");
 			}
-			const stagedDiff = await readTreeDiff(
-				pi,
-				ctx,
-				"Reading the complete staged diff",
-				["--binary", "--no-ext-diff", baselineTree, approvedTree],
-				signal,
-			);
 
 			let approved = false;
 			try {
 				approved = await ctx.ui.confirm(
 					"Create this git commit?",
-					approvalMessage(message, stagedSummary, stagedDiff, noVerify),
+					approvalMessage(message, stagedFiles, noVerify),
 					{ signal },
 				);
 			} catch {

@@ -40,7 +40,9 @@ function assertContextBasedStagingWorkflow(content: string): void {
 function assertInteractiveCommitApproval(content: string): void {
 	assert.match(content, /call\s+`create_commit`/i);
 	assert.match(content, /mandatory interactive confirmation/i);
-	assert.match(content, /complete staged diff|full[^.]*cached diff/i);
+	assert.match(content, /commit message[^.]*staged file(?: list|s)/i);
+	assert.match(content, /does not[^.]*display[^.]*(?:patch|diff)[^.]*content/i);
+	assert.match(content, /inspect[^.]*complete cached diff[^.]*before calling[^.]*tool/i);
 	assert.match(content, /exact staged tree|exact staged snapshot/i);
 	assert.match(content, /capture[^.]*HEAD[^.]*index tree/i);
 	assert.match(content, /symbolic[^.]*ref name[^.]*detached/i);

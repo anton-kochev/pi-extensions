@@ -112,8 +112,8 @@ When the user invokes `/commit`:
 5. **Request mandatory interactive confirmation and create the commit**:
    - Call `create_commit` with the complete final commit message.
    - The controlled tool detects an active merge before opening confirmation and rechecks immediately before invoking the commit. If a merge is active, it refuses without creating a merge commit; the user must resolve or complete the merge outside this controlled normal-commit workflow.
-   - Before anything is displayed, the controlled tool captures the approved HEAD identity and index tree: the resolved hash or unborn state, the symbolic ref name versus detached state, and the exact staged tree. It generates both the summary and complete diff from immutable Git objects (the captured target tree, or the empty tree for an unborn branch, to the captured index tree), never from a later read of the mutable index.
-   - The controlled tool shows the message, a useful file summary, and the complete staged diff in the interactive confirmation dialog. Approval is bound to that exact target and staged tree; after confirmation it rechecks the HEAD identity, resolved hash, and index tree. A same-tip branch switch or any other change requires fresh approval.
+   - Before anything is displayed, the controlled tool captures the approved HEAD identity and index tree: the resolved hash or unborn state, the symbolic ref name versus detached state, and the exact staged tree. It generates the staged file list from immutable Git objects (the captured target tree, or the empty tree for an unborn branch, to the captured index tree), never from a later read of the mutable index.
+   - The controlled tool shows the complete commit message and staged file list in the interactive confirmation dialog; it does not display patch or diff content there. Approval is still bound to that exact target and staged tree; after confirmation it rechecks the HEAD identity, resolved hash, and index tree. A same-tip branch switch or any other change requires fresh approval.
    - Cancellation remains effective through approval and the final pre-mutation check. The `git commit` invocation and all outcome verification or reconciliation form a non-cancellable critical section so a possibly-created commit is never abandoned half-reconciled.
    - The controlled invocation uses `--cleanup=verbatim`, so repository cleanup configuration cannot normalize the approved full message.
    - Never run `git commit` directly through bash or any other tool. Shell-command blocking is conservative defense in depth, not a security sandbox and not an alternative commit path.
@@ -134,7 +134,7 @@ When the user invokes `/commit`:
 - Narrow scope using explicit instructions, named packages or paths, and the active task before considering broader working-tree patterns.
 - Never infer scope from modification time alone.
 - When multiple unrelated change groups or mixed-scope hunks remain plausible, ask for confirmation instead of guessing.
-- Interactive approval through `create_commit` is mandatory even when the staging scope is unambiguous; rely on its full cached diff review as the final approval boundary.
+- Interactive approval through `create_commit` is mandatory even when the staging scope is unambiguous. Inspect the complete cached diff before calling the tool; the final approval boundary shows the message and staged file list while binding approval internally to the exact staged tree.
 
 ## Filtering Trivial Changes
 
