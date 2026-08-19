@@ -180,7 +180,7 @@
     {
       "name": "@pithos-kit/guild",
       "version": "0.3.0",
-      "description": "Software-development Guild members, code-review standards, confirmed Conventional Commits, and TDD guidance for .NET, Angular, TypeScript, Rust, and language-agnostic review.",
+      "description": "Software-development Guild members, .NET Clean Architecture, code-review standards, confirmed Conventional Commits, and TDD guidance for .NET, Angular, TypeScript, and Rust.",
       "pi": {
         "extensions": [
           "./extensions"
@@ -191,7 +191,7 @@
       },
       "pithosKit": {
         "displayName": "Guild",
-        "summary": "Delegate focused software work, create confirmed commits, and apply TDD guidance.",
+        "summary": "Delegate focused software work and apply repository-aware development guidance.",
         "minimumPi": ">=0.83.0",
         "commands": [
           {
@@ -223,6 +223,11 @@
             "name": "skill:code-review-standards",
             "summary": "Load the evidence-based code-review methodology explicitly.",
             "usage": "/skill:code-review-standards [review scope]"
+          },
+          {
+            "name": "skill:dotnet-clean-architecture",
+            "summary": "Load repository-aware .NET Clean Architecture guidance explicitly.",
+            "usage": "/skill:dotnet-clean-architecture [task context]"
           }
         ],
         "tools": [
@@ -249,6 +254,10 @@
           {
             "name": "code-review-standards",
             "summary": "Evidence-based review severity and deterministic merge decisions."
+          },
+          {
+            "name": "dotnet-clean-architecture",
+            "summary": "Repository-aware .NET architecture boundaries and proportional design."
           }
         ],
         "themes": [],

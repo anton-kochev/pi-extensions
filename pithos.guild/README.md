@@ -1,6 +1,6 @@
 # guild
 
-A standalone Guild of .NET, Angular, TypeScript, and Rust architecture and implementation members, language-agnostic code review standards, confirmed Conventional Commits, and test-driven development guidance for [pi](https://github.com/earendil-works/pi-mono).
+A standalone Guild of .NET, Angular, TypeScript, and Rust architecture and implementation members with repository-aware Clean Architecture, code-review, Conventional Commit, and test-driven development guidance for [pi](https://github.com/earendil-works/pi-mono).
 
 The extension adds agent-callable `guild_handover` and controlled `create_commit` tools, plus interactive `/guild-handover` and `/commit` commands. Every handover starts an isolated, ephemeral pi process with a focused system prompt and a hard tool allowlist. The child inherits the parent session's active provider, model, thinking level, working directory, and project-trust decision.
 
@@ -71,6 +71,16 @@ The skill drives behavioral changes through a test list and small red-green-refa
 Use `pi config` for global settings or `pi config -l` for a project override to toggle Guild's `tdd` resource, then run `/reload` in an active session. The `enableSkillCommands` setting controls native `/skill:tdd` registration and autocomplete; disabling the resource also removes its model-visible description after reload.
 
 TDD previously shipped with the retired `@pithos-kit/skills` package and then Atlas. Remove the retired package at every scope.
+
+## .NET Clean Architecture skill
+
+Guild's `dotnet-clean-architecture` skill helps inspect and evolve repository-connected .NET boundaries without assuming a target framework, language version, package, mediator, ORM, or four-project template. Load it directly with optional task context:
+
+```text
+/skill:dotnet-clean-architecture [task context]
+```
+
+The skill first verifies substantive .NET relevance and detects solution, project, framework, language, package, persistence, hosting, test, and deployment capabilities. It then selects the smallest justified clean, layered, vertical-slice, or hybrid structure; preserves healthy existing boundaries; and makes dependency direction, domain invariants, consistency, security, migration, and verification explicit. Its examples are conditional guidance rather than migration authority, and architect and coder tool boundaries continue to apply.
 
 Conventional Commit support also moved from Atlas to Guild. Guild 0.3.0 must be paired with Atlas 0.6.0 so exactly one active package owns `/commit`, `create_commit`, and the `conventional-commit` skill. Do not load Guild 0.3.0 beside an older Atlas release that still registers them.
 

@@ -1,7 +1,7 @@
 {
   "name": "@pithos-kit/guild",
   "version": "0.3.0",
-  "description": "Software-development Guild members, code-review standards, confirmed Conventional Commits, and TDD guidance for .NET, Angular, TypeScript, Rust, and language-agnostic review.",
+  "description": "Software-development Guild members, .NET Clean Architecture, code-review standards, confirmed Conventional Commits, and TDD guidance for .NET, Angular, TypeScript, and Rust.",
   "keywords": [
     "pi-package",
     "pi-extension",
@@ -16,6 +16,9 @@
     "code-review",
     "tdd",
     "test-driven-development",
+    "clean-architecture",
+    "domain-driven-design",
+    "vertical-slice",
     "git",
     "conventional-commits"
   ],
@@ -42,7 +45,7 @@
   },
   "pithosKit": {
     "displayName": "Guild",
-    "summary": "Delegate focused software work, create confirmed commits, and apply TDD guidance.",
+    "summary": "Delegate focused software work and apply repository-aware development guidance.",
     "minimumPi": ">=0.83.0",
     "commands": [
       { "name": "guild", "usage": "/guild [--help]", "summary": "List the active Guild roster." },
@@ -50,7 +53,8 @@
       { "name": "commit", "usage": "/commit [instructions]", "summary": "Create a context-scoped Conventional Commit with confirmation." },
       { "name": "skill:conventional-commit", "usage": "/skill:conventional-commit [instructions]", "summary": "Load the confirmed, context-aware Conventional Commit workflow explicitly." },
       { "name": "skill:tdd", "usage": "/skill:tdd [task context]", "summary": "Load the test-driven development workflow explicitly." },
-      { "name": "skill:code-review-standards", "usage": "/skill:code-review-standards [review scope]", "summary": "Load the evidence-based code-review methodology explicitly." }
+      { "name": "skill:code-review-standards", "usage": "/skill:code-review-standards [review scope]", "summary": "Load the evidence-based code-review methodology explicitly." },
+      { "name": "skill:dotnet-clean-architecture", "usage": "/skill:dotnet-clean-architecture [task context]", "summary": "Load repository-aware .NET Clean Architecture guidance explicitly." }
     ],
     "tools": [
       { "name": "guild_handover", "summary": "Hand focused work to an isolated Guild member." },
@@ -60,7 +64,8 @@
     "skills": [
       { "name": "conventional-commit", "summary": "Context-aware staging and confirmed Conventional Commit generation." },
       { "name": "tdd", "summary": "Test-driven development through red-green-refactor." },
-      { "name": "code-review-standards", "summary": "Evidence-based review severity and deterministic merge decisions." }
+      { "name": "code-review-standards", "summary": "Evidence-based review severity and deterministic merge decisions." },
+      { "name": "dotnet-clean-architecture", "summary": "Repository-aware .NET architecture boundaries and proportional design." }
     ],
     "themes": [],
     "agents": [
