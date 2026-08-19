@@ -140,6 +140,35 @@ describe("Guild member policies", () => {
     assert.doesNotMatch(prompt, /(?:\.NET|C#)\s*(?:8|9|10|11|12|13)(?:\+|\.0|\s+or\s+(?:later|newer)|\s+and\s+(?:later|newer))/i);
     assert.doesNotMatch(prompt, /No primary constructors/i);
   });
+
+  it("keeps the Angular coder repository-aware, version-aware, and implementation-focused", () => {
+    const builtInDir = resolve(import.meta.dirname, "../agents");
+    const member = discoverGuildMembers({ builtInDir }).members.find(({ name }) => name === "angular-coder");
+
+    assert.ok(member);
+    assert.deepEqual(member.tools, ["read", "grep", "find", "ls", "edit", "write", "bash"]);
+    const prompt = member.systemPrompt;
+    assert.match(prompt, /eligibility gate[\s\S]*Angular[\s\S]*(?:angular\.json|@angular\/core)[\s\S]*refuse/i);
+    assert.match(prompt, /refuse[\s\S]{0,300}(?:outside|does not belong to)[\s\S]{0,120}Angular/i);
+    assert.match(prompt, /refuse[\s\S]{0,360}repository[\s\S]{0,220}(?:no relevant|does not contain)[\s\S]{0,120}Angular/i);
+    assert.match(prompt, /edit[^\n]*write[^\n]*file changes[\s\S]*bash[^\n]*(?:build|test|verification)/i);
+    assert.match(prompt, /Angular[\s\S]*TypeScript[\s\S]*RxJS[\s\S]*(?:versions|version)/i);
+    assert.match(prompt, /repository-supported[\s\S]*(?:Angular|framework)[\s\S]*(?:APIs|features)/i);
+    assert.match(prompt, /red-green-refactor/i);
+    assert.match(prompt, /latest Angular-recommended[\s\S]{0,240}(?:default|prefer)[\s\S]{0,180}new code/i);
+    assert.match(prompt, /standalone[\s\S]*OnPush[\s\S]*(?:built-in|modern) (?:template )?control flow[\s\S]*signal-based[\s\S]*inject\(\)[\s\S]*functional/i);
+    assert.match(prompt, /repository version[\s\S]{0,220}(?:does not support|unsupported)[\s\S]{0,220}(?:compatible|upgrade)/i);
+    assert.match(prompt, /RxJS[\s\S]*nested subscriptions[\s\S]*takeUntilDestroyed/i);
+    assert.match(prompt, /typed reactive forms/i);
+    assert.match(prompt, /semantic HTML[\s\S]*keyboard[\s\S]*focus[\s\S]*(?:announcements|screen reader)/i);
+    assert.match(prompt, /repository conventions and explicit user direction[\s\S]{0,260}(?:constraints|follow)[\s\S]{0,260}correctness[\s\S]{0,180}security[\s\S]{0,180}accessibility/i);
+    assert.match(prompt, /conflicts[\s\S]{0,300}(?:explain|document)[\s\S]{0,180}smallest safer alternative/i);
+    assert.match(prompt, /Never report success[\s\S]{0,240}(?:type-checking|tests|build)[\s\S]{0,220}(?:fail|blocked)/i);
+    assert.match(prompt, /Status[\s\S]*Summary[\s\S]*Files Changed[\s\S]*Verification/i);
+    assert.doesNotMatch(prompt, /grimoire\.angular-coder|CLAUDE\.md|\bSkill\b|WebSearch|WebFetch|context7|TaskCreate|TaskUpdate|TaskList|TaskOutput|TaskStop|Persistent Agent Memory/i);
+    assert.doesNotMatch(prompt, /Angular\s*(?:1[5-9]|2\d)(?:\+|\.0|\s+or\s+(?:later|newer)|\s+and\s+(?:later|newer))/i);
+    assert.doesNotMatch(prompt, /(?:standalone components|ChangeDetectionStrategy\.OnPush|inject\(\)|functional guards)[^\n]*(?:Never|always)/i);
+  });
 });
 
 describe("agent discovery", () => {
