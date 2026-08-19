@@ -50,7 +50,7 @@ pi:
     "@pithos-kit/guild": "npm:0.3.0"
     "@pithos-kit/plan": "npm:0.1.0"
     "@pithos-kit/squiggle": "npm:0.4.1"
-    "@pithos-kit/translate": "npm:0.0.0"
+    "@pithos-kit/translate": "npm:1.0.0"
 ```
 
 Atlas can validate and interactively manage toolchain versions, `pi.version`, and `@pithos-kit/*` entries while preserving third-party configuration. Its changes describe a future rebuilt Pithos environment; they do not replace the active Pi process. Run `/pithos help` after installing it.

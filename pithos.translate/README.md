@@ -23,7 +23,7 @@ pi install -l ./pithos.translate
 ```yaml
 pi:
   extensions:
-    "@pithos-kit/translate": "npm:0.0.0"
+    "@pithos-kit/translate": "npm:1.0.0"
 ```
 
 ## Commands
@@ -59,7 +59,7 @@ User and project files are replaced atomically and use this strict shape:
 }
 ```
 
-`language` is free-form non-empty text. `model` is one exact `provider/model-id` selected from authenticated available Pi models. The first slash separates the provider, so model IDs may contain further slashes (for example, `openrouter/anthropic/claude-sonnet-4`). `mode` is `manual` or `automatic`. Unknown or incomplete fields make the scoped file invalid and cause setup to run again.
+`language` is free-form non-empty single-line text. `model` is one exact `provider/model-id` selected from authenticated available Pi models. The first slash separates the provider, so model IDs may contain further slashes (for example, `openrouter/anthropic/claude-sonnet-4`). `mode` is `manual` or `automatic`. Unknown or incomplete fields make the scoped file invalid and cause setup to run again.
 
 There is **no fallback model**. If that exact model disappears or loses authentication, Translate reports the problem and suggests `/translate config`; it never uses the active coding model instead.
 
