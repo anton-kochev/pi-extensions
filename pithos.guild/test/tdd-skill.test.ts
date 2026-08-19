@@ -58,11 +58,11 @@ describe("Guild TDD skill", () => {
     const cutover = readFileSync(resolve(repositoryRoot, "CUTOVER.md"), "utf8");
 
     assert.match(rootReadme, /TDD workflow now ships with Guild/u);
-    assert.match(rootReadme, /Update Guild and Atlas together[\s\S]*Guild release that advertises TDD only with an Atlas release that no longer bundles it/u);
-    assert.match(rootReadme, /publish and verify coordinated Guild and Atlas releases/u);
+    assert.match(rootReadme, /Coordinate Guild and Atlas releases[\s\S]*Guild 0\.3\.0 owns TDD[\s\S]*Atlas 0\.6\.0/u);
+    assert.match(rootReadme, /publish and verify coordinated Guild 0\.3\.0 and Atlas 0\.6\.0 releases/u);
     assert.doesNotMatch(rootReadme, /publish and verify Atlas 0\.5\.0 first/u);
-    assert.match(planReadme, /Guild release that owns the relocated TDD skill[\s\S]*Atlas release that no longer bundles it/u);
-    assert.match(cutover, /coordinates a Guild release that advertises TDD with an Atlas release that no longer bundles it/u);
+    assert.match(planReadme, /Guild 0\.3\.0 for the relocated TDD skill[\s\S]*Atlas 0\.6\.0[\s\S]*no longer bundles it/u);
+    assert.match(cutover, /pairs Guild 0\.3\.0 with Atlas 0\.6\.0 so Guild owns TDD[\s\S]*after Atlas stops registering them/u);
     assert.match(cutover, /TDD moved to @pithos-kit\/guild and SRS was removed/u);
   });
 

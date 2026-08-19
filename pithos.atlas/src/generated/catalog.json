@@ -65,43 +65,25 @@
     },
     {
       "name": "@pithos-kit/atlas",
-      "version": "0.5.0",
-      "description": "Model-generated session names, confirmed commits, catalog, diagnostics, version checks, and .pithos configuration for pithos-kit.",
+      "version": "0.6.0",
+      "description": "Model-generated session names, catalog, diagnostics, version checks, and .pithos configuration for pithos-kit.",
       "pi": {
         "extensions": [
           "./extensions"
-        ],
-        "skills": [
-          "./skills"
         ]
       },
       "pithosKit": {
         "displayName": "Atlas",
-        "summary": "Name new sessions, create confirmed commits, explore packages, check compatibility, and manage .pithos.",
+        "summary": "Name new sessions, explore packages, check compatibility, and manage .pithos.",
         "minimumPi": ">=0.83.0",
         "commands": [
-          {
-            "name": "commit",
-            "summary": "Create a context-scoped Conventional Commit with confirmation.",
-            "usage": "/commit [instructions]"
-          },
           {
             "name": "pithos",
             "summary": "Open Atlas or run a catalog, diagnostic, or configuration action.",
             "usage": "/pithos [help|packages|versions|doctor|config]"
-          },
-          {
-            "name": "skill:conventional-commit",
-            "summary": "Load the confirmed, context-aware Conventional Commit workflow explicitly.",
-            "usage": "/skill:conventional-commit [instructions]"
           }
         ],
         "tools": [
-          {
-            "name": "create_commit",
-            "summary": "Controlled git commit creator with mandatory interactive confirmation.",
-            "internal": true
-          },
           {
             "name": "rename_session",
             "summary": "Rename the current Pi session in lowercase kebab-case when explicitly requested."
@@ -112,12 +94,7 @@
           }
         ],
         "prompts": [],
-        "skills": [
-          {
-            "name": "conventional-commit",
-            "summary": "Context-aware staging and confirmed Conventional Commit generation."
-          }
-        ],
+        "skills": [],
         "themes": [],
         "agents": [],
         "configuration": [
@@ -202,8 +179,8 @@
     },
     {
       "name": "@pithos-kit/guild",
-      "version": "0.2.0",
-      "description": "Software-development Guild members and TDD guidance for .NET, Angular, TypeScript, Rust, and language-agnostic code review.",
+      "version": "0.3.0",
+      "description": "Software-development Guild members, confirmed Conventional Commits, and TDD guidance for .NET, Angular, TypeScript, Rust, and language-agnostic code review.",
       "pi": {
         "extensions": [
           "./extensions"
@@ -214,7 +191,7 @@
       },
       "pithosKit": {
         "displayName": "Guild",
-        "summary": "Delegate focused architecture, implementation, and code review to isolated members with TDD guidance.",
+        "summary": "Delegate focused software work, create confirmed commits, and apply TDD guidance.",
         "minimumPi": ">=0.83.0",
         "commands": [
           {
@@ -228,6 +205,16 @@
             "usage": "/guild-handover [member] [task]"
           },
           {
+            "name": "commit",
+            "summary": "Create a context-scoped Conventional Commit with confirmation.",
+            "usage": "/commit [instructions]"
+          },
+          {
+            "name": "skill:conventional-commit",
+            "summary": "Load the confirmed, context-aware Conventional Commit workflow explicitly.",
+            "usage": "/skill:conventional-commit [instructions]"
+          },
+          {
             "name": "skill:tdd",
             "summary": "Load the test-driven development workflow explicitly.",
             "usage": "/skill:tdd [task context]"
@@ -237,10 +224,19 @@
           {
             "name": "guild_handover",
             "summary": "Hand focused work to an isolated Guild member."
+          },
+          {
+            "name": "create_commit",
+            "summary": "Controlled git commit creator with mandatory interactive confirmation.",
+            "internal": true
           }
         ],
         "prompts": [],
         "skills": [
+          {
+            "name": "conventional-commit",
+            "summary": "Context-aware staging and confirmed Conventional Commit generation."
+          },
           {
             "name": "tdd",
             "summary": "Test-driven development through red-green-refactor."

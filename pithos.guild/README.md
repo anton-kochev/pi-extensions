@@ -1,8 +1,8 @@
 # guild
 
-A standalone Guild of .NET, Angular, TypeScript, and Rust architecture and implementation members, language-agnostic code review, and test-driven development guidance for [pi](https://github.com/earendil-works/pi-mono).
+A standalone Guild of .NET, Angular, TypeScript, and Rust architecture and implementation members, language-agnostic code review, confirmed Conventional Commits, and test-driven development guidance for [pi](https://github.com/earendil-works/pi-mono).
 
-The extension adds an agent-callable `guild_handover` tool and an interactive `/guild-handover` command for direct user delegation. Every handover starts an isolated, ephemeral pi process with a focused system prompt and a hard tool allowlist. The child inherits the parent session's active provider, model, thinking level, working directory, and project-trust decision.
+The extension adds agent-callable `guild_handover` and controlled `create_commit` tools, plus interactive `/guild-handover` and `/commit` commands. Every handover starts an isolated, ephemeral pi process with a focused system prompt and a hard tool allowlist. The child inherits the parent session's active provider, model, thinking level, working directory, and project-trust decision.
 
 ## Install
 
@@ -28,7 +28,7 @@ pi -e ./pithos.guild
 ```yaml
 pi:
   extensions:
-    "@pithos-kit/guild": "npm:0.2.0"
+    "@pithos-kit/guild": "npm:0.3.0"
 ```
 
 ## Guild members
@@ -58,7 +58,22 @@ The skill drives behavioral changes through a test list and small red-green-refa
 
 Use `pi config` for global settings or `pi config -l` for a project override to toggle Guild's `tdd` resource, then run `/reload` in an active session. The `enableSkillCommands` setting controls native `/skill:tdd` registration and autocomplete; disabling the resource also removes its model-visible description after reload.
 
-TDD previously shipped with the retired `@pithos-kit/skills` package and then Atlas. Remove the retired package at every scope. Do not load a Guild release that owns TDD beside an older Atlas release that still bundles it; update Atlas and Guild together so exactly one active package provides the skill.
+TDD previously shipped with the retired `@pithos-kit/skills` package and then Atlas. Remove the retired package at every scope.
+
+Conventional Commit support also moved from Atlas to Guild. Guild 0.3.0 must be paired with Atlas 0.6.0 so exactly one active package owns `/commit`, `create_commit`, and the `conventional-commit` skill. Do not load Guild 0.3.0 beside an older Atlas release that still registers them.
+
+## Confirmed commits
+
+```text
+/commit [instructions]
+/commit --help
+/skill:conventional-commit [instructions]
+/skill:conventional-commit --help
+```
+
+`/commit` uses existing staged changes when present. Otherwise it narrows the staging set from explicit instructions, named paths or packages, and the active task context. Ambiguous scopes require confirmation before staging, and unrelated untracked, generated, editor, session, and local-configuration files are excluded unless explicitly requested.
+
+The controlled `create_commit` tool shows the final message and staged file set for mandatory interactive confirmation. Declining leaves the index intact, missing UI fails closed, and a changed staged snapshot invalidates approval. Guild blocks direct model-issued `git commit` shell commands so the workflow cannot bypass the dialog; normal Git hooks still run. `/commit` is unavailable while `@pithos-kit/plan` Plan mode is active or indeterminate.
 
 ## Usage
 

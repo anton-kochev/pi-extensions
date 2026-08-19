@@ -118,7 +118,7 @@ export default function registerCommitWorkflow(pi: ExtensionAPI): void {
 			try {
 				pi.sendMessage(
 					{
-						customType: "atlas-commit-workflow",
+						customType: "guild-commit-workflow",
 						content: buildCommitPrompt(args),
 						display: false,
 					},

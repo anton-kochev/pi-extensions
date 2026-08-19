@@ -1,7 +1,7 @@
 {
   "name": "@pithos-kit/atlas",
-  "version": "0.5.0",
-  "description": "Model-generated session names, confirmed commits, catalog, diagnostics, version checks, and .pithos configuration for pithos-kit.",
+  "version": "0.6.0",
+  "description": "Model-generated session names, catalog, diagnostics, version checks, and .pithos configuration for pithos-kit.",
   "keywords": [
     "pi-package",
     "pi-extension",
@@ -9,8 +9,6 @@
     "atlas",
     "catalog",
     "configuration",
-    "git",
-    "conventional-commits",
     "session-names",
     "session-naming"
   ],
@@ -51,22 +49,17 @@
   },
   "pithosKit": {
     "displayName": "Atlas",
-    "summary": "Name new sessions, create confirmed commits, explore packages, check compatibility, and manage .pithos.",
+    "summary": "Name new sessions, explore packages, check compatibility, and manage .pithos.",
     "minimumPi": ">=0.83.0",
     "commands": [
-      { "name": "commit", "usage": "/commit [instructions]", "summary": "Create a context-scoped Conventional Commit with confirmation." },
-      { "name": "pithos", "usage": "/pithos [help|packages|versions|doctor|config]", "summary": "Open Atlas or run a catalog, diagnostic, or configuration action." },
-      { "name": "skill:conventional-commit", "usage": "/skill:conventional-commit [instructions]", "summary": "Load the confirmed, context-aware Conventional Commit workflow explicitly." }
+      { "name": "pithos", "usage": "/pithos [help|packages|versions|doctor|config]", "summary": "Open Atlas or run a catalog, diagnostic, or configuration action." }
     ],
     "tools": [
-      { "name": "create_commit", "summary": "Controlled git commit creator with mandatory interactive confirmation.", "internal": true },
       { "name": "rename_session", "summary": "Rename the current Pi session in lowercase kebab-case when explicitly requested." },
       { "name": "pithos_info", "summary": "Read pithos-kit catalog, version, runtime, and configuration information." }
     ],
     "prompts": [],
-    "skills": [
-      { "name": "conventional-commit", "summary": "Context-aware staging and confirmed Conventional Commit generation." }
-    ],
+    "skills": [],
     "themes": [],
     "agents": [],
     "configuration": [
@@ -77,14 +70,10 @@
   "pi": {
     "extensions": [
       "./extensions"
-    ],
-    "skills": [
-      "./skills"
     ]
   },
   "files": [
     "extensions",
-    "skills",
     "src",
     "README.md"
   ]

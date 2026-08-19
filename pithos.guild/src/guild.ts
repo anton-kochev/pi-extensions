@@ -32,6 +32,7 @@ import {
 	renderGuildResult,
 } from "./ui";
 import { GuildRunTracker } from "./visibility";
+import registerCommitWorkflow from "./commit";
 
 const BUILTIN_AGENTS_DIR = fileURLToPath(new URL("../agents", import.meta.url));
 const MAX_MODEL_OUTPUT_BYTES = 50 * 1024;
@@ -162,6 +163,8 @@ function formatRoster(discovery: GuildDiscoveryResult): string {
 }
 
 export function registerGuild(pi: ExtensionAPI, dependencies: GuildDependencies = defaultDependencies): void {
+	registerCommitWorkflow(pi);
+
 	const activeRuns = new GuildRunTracker();
 	let ticker: NodeJS.Timeout | undefined;
 	let activeUiContext: ExtensionContext | undefined;

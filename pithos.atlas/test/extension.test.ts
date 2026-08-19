@@ -103,8 +103,8 @@ describe("Atlas extension", () => {
 		globalThis.fetch = async () => { throw new Error("unexpected startup network request"); };
 		try {
 			const { commands, tools } = createHarness();
-			assert.deepEqual([...commands.keys()], ["commit", "pithos"]);
-			assert.deepEqual([...tools.keys()], ["create_commit", "rename_session", "pithos_info"]);
+			assert.deepEqual([...commands.keys()], ["pithos"]);
+			assert.deepEqual([...tools.keys()], ["rename_session", "pithos_info"]);
 			const schemaText = JSON.stringify(tools.get("pithos_info").parameters);
 			assert.doesNotMatch(schemaText, /write|apply|manage|update/i);
 			const result = await tools.get("pithos_info").execute("call", { action: "catalog" }, undefined, undefined, {
@@ -114,61 +114,6 @@ describe("Atlas extension", () => {
 		} finally {
 			globalThis.fetch = originalFetch;
 		}
-	});
-
-	it("starts the confirmed commit workflow without committing directly", async () => {
-		const { commands, messages } = createHarness();
-		const notifications: string[] = [];
-
-		await commands.get("commit").handler("Guild dashboard changes", {
-			isIdle: () => true,
-			hasUI: true,
-			sessionManager: { getBranch: () => [] },
-			ui: { notify: (message: string) => notifications.push(message) },
-		} as never);
-
-		assert.equal(notifications.length, 0);
-		assert.equal(messages.length, 1);
-		assert.equal(messages[0]?.message.customType, "atlas-commit-workflow");
-		assert.equal(messages[0]?.message.display, false);
-		assert.match(messages[0]?.message.content ?? "", /Guild dashboard changes/);
-		assert.match(messages[0]?.message.content ?? "", /create_commit/);
-		assert.deepEqual(messages[0]?.options, { triggerTurn: true });
-	});
-
-	it("shows /commit help without starting an agent turn", async () => {
-		const { commands, messages } = createHarness();
-		const notifications: string[] = [];
-
-		await commands.get("commit").handler("--help", {
-			isIdle: () => true,
-			hasUI: true,
-			sessionManager: { getBranch: () => [] },
-			ui: { notify: (message: string) => notifications.push(message) },
-		} as never);
-
-		assert.equal(messages.length, 0);
-		assert.equal(notifications.length, 1);
-		assert.match(notifications[0] ?? "", /Usage: \/commit \[instructions\]/);
-		assert.match(notifications[0] ?? "", /interactive confirmation/i);
-	});
-
-	it("refuses to start /commit while Plan mode is active", async () => {
-		const { commands, messages } = createHarness();
-		const notifications: string[] = [];
-
-		await commands.get("commit").handler("", {
-			isIdle: () => true,
-			hasUI: true,
-			sessionManager: {
-				getBranch: () => [{ type: "custom", customType: "plan-theme-state", data: { active: true } }],
-			},
-			ui: { notify: (message: string) => notifications.push(message) },
-		} as never);
-
-		assert.equal(messages.length, 0);
-		assert.equal(notifications.length, 1);
-		assert.match(notifications[0] ?? "", /commit.*unavailable.*Plan mode/i);
 	});
 
 	it("reports configured toolchains through the read-only config tool", async () => {
@@ -293,12 +238,13 @@ describe("Atlas extension", () => {
 		} as never);
 
 		assert.equal(notifications.length, 1);
-		assert.match(notifications[0] ?? "", /commands: \/commit, \/pithos, \/skill:conventional-commit/);
-		assert.match(notifications[0] ?? "", /tools: create_commit \(internal\), rename_session, pithos_info/);
+		assert.match(notifications[0] ?? "", /commands: \/pithos/);
+		assert.match(notifications[0] ?? "", /commands: \/guild, \/guild-handover, \/commit, \/skill:conventional-commit, \/skill:tdd/);
+		assert.match(notifications[0] ?? "", /tools: guild_handover, create_commit \(internal\)/);
+		assert.match(notifications[0] ?? "", /tools: rename_session, pithos_info/);
 		assert.match(notifications[0] ?? "", /prompts: plan/);
 		assert.doesNotMatch(notifications[0] ?? "", /srs-generator/);
-		assert.match(notifications[0] ?? "", /skills: conventional-commit/);
-		assert.match(notifications[0] ?? "", /skills: tdd/);
+		assert.match(notifications[0] ?? "", /skills: conventional-commit, tdd/);
 		assert.match(notifications[0] ?? "", /themes: plan/);
 		assert.match(notifications[0] ?? "", /agents: dotnet-architect/);
 		assert.match(notifications[0] ?? "", /configuration: file \.pi\/aegis\.json/);
@@ -316,6 +262,7 @@ describe("Atlas extension", () => {
 		assert.match(notifications[0], /3–5-word session names/);
 		assert.match(notifications[0], /Usage: \/pithos/);
 		assert.doesNotMatch(notifications[0], /\/skill:tdd|TDD guidance/);
+		assert.doesNotMatch(notifications[0], /\/commit|Conventional Commit/);
 		assert.doesNotMatch(notifications[0], /\/pithos help </);
 	});
 });

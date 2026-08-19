@@ -26,7 +26,7 @@ pi:
 
 ## Migrating from `@pithos-kit/skills`
 
-`@pithos-kit/skills` is retired. Remove global and project installs (`pi remove npm:@pithos-kit/skills` and `pi remove -l npm:@pithos-kit/skills`) plus its `.pithos` pin, keep this standalone Plan package for `/plan`, and use a Guild release that owns the relocated TDD skill together with an Atlas release that no longer bundles it. Historical Skills 0.4.0 and earlier must not be loaded alongside Plan because both packages handle the same `/plan` command and Plan state.
+`@pithos-kit/skills` is retired. Remove global and project installs (`pi remove npm:@pithos-kit/skills` and `pi remove -l npm:@pithos-kit/skills`) plus its `.pithos` pin, keep this standalone Plan package for `/plan`, and use Guild 0.3.0 for the relocated TDD skill together with Atlas 0.6.0, which no longer bundles it. Historical Skills 0.4.0 and earlier must not be loaded alongside Plan because both packages handle the same `/plan` command and Plan state.
 
 ## Usage
 

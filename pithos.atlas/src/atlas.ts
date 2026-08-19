@@ -3,7 +3,6 @@ import { VERSION, type ExtensionAPI, type ExtensionCommandContext } from "@earen
 import { Type } from "typebox";
 import { resolveActivePiVersion } from "./active-pi.ts";
 import { loadBundledCatalog } from "./bundled-catalog.ts";
-import registerCommitWorkflow from "./commit.ts";
 import type { Catalog, CatalogPackage } from "./catalog.ts";
 import { refreshCatalog, type RefreshedCatalog } from "./catalog-service.ts";
 import { commitConfig, readConfigSnapshot, type ConfigSnapshot } from "./config-transaction.ts";
@@ -17,12 +16,9 @@ import { runConfigWizard } from "./ui.ts";
 
 const MAX_OUTPUT_CHARS = 40_000;
 
-export const ATLAS_HELP = `Pithos Atlas gives eligible new sessions readable 3–5-word session names after their first user message, creates confirmed Conventional Commits, configures reproducible toolchain, Pi, and package pins, and diagnoses the active environment.
+export const ATLAS_HELP = `Pithos Atlas gives eligible new sessions readable 3–5-word session names after their first user message, configures reproducible toolchain, Pi, and package pins, and diagnoses the active environment.
 
 Usage: /pithos [command]
-
-Atlas workflows:
-  /commit [instructions]   Prepare a context-scoped commit with mandatory interactive confirmation
 
 Pithos commands:
   /pithos                  Open the interactive Atlas menu
@@ -186,7 +182,6 @@ function formatDoctor(report: DiagnosticsReport, warnings: string[]): string {
 }
 
 export function registerAtlas(pi: ExtensionAPI): void {
-	registerCommitWorkflow(pi);
 	registerSessionNaming(pi);
 
 	const enforceKebabCaseSessionName = (name: string | undefined): void => {

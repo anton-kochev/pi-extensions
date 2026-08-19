@@ -1,7 +1,7 @@
 {
   "name": "@pithos-kit/guild",
-  "version": "0.2.0",
-  "description": "Software-development Guild members and TDD guidance for .NET, Angular, TypeScript, Rust, and language-agnostic code review.",
+  "version": "0.3.0",
+  "description": "Software-development Guild members, confirmed Conventional Commits, and TDD guidance for .NET, Angular, TypeScript, Rust, and language-agnostic code review.",
   "keywords": [
     "pi-package",
     "pi-extension",
@@ -15,7 +15,9 @@
     "rust",
     "code-review",
     "tdd",
-    "test-driven-development"
+    "test-driven-development",
+    "git",
+    "conventional-commits"
   ],
   "license": "MIT",
   "type": "module",
@@ -40,18 +42,22 @@
   },
   "pithosKit": {
     "displayName": "Guild",
-    "summary": "Delegate focused architecture, implementation, and code review to isolated members with TDD guidance.",
+    "summary": "Delegate focused software work, create confirmed commits, and apply TDD guidance.",
     "minimumPi": ">=0.83.0",
     "commands": [
       { "name": "guild", "usage": "/guild [--help]", "summary": "List the active Guild roster." },
       { "name": "guild-handover", "usage": "/guild-handover [member] [task]", "summary": "Delegate directly from the interactive TUI." },
+      { "name": "commit", "usage": "/commit [instructions]", "summary": "Create a context-scoped Conventional Commit with confirmation." },
+      { "name": "skill:conventional-commit", "usage": "/skill:conventional-commit [instructions]", "summary": "Load the confirmed, context-aware Conventional Commit workflow explicitly." },
       { "name": "skill:tdd", "usage": "/skill:tdd [task context]", "summary": "Load the test-driven development workflow explicitly." }
     ],
     "tools": [
-      { "name": "guild_handover", "summary": "Hand focused work to an isolated Guild member." }
+      { "name": "guild_handover", "summary": "Hand focused work to an isolated Guild member." },
+      { "name": "create_commit", "summary": "Controlled git commit creator with mandatory interactive confirmation.", "internal": true }
     ],
     "prompts": [],
     "skills": [
+      { "name": "conventional-commit", "summary": "Context-aware staging and confirmed Conventional Commit generation." },
       { "name": "tdd", "summary": "Test-driven development through red-green-refactor." }
     ],
     "themes": [],

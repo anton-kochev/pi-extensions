@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/@pithos-kit/atlas)](https://www.npmjs.com/package/@pithos-kit/atlas)
 
-Atlas gives eligible new sessions readable synthetic names, provides confirmed Conventional Commits, and includes an interactive catalog, version checker, compatibility doctor, and `.pithos` configuration manager for pithos-kit. It combines bounded model-assisted session naming and a bundled offline catalog with explicit public npm registry checks and Pi runtime provenance.
+Atlas gives eligible new sessions readable synthetic names and includes an interactive catalog, version checker, compatibility doctor, and `.pithos` configuration manager for pithos-kit. It combines bounded model-assisted session naming and a bundled offline catalog with explicit public npm registry checks and Pi runtime provenance.
 
 ## Install
 
@@ -13,7 +13,7 @@ pi install npm:@pithos-kit/atlas
 Pin an exact version:
 
 ```bash
-pi install npm:@pithos-kit/atlas@0.5.0
+pi install npm:@pithos-kit/atlas@0.6.0
 ```
 
 For local development:
@@ -27,7 +27,7 @@ pi install -l ./pithos.atlas
 ```yaml
 pi:
   extensions:
-    "@pithos-kit/atlas": "npm:0.5.0"
+    "@pithos-kit/atlas": "npm:0.6.0"
 ```
 
 The separate Pithos base image can preinstall Atlas so it remains available to diagnose a project configuration that would otherwise prevent project packages from loading.
@@ -47,10 +47,6 @@ Atlas also provides the model-facing `rename_session` tool. Its tool guidance li
 ## Commands
 
 ```text
-/commit [instructions]
-/commit --help
-/skill:conventional-commit [instructions]
-/skill:conventional-commit --help
 /pithos
 /pithos help
 /pithos packages
@@ -60,19 +56,17 @@ Atlas also provides the model-facing `rename_session` tool. Its tool guidance li
 /pithos config validate
 ```
 
-- `/commit` starts Atlas's context-aware Conventional Commit workflow. It can infer a narrow staging set, but creating the commit always requires interactive confirmation.
-- `/skill:conventional-commit` exposes the same workflow for explicit or proactive skill loading.
 - `/pithos` opens a focused About, Doctor, and Configure menu in TUI mode and prints help in non-interactive modes.
-- `/pithos help` is the single Atlas help page. `/commit` and `/skill:conventional-commit` retain Atlas-provided help.
+- `/pithos help` is the single Atlas help page.
 - `packages` lists package-owned commands, tools, prompts, skills, themes, agents, and configuration from the bundled catalog, then adds runtime command/tool provenance without contacting npm.
 - `versions` explicitly queries public npm registry endpoints, distinguishing bundled and latest versions.
 - `doctor` distinguishes the active Pi process, the Pi version configured for a future Pithos rebuild, configured package pins, runtime-detected packages, bundled versions, latest versions, and versions compatible with the configured Pi.
 - `config validate` reads and validates `.pithos` without changing it.
 - `config` opens the interactive manager described below.
 
-## TDD migration to Guild
+## Software-development workflow migration to Guild
 
-Software-development skills now belong to [`@pithos-kit/guild`](https://www.npmjs.com/package/@pithos-kit/guild), so Atlas no longer bundles or advertises `tdd`. Update Atlas and Guild together: an older Atlas release loaded beside a Guild release that owns TDD creates a duplicate skill-name collision.
+Software-development skills and commit workflows now belong to [`@pithos-kit/guild`](https://www.npmjs.com/package/@pithos-kit/guild), so Atlas no longer bundles or advertises TDD or Conventional Commit capabilities. Pair Atlas 0.6.0 with Guild 0.3.0 so exactly one active package owns `/commit`, `create_commit`, `conventional-commit`, and TDD. Loading Guild 0.3.0 beside an older Atlas release causes duplicate command, tool, and skill ownership.
 
 The earlier `@pithos-kit/skills` package remains retired. Remove it at every scope where it was installed, then remove its future-build pin through `/pithos config`:
 
@@ -82,12 +76,6 @@ pi remove -l npm:@pithos-kit/skills    # current project's settings
 ```
 
 Opening `/pithos config` with a retired Skills pin stages its removal for review; Atlas will not preserve or re-offer that package. Use `pi list` to check both effective package scopes and remove any earlier legacy Skills identity too.
-
-## Confirmed commits
-
-`/commit` uses existing staged changes when present. Otherwise it narrows the staging set from explicit instructions, named paths or packages, and the active task context. Ambiguous scopes require confirmation before staging, and unrelated untracked, generated, editor, session, and local-configuration files are excluded unless explicitly requested.
-
-The final message and staged file set are shown by Atlas's controlled `create_commit` tool. Declining leaves the index intact, missing UI fails closed, and a changed staged snapshot invalidates the approval. Atlas blocks direct model-issued `git commit` shell commands so the workflow cannot skip the dialog; normal Git hooks still run. `/commit` is unavailable while `@pithos-kit/plan` Plan mode is active or indeterminate.
 
 ## Interactive configuration
 
@@ -123,7 +111,7 @@ Cancellation and pre-commit errors leave `.pithos` unchanged. After a successful
 
 ## Agent tools
 
-Atlas registers the controlled `create_commit` tool, the validated `rename_session` tool, and the read-only `pithos_info` tool. `pithos_info` supports these actions:
+Atlas registers the validated `rename_session` tool and the read-only `pithos_info` tool. `pithos_info` supports these actions:
 
 - `catalog`
 - `versions`

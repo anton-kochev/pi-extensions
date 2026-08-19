@@ -2,7 +2,7 @@
 
 This repository is a clean break. Runtime code, Atlas, and package documentation do not alias, recognize, migrate, or fall back to previous npm identities.
 
-> Sections 1–4 are an archived record of the completed organization cutover and must not be executed again. `@pithos-kit/skills` was subsequently retired; its SRS prompt was removed and TDD first moved to `@pithos-kit/atlas` 0.5.0, then transferred to Guild as part of the software-development artifact boundary. Sections 5–7 record the remaining external retirement work.
+> Sections 1–4 are an archived record of the completed organization cutover and must not be executed again. `@pithos-kit/skills` was subsequently retired; its SRS prompt was removed and TDD first moved to `@pithos-kit/atlas` 0.5.0, then transferred to Guild as part of the software-development artifact boundary. Conventional Commit support was also transferred from Atlas to Guild. Sections 5–7 record the remaining external retirement work.
 
 ## 1. Historical: npm organization packages
 
@@ -106,7 +106,7 @@ This checkout intentionally does not modify the separate `anton-kochev/pithos` r
 
 1. replaces every previous npm package entry with its exact `@pithos-kit/<short-name>` replacement;
 2. preinstalls `@pithos-kit/atlas` in the base/default environment so it can diagnose project configuration even when project packages fail to load;
-3. keeps exact `npm:<version>` pins under `pi.extensions`, removes `@pithos-kit/skills`, and coordinates a Guild release that advertises TDD with an Atlas release that no longer bundles it;
+3. keeps exact `npm:<version>` pins under `pi.extensions`, removes `@pithos-kit/skills`, and pairs Guild 0.3.0 with Atlas 0.6.0 so Guild owns TDD plus `/commit`, `create_commit`, and `conventional-commit` only after Atlas stops registering them, avoiding duplicate command, tool, or skill registration;
 4. keeps `@pithos-kit/plan` as the sole owner of `/plan`, avoiding historical Skills versions that bundled the same handler;
 5. rebuilds generated `.pithos.d/` output from authoritative `.pithos` input rather than editing generated files;
 6. accounts for Context Bar and Themes requiring Pi `>=0.84.1` when selecting the new base Pi version;
@@ -133,4 +133,5 @@ Deprecation communicates the replacement but does not redirect installs or migra
 - Confirm public extension commands return their documented help, while native skill commands follow Pi's configured command behavior.
 - Confirm Atlas performs no startup/completion registry calls and exposes no configuration mutation tool action.
 - Confirm `.pithos.d/` is generated only by Pithos.
-- Announce the clean break with links to the root README, Guild, Atlas, and Plan documentation, coordinated TDD migration guidance, and explicit install/configuration examples.
+- Announce the clean break with links to the root README, Guild, Atlas, and Plan documentation, coordinated TDD and Conventional Commit migration guidance, and explicit install/configuration examples.
+- Publish and deploy Guild 0.3.0 and Atlas 0.6.0 together; mixed old-Atlas/new-Guild installations duplicate `/commit`, `create_commit`, and `conventional-commit` registration.

@@ -22,7 +22,7 @@ function successfulResult(source: "builtin" | "user" | "project" = "builtin"): G
 }
 
 function fakePi() {
-  let tool: any;
+  const tools = new Map<string, any>();
   const commands = new Map<string, any>();
   const handlers = new Map<string, any>();
   const messages: Array<{ message: any; options: any }> = [];
@@ -30,7 +30,7 @@ function fakePi() {
   return {
     api: {
       registerTool(definition: any) {
-        tool = definition;
+        tools.set(definition.name, definition);
       },
       registerCommand(name: string, definition: any) {
         commands.set(name, definition);
@@ -46,8 +46,9 @@ function fakePi() {
       },
     },
     get tool() {
-      return tool;
+      return tools.get("guild_handover");
     },
+    tools,
     commands,
     handlers,
     messages,
@@ -121,6 +122,93 @@ describe("guild extension", () => {
       ["csharp-coder"],
     );
     assert.equal(handover.getArgumentCompletions("csharp-coder "), null);
+  });
+
+  it("registers Guild as the confirmed commit workflow owner", async () => {
+    const pi = fakePi();
+    registerGuild(pi.api as never, {
+      discover: () => ({ members: [], warnings: [] }),
+      run: async () => successfulResult(),
+    });
+
+    assert.ok(pi.commands.has("commit"));
+    assert.ok(pi.tools.has("create_commit"));
+    assert.ok(pi.handlers.has("input"));
+    assert.ok(pi.handlers.has("tool_call"));
+
+    const notifications: string[] = [];
+    await pi.commands.get("commit").handler("--help", context({
+      isIdle: () => true,
+      sessionManager: { getBranch: () => [] },
+      ui: { ...context().ui, notify: (message: string) => notifications.push(message) },
+    }));
+
+    assert.equal(pi.messages.length, 0);
+    assert.match(notifications[0] ?? "", /Usage: \/commit \[instructions\]/);
+  });
+
+  it("handles conventional-commit skill help without starting an agent turn", async () => {
+    const pi = fakePi();
+    registerGuild(pi.api as never, {
+      discover: () => ({ members: [], warnings: [] }),
+      run: async () => successfulResult(),
+    });
+    const notifications: string[] = [];
+    const ctx = context({
+      ui: { ...context().ui, notify: (message: string) => notifications.push(message) },
+    });
+
+    const result = await pi.handlers.get("input")(
+      { text: "/skill:conventional-commit --help" },
+      ctx,
+    );
+
+    assert.deepEqual(result, { action: "handled" });
+    assert.equal(pi.messages.length, 0);
+    assert.match(notifications[0] ?? "", /Usage: \/skill:conventional-commit \[instructions\]/);
+    assert.match(notifications[0] ?? "", /interactive confirmation/i);
+  });
+
+  it("starts the confirmed commit workflow without committing directly", async () => {
+    const pi = fakePi();
+    registerGuild(pi.api as never, {
+      discover: () => ({ members: [], warnings: [] }),
+      run: async () => successfulResult(),
+    });
+
+    await pi.commands.get("commit").handler("Guild dashboard changes", context({
+      isIdle: () => true,
+      sessionManager: { getBranch: () => [] },
+    }));
+
+    assert.equal(pi.messages.length, 1);
+    assert.equal(pi.messages[0]?.message.customType, "guild-commit-workflow");
+    assert.equal(pi.messages[0]?.message.display, false);
+    assert.match(pi.messages[0]?.message.content ?? "", /Guild dashboard changes/);
+    assert.match(pi.messages[0]?.message.content ?? "", /create_commit/);
+    assert.deepEqual(pi.messages[0]?.options, { triggerTurn: true });
+  });
+
+  it("refuses to start /commit while Plan mode is active or indeterminate", async () => {
+    for (const data of [{ active: true }, {}]) {
+      const pi = fakePi();
+      registerGuild(pi.api as never, {
+        discover: () => ({ members: [], warnings: [] }),
+        run: async () => successfulResult(),
+      });
+      const notifications: string[] = [];
+
+      await pi.commands.get("commit").handler("", context({
+        isIdle: () => true,
+        sessionManager: {
+          getBranch: () => [{ type: "custom", customType: "plan-theme-state", data }],
+        },
+        ui: { ...context().ui, notify: (message: string) => notifications.push(message) },
+      }));
+
+      assert.equal(pi.messages.length, 0);
+      assert.match(notifications[0] ?? "", /commit.*unavailable.*Plan mode/i);
+    }
   });
 
   it("shows package-local help for both Guild commands via --help and -h without starting work", async () => {
