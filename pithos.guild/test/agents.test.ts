@@ -89,6 +89,33 @@ describe("Guild member policies", () => {
     assert.doesNotMatch(prompt, /grimoire\.dotnet-architect|CLAUDE\.md|\bBash\b|\bSkill\b/i);
     assert.doesNotMatch(prompt, /(?:\.NET|C#)\s*(?:8|9|10|11|12)(?:\+|\.0|\s+or\s+(?:later|newer)|\s+and\s+(?:later|newer))/i);
   });
+
+  it("keeps the front-end architect read-only, framework-aware, and at architecture altitude", () => {
+    const builtInDir = resolve(import.meta.dirname, "../agents");
+    const member = discoverGuildMembers({ builtInDir }).members.find(({ name }) => name === "frontend-architect");
+
+    assert.ok(member);
+    assert.deepEqual(member.tools, ["read", "grep", "find", "ls"]);
+    const prompt = member.systemPrompt;
+    assert.match(prompt, /read-only[\s\S]*Never create, edit, or delete files, run shell commands/i);
+    assert.match(prompt, /architecture altitude[\s\S]*contract snippet declares members; it does not implement them/i);
+    assert.match(prompt, /package manifests[\s\S]*lockfiles[\s\S]*framework[\s\S]*version/i);
+    assert.match(prompt, /component[\s\S]*state ownership[\s\S]*data flow[\s\S]*routing[\s\S]*rendering/i);
+    assert.match(prompt, /server state[\s\S]*client state/i);
+    assert.match(prompt, /Angular[\s\S]*Vue/i);
+    assert.match(prompt, /version-sensitive[\s\S]*(?:verify|evidence|repository)/i);
+    assert.match(prompt, /accessibility[\s\S]*performance/i);
+    assert.match(prompt, /loading, empty, and error states/i);
+    assert.match(prompt, /red-green-refactor/i);
+    assert.match(prompt, /Apply principles as tools, not rituals/i);
+    assert.match(prompt, /Project best practice[\s\S]*Local convention[\s\S]*Questionable pattern[\s\S]*Anti-pattern/i);
+    assert.match(prompt, /repository conventions and explicit user direction[\s\S]{0,240}(?:constraints|follow)[\s\S]{0,240}correctness[\s\S]{0,160}security[\s\S]{0,160}accessibility/i);
+    assert.match(prompt, /When either conflicts[\s\S]{0,240}explain[\s\S]{0,160}smallest safer alternative/i);
+    assert.match(prompt, /Test Plan[\s\S]*Handoff[\s\S]*(?:affected paths or areas)[\s\S]*implementation order[\s\S]*acceptance criteria[\s\S]*constraints/i);
+    assert.match(prompt, /Quality checklist/i);
+    assert.doesNotMatch(prompt, /angular-coder|vue-coder/i);
+    assert.doesNotMatch(prompt, /grimoire\.frontend-architect|CLAUDE\.md|\bBash\b|\bSkill\b|WebSearch|WebFetch|context7/i);
+  });
 });
 
 describe("agent discovery", () => {
