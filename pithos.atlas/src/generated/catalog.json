@@ -211,7 +211,7 @@
     },
     {
       "name": "@pithos-kit/guild",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "description": "Standalone Guild members for .NET, Angular, TypeScript, Rust, and language-agnostic code review.",
       "pi": {
         "extensions": [

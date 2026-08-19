@@ -28,7 +28,7 @@ pi -e ./pithos.guild
 ```yaml
 pi:
   extensions:
-    "@pithos-kit/guild": "npm:0.1.1"
+    "@pithos-kit/guild": "npm:0.2.0"
 ```
 
 ## Guild members
