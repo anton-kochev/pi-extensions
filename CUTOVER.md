@@ -2,7 +2,7 @@
 
 This repository is a clean break. Runtime code, Atlas, and package documentation do not alias, recognize, migrate, or fall back to previous npm identities.
 
-> Sections 1–4 are an archived record of the completed organization cutover and must not be executed again. `@pithos-kit/skills` was subsequently retired; its SRS prompt was removed and TDD moved to `@pithos-kit/atlas` 0.5.0. Sections 5–7 record the remaining external retirement work.
+> Sections 1–4 are an archived record of the completed organization cutover and must not be executed again. `@pithos-kit/skills` was subsequently retired; its SRS prompt was removed and TDD first moved to `@pithos-kit/atlas` 0.5.0, then transferred to Guild as part of the software-development artifact boundary. Sections 5–7 record the remaining external retirement work.
 
 ## 1. Historical: npm organization packages
 
@@ -106,7 +106,7 @@ This checkout intentionally does not modify the separate `anton-kochev/pithos` r
 
 1. replaces every previous npm package entry with its exact `@pithos-kit/<short-name>` replacement;
 2. preinstalls `@pithos-kit/atlas` in the base/default environment so it can diagnose project configuration even when project packages fail to load;
-3. keeps exact `npm:<version>` pins under `pi.extensions`, removes `@pithos-kit/skills`, and uses `@pithos-kit/atlas` 0.5.0 or later for TDD;
+3. keeps exact `npm:<version>` pins under `pi.extensions`, removes `@pithos-kit/skills`, and coordinates a Guild release that advertises TDD with an Atlas release that no longer bundles it;
 4. keeps `@pithos-kit/plan` as the sole owner of `/plan`, avoiding historical Skills versions that bundled the same handler;
 5. rebuilds generated `.pithos.d/` output from authoritative `.pithos` input rather than editing generated files;
 6. accounts for Context Bar and Themes requiring Pi `>=0.84.1` when selecting the new base Pi version;
@@ -116,14 +116,14 @@ This repository currently pins Pi `0.84.2` in `.pithos`; Atlas still declares co
 
 ## 6. Deprecate the retired Skills identities
 
-After Atlas 0.5.0 and the separate Pithos update are verified, deprecate every published Skills version with explicit replacement messages:
+After the coordinated Guild and Atlas releases and the separate Pithos update are verified, deprecate every published Skills version with explicit replacement messages:
 
 ```bash
-npm deprecate '@anton-kochev/pithos.skills@*' 'Retired; TDD moved to @pithos-kit/atlas 0.5.0 and SRS was removed'
-npm deprecate '@pithos-kit/skills@*' 'Retired; TDD moved to @pithos-kit/atlas 0.5.0 and SRS was removed'
+npm deprecate '@anton-kochev/pithos.skills@*' 'Retired; TDD moved to @pithos-kit/guild and SRS was removed'
+npm deprecate '@pithos-kit/skills@*' 'Retired; TDD moved to @pithos-kit/guild and SRS was removed'
 ```
 
-Deprecation communicates the replacement but does not redirect installs or migrate `.pithos`; users must remove Skills and pin Atlas explicitly.
+Deprecation communicates the replacement but does not redirect installs or migrate `.pithos`; users must remove Skills, pin Guild explicitly, and update Atlas to a release that no longer bundles TDD.
 
 ## 7. Final checks and announcement
 
@@ -133,4 +133,4 @@ Deprecation communicates the replacement but does not redirect installs or migra
 - Confirm public extension commands return their documented help, while native skill commands follow Pi's configured command behavior.
 - Confirm Atlas performs no startup/completion registry calls and exposes no configuration mutation tool action.
 - Confirm `.pithos.d/` is generated only by Pithos.
-- Announce the clean break with links to the root README, Atlas and Plan documentation, and explicit install/configuration examples.
+- Announce the clean break with links to the root README, Guild, Atlas, and Plan documentation, coordinated TDD migration guidance, and explicit install/configuration examples.

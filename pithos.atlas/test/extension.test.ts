@@ -297,7 +297,8 @@ describe("Atlas extension", () => {
 		assert.match(notifications[0] ?? "", /tools: create_commit \(internal\), rename_session, pithos_info/);
 		assert.match(notifications[0] ?? "", /prompts: plan/);
 		assert.doesNotMatch(notifications[0] ?? "", /srs-generator/);
-		assert.match(notifications[0] ?? "", /skills: conventional-commit, tdd/);
+		assert.match(notifications[0] ?? "", /skills: conventional-commit/);
+		assert.match(notifications[0] ?? "", /skills: tdd/);
 		assert.match(notifications[0] ?? "", /themes: plan/);
 		assert.match(notifications[0] ?? "", /agents: dotnet-architect/);
 		assert.match(notifications[0] ?? "", /configuration: file \.pi\/aegis\.json/);
@@ -314,6 +315,7 @@ describe("Atlas extension", () => {
 		assert.equal(notifications.length, 1);
 		assert.match(notifications[0], /3–5-word session names/);
 		assert.match(notifications[0], /Usage: \/pithos/);
+		assert.doesNotMatch(notifications[0], /\/skill:tdd|TDD guidance/);
 		assert.doesNotMatch(notifications[0], /\/pithos help </);
 	});
 });

@@ -1,7 +1,7 @@
 {
   "name": "@pithos-kit/atlas",
   "version": "0.5.0",
-  "description": "Model-generated session names, confirmed commits, TDD guidance, catalog, diagnostics, version checks, and .pithos configuration for pithos-kit.",
+  "description": "Model-generated session names, confirmed commits, catalog, diagnostics, version checks, and .pithos configuration for pithos-kit.",
   "keywords": [
     "pi-package",
     "pi-extension",
@@ -11,8 +11,6 @@
     "configuration",
     "git",
     "conventional-commits",
-    "tdd",
-    "test-driven-development",
     "session-names",
     "session-naming"
   ],
@@ -53,13 +51,12 @@
   },
   "pithosKit": {
     "displayName": "Atlas",
-    "summary": "Name new sessions, create confirmed commits, provide TDD guidance, explore packages, check compatibility, and manage .pithos.",
+    "summary": "Name new sessions, create confirmed commits, explore packages, check compatibility, and manage .pithos.",
     "minimumPi": ">=0.83.0",
     "commands": [
       { "name": "commit", "usage": "/commit [instructions]", "summary": "Create a context-scoped Conventional Commit with confirmation." },
       { "name": "pithos", "usage": "/pithos [help|packages|versions|doctor|config]", "summary": "Open Atlas or run a catalog, diagnostic, or configuration action." },
-      { "name": "skill:conventional-commit", "usage": "/skill:conventional-commit [instructions]", "summary": "Load the confirmed, context-aware Conventional Commit workflow explicitly." },
-      { "name": "skill:tdd", "usage": "/skill:tdd [task context]", "summary": "Load the test-driven development workflow explicitly." }
+      { "name": "skill:conventional-commit", "usage": "/skill:conventional-commit [instructions]", "summary": "Load the confirmed, context-aware Conventional Commit workflow explicitly." }
     ],
     "tools": [
       { "name": "create_commit", "summary": "Controlled git commit creator with mandatory interactive confirmation.", "internal": true },
@@ -68,8 +65,7 @@
     ],
     "prompts": [],
     "skills": [
-      { "name": "conventional-commit", "summary": "Context-aware staging and confirmed Conventional Commit generation." },
-      { "name": "tdd", "summary": "Test-driven development through red-green-refactor." }
+      { "name": "conventional-commit", "summary": "Context-aware staging and confirmed Conventional Commit generation." }
     ],
     "themes": [],
     "agents": [],

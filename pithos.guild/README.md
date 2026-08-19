@@ -1,6 +1,6 @@
 # guild
 
-A standalone Guild of .NET, Angular, TypeScript, and Rust architecture and implementation members plus language-agnostic code review for [pi](https://github.com/earendil-works/pi-mono).
+A standalone Guild of .NET, Angular, TypeScript, and Rust architecture and implementation members, language-agnostic code review, and test-driven development guidance for [pi](https://github.com/earendil-works/pi-mono).
 
 The extension adds an agent-callable `guild_handover` tool and an interactive `/guild-handover` command for direct user delegation. Every handover starts an isolated, ephemeral pi process with a focused system prompt and a hard tool allowlist. The child inherits the parent session's active provider, model, thinking level, working directory, and project-trust decision.
 
@@ -45,6 +45,20 @@ pi:
 | `code-reviewer` | Read-only, language-aware review of repository changes with severity-prioritized findings | `read`, `grep`, `find`, `ls`, `bash` |
 
 Architect members cannot edit files or run shell commands. The reviewer cannot edit files and uses shell access only for non-mutating repository inspection. Coder members own related tests and verification and must not report success when relevant checks fail.
+
+## Test-driven development skill
+
+Guild owns the language-agnostic `tdd` skill used for explicit or proactive test-driven development. Load it directly with optional task context:
+
+```text
+/skill:tdd [task context]
+```
+
+The skill drives behavioral changes through a test list and small red-green-refactor cycles while allowing pragmatic exceptions for spikes, trivial declarations, generated output, and other work that does not benefit from test-first ceremony. Pi exposes the skill to the main agent and to Guild child processes through native skill discovery.
+
+Use `pi config` for global settings or `pi config -l` for a project override to toggle Guild's `tdd` resource, then run `/reload` in an active session. The `enableSkillCommands` setting controls native `/skill:tdd` registration and autocomplete; disabling the resource also removes its model-visible description after reload.
+
+TDD previously shipped with the retired `@pithos-kit/skills` package and then Atlas. Remove the retired package at every scope. Do not load a Guild release that owns TDD beside an older Atlas release that still bundles it; update Atlas and Guild together so exactly one active package provides the skill.
 
 ## Usage
 

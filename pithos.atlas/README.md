@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/@pithos-kit/atlas)](https://www.npmjs.com/package/@pithos-kit/atlas)
 
-Atlas gives eligible new sessions readable synthetic names, provides confirmed Conventional Commits and test-driven development guidance, and includes an interactive catalog, version checker, compatibility doctor, and `.pithos` configuration manager for pithos-kit. It combines bounded model-assisted session naming and a bundled offline catalog with explicit public npm registry checks and Pi runtime provenance.
+Atlas gives eligible new sessions readable synthetic names, provides confirmed Conventional Commits, and includes an interactive catalog, version checker, compatibility doctor, and `.pithos` configuration manager for pithos-kit. It combines bounded model-assisted session naming and a bundled offline catalog with explicit public npm registry checks and Pi runtime provenance.
 
 ## Install
 
@@ -51,7 +51,6 @@ Atlas also provides the model-facing `rename_session` tool. Its tool guidance li
 /commit --help
 /skill:conventional-commit [instructions]
 /skill:conventional-commit --help
-/skill:tdd [task context]
 /pithos
 /pithos help
 /pithos packages
@@ -63,33 +62,26 @@ Atlas also provides the model-facing `rename_session` tool. Its tool guidance li
 
 - `/commit` starts Atlas's context-aware Conventional Commit workflow. It can infer a narrow staging set, but creating the commit always requires interactive confirmation.
 - `/skill:conventional-commit` exposes the same workflow for explicit or proactive skill loading.
-- `/skill:tdd` loads the language-agnostic red-green-refactor workflow for explicit or proactive test-driven development.
 - `/pithos` opens a focused About, Doctor, and Configure menu in TUI mode and prints help in non-interactive modes.
-- `/pithos help` is the single Atlas help page. `/commit` and `/skill:conventional-commit` retain Atlas-provided help; native `/skill:tdd` passes trailing arguments into the skill as task context.
+- `/pithos help` is the single Atlas help page. `/commit` and `/skill:conventional-commit` retain Atlas-provided help.
 - `packages` lists package-owned commands, tools, prompts, skills, themes, agents, and configuration from the bundled catalog, then adds runtime command/tool provenance without contacting npm.
 - `versions` explicitly queries public npm registry endpoints, distinguishing bundled and latest versions.
 - `doctor` distinguishes the active Pi process, the Pi version configured for a future Pithos rebuild, configured package pins, runtime-detected packages, bundled versions, latest versions, and versions compatible with the configured Pi.
 - `config validate` reads and validates `.pithos` without changing it.
 - `config` opens the interactive manager described below.
 
-## Test-driven development skill
+## TDD migration to Guild
 
-Atlas owns the `tdd` skill previously published by the retired `@pithos-kit/skills` package. The SRS prompt from that package was removed. Remove the retired package at every scope where it was installed, then remove its future-build pin through `/pithos config`:
+Software-development skills now belong to [`@pithos-kit/guild`](https://www.npmjs.com/package/@pithos-kit/guild), so Atlas no longer bundles or advertises `tdd`. Update Atlas and Guild together: an older Atlas release loaded beside a Guild release that owns TDD creates a duplicate skill-name collision.
+
+The earlier `@pithos-kit/skills` package remains retired. Remove it at every scope where it was installed, then remove its future-build pin through `/pithos config`:
 
 ```bash
 pi remove npm:@pithos-kit/skills       # global settings
 pi remove -l npm:@pithos-kit/skills    # current project's settings
 ```
 
-Opening `/pithos config` with a retired Skills pin stages its removal for review; Atlas will not preserve or re-offer that package. Use `pi list` to check both effective package scopes. Remove any earlier legacy Skills identity too if it is still present; loading either historical package beside Atlas can create a duplicate `tdd` skill. TDD remains available through Atlas.
-
-Use Pi's native resource configuration to control whether the agent can discover TDD:
-
-1. Run `pi config` for global settings, or `pi config -l` for a project override.
-2. Toggle Atlas's `tdd` skill.
-3. Run `/reload` in any active Pi session.
-
-When enabled, Pi includes the TDD description in the agent's available skills. Pi's `enableSkillCommands` setting controls native skill-command registration and autocomplete without hiding loaded skills from the model. Disabling the TDD resource removes its model-visible description and native command after reload. It does not remove full skill instructions already expanded into the current conversation; start a new session or branch from before the invocation when that context must also be absent.
+Opening `/pithos config` with a retired Skills pin stages its removal for review; Atlas will not preserve or re-offer that package. Use `pi list` to check both effective package scopes and remove any earlier legacy Skills identity too.
 
 ## Confirmed commits
 
