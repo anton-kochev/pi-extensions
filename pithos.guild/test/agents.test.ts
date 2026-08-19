@@ -60,6 +60,35 @@ describe("Guild member policies", () => {
     assert.ok(result.members.every((agent) => agent.source === "builtin"));
     assert.deepEqual(result.warnings, []);
   });
+
+  it("keeps the .NET architect read-only, repository-aware, and at architecture altitude", () => {
+    const builtInDir = resolve(import.meta.dirname, "../agents");
+    const member = discoverGuildMembers({ builtInDir }).members.find(({ name }) => name === "dotnet-architect");
+
+    assert.ok(member);
+    assert.deepEqual(member.tools, ["read", "grep", "find", "ls"]);
+    const prompt = member.systemPrompt;
+    assert.match(prompt, /read-only[\s\S]*Never create, edit, or delete files, run shell commands/i);
+    assert.match(prompt, /eligibility gate[\s\S]*verify[\s\S]*(?:\.sln|\.csproj)[\s\S]*refuse/i);
+    assert.match(prompt, /refuse[\s\S]{0,240}(?:outside|does not belong to)[\s\S]{0,120}\.NET/i);
+    assert.match(prompt, /refuse[\s\S]{0,300}repository[\s\S]{0,200}(?:no relevant|does not contain)[\s\S]{0,120}(?:\.NET|C#)/i);
+    assert.match(prompt, /explain[\s\S]{0,120}(?:why|reason|evidence)/i);
+    assert.match(prompt, /architecture altitude[\s\S]*contract snippet declares members; it does not implement them/i);
+    assert.match(prompt, /Read before designing[\s\S]*target frameworks[\s\S]*language and package versions/i);
+    assert.match(prompt, /Apply principles as tools, not rituals/i);
+    assert.match(prompt, /Clean Architecture[\s\S]*Domain-Driven Design/i);
+    assert.match(prompt, /red-green-refactor/i);
+    assert.match(prompt, /nullable annotations[^\n]*(?:supported|enabled|configuration|settings)/i);
+    assert.match(prompt, /Entity Framework Core/i);
+    assert.match(prompt, /Azure Functions/i);
+    assert.match(prompt, /Failure, security, and operations[\s\S]*Performance/i);
+    assert.match(prompt, /Quality checklist/i);
+    assert.match(prompt, /Test Plan[\s\S]*Handoff[\s\S]*(?:affected paths or areas)[\s\S]*implementation order[\s\S]*acceptance criteria[\s\S]*constraints/i);
+    assert.match(prompt, /Never[\s\S]{0,100}claim(?:ed)? to have implemented/i);
+    assert.doesNotMatch(prompt, /csharp-coder/i);
+    assert.doesNotMatch(prompt, /grimoire\.dotnet-architect|CLAUDE\.md|\bBash\b|\bSkill\b/i);
+    assert.doesNotMatch(prompt, /(?:\.NET|C#)\s*(?:8|9|10|11|12)(?:\+|\.0|\s+or\s+(?:later|newer)|\s+and\s+(?:later|newer))/i);
+  });
 });
 
 describe("agent discovery", () => {
