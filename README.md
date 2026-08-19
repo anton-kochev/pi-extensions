@@ -13,6 +13,7 @@ A monorepo of independently published Pi extensions, skills, prompts, themes, an
 - [`pithos.context-bar/`](./pithos.context-bar) — a thin, stacked context-window composition bar above the editor. [![npm version](https://img.shields.io/npm/v/@pithos-kit/context-bar.svg)](https://www.npmjs.com/package/@pithos-kit/context-bar)
 - [`pithos.plan/`](./pithos.plan) — enforced read-only planning, approved plan creation, a Plan theme, and contextual session naming. [![npm version](https://img.shields.io/npm/v/@pithos-kit/plan.svg)](https://www.npmjs.com/package/@pithos-kit/plan)
 - [`pithos.themes/`](./pithos.themes) — accessible Auric light and dark themes with automatic appearance switching. [![npm version](https://img.shields.io/npm/v/@pithos-kit/themes.svg)](https://www.npmjs.com/package/@pithos-kit/themes)
+- [`pithos.translate/`](./pithos.translate) — faithful manual and display-only automatic assistant translation. [![npm version](https://img.shields.io/npm/v/@pithos-kit/translate.svg)](https://www.npmjs.com/package/@pithos-kit/translate)
 - [`pithos.atlas/`](./pithos.atlas) — name eligible new sessions, explore package capabilities, diagnose compatibility, and manage `.pithos` interactively. [![npm version](https://img.shields.io/npm/v/@pithos-kit/atlas.svg)](https://www.npmjs.com/package/@pithos-kit/atlas)
 
 ## Install
@@ -30,6 +31,7 @@ pi install npm:@pithos-kit/guild
 pi install npm:@pithos-kit/context-bar
 pi install npm:@pithos-kit/plan
 pi install npm:@pithos-kit/themes
+pi install npm:@pithos-kit/translate
 ```
 
 Pin an exact version when reproducibility matters:
@@ -48,6 +50,7 @@ pi:
     "@pithos-kit/guild": "npm:0.3.0"
     "@pithos-kit/plan": "npm:0.1.0"
     "@pithos-kit/squiggle": "npm:0.4.1"
+    "@pithos-kit/translate": "npm:0.1.0"
 ```
 
 Atlas can validate and interactively manage toolchain versions, `pi.version`, and `@pithos-kit/*` entries while preserving third-party configuration. Its changes describe a future rebuilt Pithos environment; they do not replace the active Pi process. Run `/pithos help` after installing it.
@@ -56,7 +59,7 @@ Atlas can validate and interactively manage toolchain versions, `pi.version`, an
 
 Pi can hide or expose the Guild TDD skill without another extension. Run `pi config` for global settings or `pi config -l` for a project override, toggle the `tdd` skill, then run `/reload` in an active Pi session. Disabling the resource removes its model-visible description and native command after reload. When TDD is enabled, `enableSkillCommands` controls command registration and autocomplete; only disabling the resource makes the skill invisible to the agent. Instructions already expanded into conversation history remain unless you start a new session or branch from before the invocation.
 
-Current package metadata declares Pi `>=0.83.0` except Context Bar and Themes, which require Pi `>=0.84.1`. Atlas reports incompatible combinations rather than silently accepting them.
+Current package metadata declares Pi `>=0.83.0` except Translate, which requires Pi `>=0.84.0`, and Context Bar and Themes, which require Pi `>=0.84.1`. Atlas reports incompatible combinations rather than silently accepting them.
 
 ## Package-local help
 
@@ -83,6 +86,7 @@ pi install -l ./pithos.guild
 pi install -l ./pithos.context-bar
 pi install -l ./pithos.plan
 pi install -l ./pithos.themes
+pi install -l ./pithos.translate
 pi install -l ./pithos.atlas
 ```
 
@@ -117,6 +121,7 @@ git push --follow-tags
 | `pithos.context-bar` | `@pithos-kit/context-bar` | `pithos-kit.context-bar-v` | `publish-pithos.context-bar.yml` |
 | `pithos.plan` | `@pithos-kit/plan` | `pithos-kit.plan-v` | `publish-pithos.plan.yml` |
 | `pithos.themes` | `@pithos-kit/themes` | `pithos-kit.themes-v` | `publish-pithos.themes.yml` |
+| `pithos.translate` | `@pithos-kit/translate` | `pithos-kit.translate-v` | `publish-pithos.translate.yml` |
 | `pithos.atlas` | `@pithos-kit/atlas` | `pithos-kit.atlas-v` | `publish-pithos.atlas.yml` |
 
 The workflows publish through npm trusted publishing and OIDC. For the Skills retirement, publish and verify coordinated Guild 0.3.0 and Atlas 0.6.0 releases, update the separate Pithos project to pin both versions, then deprecate Skills and complete the final checks in [`CUTOVER.md`](./CUTOVER.md).

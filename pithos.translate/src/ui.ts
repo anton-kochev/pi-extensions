@@ -1,0 +1,76 @@
+import { BorderedLoader, type ExtensionCommandContext, type ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { TranslateConfig } from "./config.ts";
+import type { TranslationResult } from "./translation.ts";
+
+export async function runTranslationWithUi(
+  ctx: ExtensionCommandContext,
+  language: string,
+  model: string,
+  task: (signal?: AbortSignal) => Promise<TranslationResult>,
+): Promise<TranslationResult> {
+  if (ctx.mode !== "tui" || typeof ctx.ui.custom !== "function") {
+    return {
+      ok: false,
+      kind: "unsupported-mode",
+      error: "Translation display is available only in Pi's interactive TUI.",
+    };
+  }
+
+  const result = await ctx.ui.custom<TranslationResult | undefined>((tui, theme, _keybindings, done) => {
+    const loader = new BorderedLoader(tui, theme, `Translating into ${language} with ${model}…`, { cancellable: true });
+    let finished = false;
+    const finish = (value: TranslationResult | undefined): void => {
+      if (finished) return;
+      finished = true;
+      done(value);
+    };
+    loader.onAbort = () => finish(undefined);
+    task(loader.signal)
+      .then(finish)
+      .catch((error: unknown) => finish({
+        ok: false,
+        kind: "request-failed",
+        error: error instanceof Error ? error.message : "Translation model request failed.",
+      }));
+    return loader;
+  });
+
+  return result ?? { ok: false, kind: "cancelled", error: "Translation cancelled." };
+}
+
+export async function runConfigWizard(
+  ctx: ExtensionContext,
+  current?: TranslateConfig,
+): Promise<TranslateConfig | undefined> {
+  if (!ctx.hasUI) return undefined;
+
+  let language: string | undefined;
+  while (!language) {
+    const answer = await ctx.ui.input("Translation target language", current?.language ?? "e.g. French, Japanese");
+    if (answer === undefined) return undefined;
+    language = answer.trim();
+    if (!language) ctx.ui.notify("Target language is required.", "warning");
+  }
+
+  const models = ctx.modelRegistry
+    .getAvailable()
+    .filter((model) => ctx.modelRegistry.hasConfiguredAuth(model))
+    .sort((left, right) => `${left.provider}/${left.id}`.localeCompare(`${right.provider}/${right.id}`));
+  if (models.length === 0) {
+    ctx.ui.notify("No authenticated translation models are available. Configure a provider with /login first.", "error");
+    return undefined;
+  }
+
+  const choices = models.map((model) => `${model.provider}/${model.id} — ${model.name}`);
+  const selected = await ctx.ui.select("Exact translation model", choices);
+  if (!selected) return undefined;
+  const selectedIndex = choices.indexOf(selected);
+  const model = models[selectedIndex];
+  if (!model) return undefined;
+
+  return {
+    language,
+    model: `${model.provider}/${model.id}`,
+    mode: current?.mode ?? "manual",
+  };
+}

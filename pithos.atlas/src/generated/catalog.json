@@ -479,6 +479,40 @@
         "agents": [],
         "configuration": []
       }
+    },
+    {
+      "name": "@pithos-kit/translate",
+      "version": "0.1.0",
+      "description": "Faithful manual and display-only automatic assistant translation for Pi.",
+      "pi": {
+        "extensions": [
+          "./extensions"
+        ]
+      },
+      "pithosKit": {
+        "displayName": "Translate",
+        "summary": "Translate assistant prose manually or replace it only in terminal display.",
+        "minimumPi": ">=0.84.0",
+        "commands": [
+          {
+            "name": "translate",
+            "summary": "Translate the latest assistant response or configure automatic translation.",
+            "usage": "/translate [on|off|status|config|--help]"
+          }
+        ],
+        "tools": [],
+        "prompts": [],
+        "skills": [],
+        "themes": [],
+        "agents": [],
+        "configuration": [
+          {
+            "kind": "file",
+            "key": ".pi/translate.json",
+            "summary": "Project-scoped translation language, model, and mode."
+          }
+        ]
+      }
     }
   ]
 }

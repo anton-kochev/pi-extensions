@@ -1,0 +1,74 @@
+{
+  "name": "@pithos-kit/translate",
+  "version": "0.1.0",
+  "description": "Faithful manual and display-only automatic assistant translation for Pi.",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "pithos",
+    "translation",
+    "i18n"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anton-kochev/pithos-kit.git",
+    "directory": "pithos.translate"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": ">=0.84.0",
+    "@earendil-works/pi-tui": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-tui": "^0.84.0",
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.4",
+    "typescript": "^5.9.0"
+  },
+  "scripts": {
+    "test": "node --import tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "pithosKit": {
+    "displayName": "Translate",
+    "summary": "Translate assistant prose manually or replace it only in terminal display.",
+    "minimumPi": ">=0.84.0",
+    "commands": [
+      {
+        "name": "translate",
+        "usage": "/translate [on|off|status|config|--help]",
+        "summary": "Translate the latest assistant response or configure automatic translation."
+      }
+    ],
+    "tools": [],
+    "prompts": [],
+    "skills": [],
+    "themes": [],
+    "agents": [],
+    "configuration": [
+      {
+        "kind": "file",
+        "key": ".pi/translate.json",
+        "summary": "Project-scoped translation language, model, and mode."
+      }
+    ]
+  },
+  "pi": {
+    "extensions": [
+      "./extensions"
+    ]
+  },
+  "files": [
+    "extensions",
+    "src",
+    "README.md"
+  ]
+}

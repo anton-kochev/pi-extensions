@@ -110,7 +110,7 @@ describe("Atlas extension", () => {
 			const result = await tools.get("pithos_info").execute("call", { action: "catalog" }, undefined, undefined, {
 				cwd: "/project",
 			} as never);
-			assert.equal(result.details.packages.length, 10);
+			assert.equal(result.details.packages.length, 11);
 		} finally {
 			globalThis.fetch = originalFetch;
 		}
