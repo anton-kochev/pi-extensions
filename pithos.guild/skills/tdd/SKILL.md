@@ -9,7 +9,9 @@ description: >-
   "red-green-refactor", "drive this with tests", or a request to implement
   well-tested logic (parsers, algorithms, business rules, state machines, API
   handlers) where jumping straight to code would risk untested or over-built
-  work. This is the tech-agnostic methodology layer — the loop is identical
+  work. Apply it proactively when a task introduces non-trivial logic, even if
+  the user does not explicitly ask for TDD. This is the tech-agnostic methodology
+  layer — the loop is identical
   whether the runner is pytest, JUnit, Jest, RSpec, or `go test`; pair it with a
   stack-specific skill or agent for tooling and conventions.
 ---
@@ -30,6 +32,34 @@ the same. Only the tooling layer changes — the runner, the assertion library, 
 naming convention. Everything in this skill applies whether you're in pytest,
 JUnit, Jest, RSpec, `go test`, ExUnit, or a hand-rolled harness.
 
+## When to use TDD
+
+Use TDD proactively for non-trivial logic: parsers, algorithms, business rules,
+state transitions, validation, branching error behavior, API handlers, and bug
+fixes where a regression can be reproduced. Do not wait for the user to say
+"test-first." If a test can clarify a behavioral decision or shape a public
+interface before the implementation hardens, start with the loop.
+
+Scale the ceremony to the risk. A small pure rule may need one narrow unit test;
+a boundary-spanning behavior may need an integration test. The objective is the
+shortest useful feedback loop, not imposing a particular test layer.
+
+## Repository and tool discovery
+
+Before writing the first test, inspect the test runner, test commands, manifests,
+configuration, and nearby test conventions already present in the repository.
+Identify the narrowest command that exercises the behavior and the broader
+checks expected by the project. Reuse its assertion style, fixture strategy, and
+file layout rather than introducing a parallel harness or assuming a favorite
+framework.
+
+Use the available tools and adapt to the environment's capabilities. Read and
+search before editing; use the repository's supported runner, compiler, build,
+or framework diagnostics; and do not add a dependency merely to perform the
+ritual. If the environment cannot execute a relevant check, keep the change
+verifiable by the strongest available mechanism and report the limitation
+truthfully.
+
 ## The two rules that matter most
 
 **Rule 1 — Never write production code except to make a failing test pass.** A
@@ -40,11 +70,16 @@ practice, but it is not TDD and it forfeits TDD's main benefit: the test gets to
 shape the interface before the implementation locks it in.
 
 **Rule 2 — The test must fail for the right reason before you make it pass.** Run
-the test and watch it go red. A test that passes the moment you write it, or
-fails with a compile/import error instead of a real assertion failure, is telling
-you nothing. Seeing the *expected* failure is what proves the test can actually
-detect the absence of the behavior — otherwise you may ship a test that can never
-fail and gives false confidence.
+the test and watch it go red. An assertion failure is not the only valid red: an
+expected missing symbol, type, compile, or import error counts as a valid failure
+when the test deliberately names an API that does not exist yet. An unrelated
+harness, setup, dependency, environment, or configuration failure does not count;
+repair that problem and rerun until the failure demonstrates the missing behavior.
+For a test driving new behavior, passing the moment you write it is also telling
+you nothing. An intentional existing-state pin is the exception: it may pass on
+arrival, but a safe controlled red must then prove that it detects drift. Seeing
+an *expected* failure proves the test can detect the absence or violation of the
+behavior and is not a decoration that can never fail.
 
 ## Posture: small steps, fast feedback
 
@@ -80,8 +115,12 @@ moment the test acts as the first consumer of your design, so let it push you
 toward an interface that's pleasant to use.
 
 Then run it and confirm it fails for the right reason. Write no more of the test
-than is sufficient to fail — a compile or import error counts as a failure, and
-is often the right place to stop and go make it compile.
+than is sufficient to fail. An expected compile, import, type, or missing-symbol
+failure at the deliberately absent production boundary is red and is often the
+right place to stop and make the API exist. A broken test command, unavailable
+dependency, malformed fixture, or other unrelated harness/setup failure is not
+red; fix the test infrastructure without implementing the behavior, then run the
+test again and observe the expected failure.
 
 A good test at this phase:
 - exercises **one** behavior, with a name that states that behavior
@@ -205,6 +244,51 @@ design, don't contort the test.
 
 ---
 
+## Tests that pin instead of drive
+
+A driving test states desired behavior before the production implementation,
+uses the interface a caller should want, and goes red because that behavior does
+not exist. Tests written after production code can instead pin the existing
+implementation: they often pass on arrival, mirror its branches or data shape,
+and preserve whatever was built. Such a test may increase coverage but supplies
+no evidence that it can detect the behavior's absence or shape the design.
+
+A different, intentional pin protects something that is currently true: an
+invariant, deny-list, policy, configuration, generated catalog, or exact contract
+that already works. It should pass when written because no new behavior is being
+driven. Rule 2 still applies, so prove the pin can object rather than merely show
+that it matches. Manufacture that red with the smallest controlled mutation the
+test is meant to catch, run the focused test, inspect its diagnostic, then revert
+or restore the mutation and rerun to green. A green match proves the test can
+read the state; only the controlled red proves it can reject drift.
+
+Report pin evidence as a compact table, not an assurance:
+
+| Controlled mutation | Test that went red | Failure message |
+| --- | --- | --- |
+| the smallest representative drift | the focused command or case | the diagnostic that identified the drift |
+
+Perform mutation testing only when it is safe. Prefer a regeneratable artifact,
+an isolated temporary copy or fixture, or your own uncommitted line, with cleanup
+that also runs after failure or interruption. Verify the repository state was
+restored afterward. Never disable or weaken a control that is actively protecting
+repository or user state merely to prove another control watches it; use an
+equivalent isolated case instead. Do not alter user-authored or unrelated changes.
+
+Make the expected value resistant to blind replacement. Compare semantic sets or
+structures rather than serialized strings when order is irrelevant, and keep
+allowlists or policy entries in a table with a written justification for each
+entry. That makes legitimate updates explicit and prevents a failing expectation
+from being "fixed" by copying the observed state over it without review.
+
+Characterization tests are another deliberate form of pinning. Around legacy
+code, capture current observable behavior to establish a safety net before a
+refactor. Avoid blessing every incidental output, private call, or oversized
+snapshot, and record known quirks so a temporary characterization does not
+silently become a permanent product promise. Once the baseline is protected,
+drive each new or changed behavior test-first. Regression tests follow the same
+rule: reproduce the bug as a focused failing test before applying the fix.
+
 ## When to flex (and when to skip)
 
 TDD is a strong default for non-trivial logic, but it is a tool, not a religion.
@@ -218,6 +302,13 @@ Apply judgment:
   ceremony.
 - **Trivial code** (a plain getter, a config constant) gains little from a test
   written first.
+- **Metadata, declarations, configuration, generated, and compiler-only work.**
+  A runtime red-green cycle may be artificial or impossible. For a mechanical
+  metadata or configuration edit, use the repository's schema, parser, lint, or
+  build check. For declarations and compiler-only contracts, prefer a focused
+  compile fixture when it adds value. Change generated output through its source
+  or generator and verify regeneration rather than hand-testing generated text.
+  Do not invent runtime production code solely to manufacture a red phase.
 - **Legacy code with no tests.** Don't start with greenfield TDD — start with
   *characterization (pinning) tests* that capture current behavior as-is, giving
   you a net, *then* refactor and drive new behavior test-first.
@@ -231,6 +322,21 @@ because a step got hard is not.
 
 ---
 
+## Verification and reporting
+
+Verification is part of the loop, not a retrospective claim. Record the focused
+command and its expected red result, rerun that same command to green, then run
+the relevant broader test, type-check, lint, or build commands justified by the
+change. Distinguish a behavioral red from unrelated infrastructure failures, and
+do not hide a failing broader check just because the narrow test passes.
+
+Never claim or report that tests pass, the suite is green, or verification
+succeeded unless you actually ran the stated command and observed that outcome.
+Report each failure with its useful diagnostic. If a check was unavailable,
+unsafe to run, or not run, say so explicitly and explain the limitation instead
+of implying success. Separate failures introduced by the change from pre-existing
+or environmental failures when the evidence supports that distinction.
+
 ## Anti-patterns to avoid
 
 - **Skipping the refactor.** The most common failure. Green is not done; green is
@@ -238,9 +344,10 @@ because a step got hard is not.
 - **Writing the code first, test after.** That's test-*after* development. It
   still gives you coverage but forfeits the design feedback that is TDD's whole
   point.
-- **Tests that can't fail.** If you never saw it red for the right reason, you
-  don't know it tests anything. Assertion-free tests and tests that pass on
-  arrival are decorations.
+- **Tests that can't fail.** If you never saw a test red for the right reason,
+  you don't know that it can object. Assertion-free tests and driving tests that
+  pass on arrival are decorations. An intentional existing-state pin may pass
+  initially, but it still needs a safe controlled red before it is trustworthy.
 - **Asserting on implementation.** Coupling tests to private methods, call
   sequences, or full-object snapshots makes every refactor break the suite, so
   people stop refactoring — the exact opposite of the goal.
