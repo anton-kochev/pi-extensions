@@ -32,6 +32,14 @@ function writeAgent(
   );
 }
 
+function markdownSection(content: string, heading: RegExp): string {
+  const section = content
+    .split(/(?=^## )/m)
+    .find((candidate) => heading.test(candidate.split("\n", 1)[0] ?? ""));
+  assert.ok(section, `Missing Markdown section matching ${heading}`);
+  return section;
+}
+
 afterEach(() => {
   while (temporaryDirectories.length > 0) {
     rmSync(temporaryDirectories.pop()!, { recursive: true, force: true });
@@ -43,6 +51,7 @@ describe("Guild member policies", () => {
     assert.deepEqual(GUILD_MEMBER_NAMES, [
       "dotnet-architect",
       "frontend-architect",
+      "typescript-architect",
       "csharp-coder",
       "angular-coder",
       "typescript-coder",
@@ -52,6 +61,8 @@ describe("Guild member policies", () => {
     ]);
     assert.deepEqual(GUILD_MEMBER_POLICIES["dotnet-architect"].tools, ["read", "grep", "find", "ls"]);
     assert.deepEqual(GUILD_MEMBER_POLICIES["frontend-architect"].tools, ["read", "grep", "find", "ls"]);
+    assert.deepEqual(GUILD_MEMBER_POLICIES["typescript-architect"].tools, ["read", "grep", "find", "ls"]);
+    assert.equal(GUILD_MEMBER_POLICIES["typescript-architect"].role, "architect");
     assert.deepEqual(GUILD_MEMBER_POLICIES["csharp-coder"].tools, ["read", "grep", "find", "ls", "edit", "write", "bash"]);
     assert.deepEqual(GUILD_MEMBER_POLICIES["angular-coder"].tools, ["read", "grep", "find", "ls", "edit", "write", "bash"]);
     assert.deepEqual(GUILD_MEMBER_POLICIES["typescript-coder"].tools, ["read", "grep", "find", "ls", "edit", "write", "bash"]);
@@ -125,6 +136,107 @@ describe("Guild member policies", () => {
     assert.match(prompt, /Quality checklist/i);
     assert.doesNotMatch(prompt, /angular-coder|vue-coder/i);
     assert.doesNotMatch(prompt, /grimoire\.frontend-architect|CLAUDE\.md|\bBash\b|\bSkill\b|WebSearch|WebFetch|context7/i);
+  });
+
+  it("keeps the TypeScript architect general, read-only, and runtime-aware", () => {
+    const builtInDir = resolve(import.meta.dirname, "../agents");
+    const member = discoverGuildMembers({ builtInDir }).members.find(({ name }) => name === "typescript-architect");
+
+    assert.ok(member);
+    assert.deepEqual(member.tools, ["read", "grep", "find", "ls"]);
+    const prompt = member.systemPrompt;
+
+    const eligibility = markdownSection(prompt, /eligibility gate/i);
+    assert.match(eligibility, /TypeScript/i);
+    assert.match(eligibility, /JavaScript/i);
+    assert.match(eligibility, /Node\.js/i);
+    assert.match(eligibility, /tsconfig|package manifest/i);
+    assert.match(eligibility, /substantive, relevant/i);
+    assert.match(eligibility, /refuse/i);
+
+    const boundary = markdownSection(prompt, /hard boundary/i);
+    assert.match(boundary, /read-only/i);
+    assert.match(boundary, /Never create, edit, or delete files, run shell commands/i);
+    assert.match(boundary, /architecture altitude/i);
+    assert.match(boundary, /load-bearing contracts/i);
+    assert.match(boundary, /Never include function bodies/i);
+
+    const workingMethod = markdownSection(prompt, /working method/i);
+    for (const capability of [/package manifests/i, /lockfiles/i, /tsconfig/i, /Node\.js runtime/i, /module format/i, /strictness/i]) {
+      assert.match(workingMethod, capability);
+    }
+
+    const guidance = markdownSection(prompt, /TypeScript and Node\.js architecture guidance/i);
+    for (const responsibility of [
+      /services/i,
+      /libraries/i,
+      /command-line/i,
+      /workers/i,
+      /developer tooling/i,
+      /module boundaries/i,
+      /package boundaries/i,
+      /workspace/i,
+      /dependency direction/i,
+      /public API/i,
+      /ESM/i,
+      /CommonJS/i,
+      /package `exports`/i,
+      /runtime validation/i,
+      /TypeScript types are erased/i,
+      /event ordering/i,
+      /AbortSignal/i,
+      /backpressure/i,
+      /startup or shutdown/i,
+      /state owner/i,
+      /schema ownership/i,
+      /migration/i,
+      /context isolation/i,
+    ]) {
+      assert.match(guidance, responsibility);
+    }
+
+    const piGuidance = markdownSection(prompt, /Pi extension and runtime architecture/i);
+    assert.match(piGuidance, /only when repository evidence/i);
+    for (const contract of [
+      /ExtensionAPI/i,
+      /lifecycle event ordering/i,
+      /session_start/i,
+      /session_shutdown/i,
+      /session replacement/i,
+      /stale/i,
+      /appendEntry/i,
+      /sendMessage/i,
+      /model context/i,
+      /TUI/i,
+      /Markdown transformer/i,
+      /streaming updates/i,
+      /available width/i,
+      /invalidate/i,
+    ]) {
+      assert.match(piGuidance, contract);
+    }
+
+    const existingCode = markdownSection(prompt, /existing-code judgment/i);
+    for (const classification of [/Project best practice/i, /Local convention/i, /Questionable pattern/i, /Anti-pattern/i]) {
+      assert.match(existingCode, classification);
+    }
+
+    const testDesign = markdownSection(prompt, /refactoring and test-driven design/i);
+    assert.match(testDesign, /red-green-refactor/i);
+    assert.match(testDesign, /does not write or run tests/i);
+
+    const output = markdownSection(prompt, /required output/i);
+    for (const deliverable of [/Summary/i, /Design or Findings/i, /Test Plan/i, /Trade-offs and Risks/i, /Handoff/i]) {
+      assert.match(output, deliverable);
+    }
+    assert.match(output, /recipient-neutral/i);
+    assert.match(output, /affected paths or areas/i);
+    assert.match(output, /implementation order/i);
+    assert.match(output, /acceptance criteria/i);
+    assert.match(output, /constraints/i);
+
+    assert.doesNotMatch(prompt, /typescript-coder/i);
+    assert.doesNotMatch(prompt, /TypeScript(?:\s+version)?\s+\d+(?:\.\d+)?|Node(?:\.js)?(?:\s+version)?\s+\d+(?:\.\d+)?|Pi(?:\s+version)?\s+\d+(?:\.\d+)?/i);
   });
 
   it("keeps the C# coder repository-aware, test-driven, and implementation-focused", () => {

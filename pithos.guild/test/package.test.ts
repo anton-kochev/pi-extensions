@@ -13,6 +13,7 @@ describe("Guild package metadata", () => {
     assert.match(packageJson.description, /TypeScript/i);
     assert.match(packageJson.description, /Rust/i);
     assert.match(packageJson.description, /review/i);
+    assert.ok(packageJson.pithosKit.agents.some(({ name }: { name: string }) => name === "typescript-architect"));
     assert.ok(packageJson.pithosKit.agents.some(({ name }: { name: string }) => name === "typescript-coder"));
     assert.ok(packageJson.pithosKit.agents.some(({ name }: { name: string }) => name === "rust-coder"));
     assert.ok(packageJson.pithosKit.agents.some(({ name }: { name: string }) => name === "rust-architect"));

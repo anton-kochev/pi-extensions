@@ -1,6 +1,6 @@
 # guild
 
-A standalone Guild of .NET, Angular, TypeScript, and Rust architecture and implementation members with repository-aware Clean Architecture, code-review, Conventional Commit, and test-driven development guidance for [pi](https://github.com/earendil-works/pi-mono).
+A standalone Guild of .NET, Angular, TypeScript, Node.js, and Rust architecture and implementation members with repository-aware Clean Architecture, code-review, Conventional Commit, and test-driven development guidance for [pi](https://github.com/earendil-works/pi-mono).
 
 The extension adds agent-callable `guild_handover` and controlled `create_commit` tools, plus interactive `/guild-handover` and `/commit` commands. Every handover starts an isolated, ephemeral pi process with a focused system prompt and a hard tool allowlist. The child inherits the parent session's active provider, model, thinking level, working directory, and project-trust decision.
 
@@ -37,6 +37,7 @@ pi:
 |---|---|---|
 | `dotnet-architect` | Read-only .NET architecture, reviews, contracts, test plans, and implementation handoffs | `read`, `grep`, `find`, `ls` |
 | `frontend-architect` | Read-only front-end architecture, state ownership, boundaries, routing, rendering, and API contracts | `read`, `grep`, `find`, `ls` |
+| `typescript-architect` | Read-only TypeScript/Node.js module, package, runtime, async lifecycle, state, compatibility, and Pi extension architecture | `read`, `grep`, `find`, `ls` |
 | `csharp-coder` | Scoped C#/.NET implementation, related tests, builds, and verification | `read`, `grep`, `find`, `ls`, `edit`, `write`, `bash` |
 | `angular-coder` | Scoped Angular implementation, related tests, type-checking, linting, and builds | `read`, `grep`, `find`, `ls`, `edit`, `write`, `bash` |
 | `typescript-coder` | Scoped TypeScript/JavaScript implementation, migration, tests, type-checking, linting, and builds | `read`, `grep`, `find`, `ls`, `edit`, `write`, `bash` |
@@ -104,6 +105,7 @@ Ask the main agent to hand a self-contained task over to a Guild member:
 ```text
 Use dotnet-architect to design the order cancellation workflow.
 Use frontend-architect to define state ownership for checkout.
+Use typescript-architect to design package boundaries and async lifecycle contracts.
 Use csharp-coder to implement the approved cancellation design.
 Use angular-coder to add the checkout loading and error states.
 Use typescript-coder to make the API client errors type-safe.
@@ -172,7 +174,7 @@ The first release intentionally supports one Guild member per invocation. Parall
 
 ## Guild member overrides
 
-The package always provides its eight built-in definitions. You can override a definition by creating a Markdown agent file in:
+The package always provides its nine built-in definitions. You can override a definition by creating a Markdown agent file in:
 
 - User scope: `~/.pi/agent/agents/*.md`
 - Project scope: `.pi/agents/*.md` in the current directory or an ancestor
@@ -224,4 +226,4 @@ npm pack --dry-run
 
 ## Provenance
 
-The bundled Guild member prompts are adapted for pi from the MIT-licensed [Grimoire](https://github.com/anton-kochev/grimoire) project. See [`NOTICE.md`](./NOTICE.md).
+Most bundled Guild member prompts are adapted for pi from the MIT-licensed [Grimoire](https://github.com/anton-kochev/grimoire) project. The `typescript-architect` prompt is repository-native guidance informed by Pi's documented extension and runtime contracts. See [`NOTICE.md`](./NOTICE.md).

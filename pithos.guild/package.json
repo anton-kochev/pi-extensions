@@ -12,6 +12,7 @@
     "angular",
     "typescript",
     "javascript",
+    "nodejs",
     "rust",
     "code-review",
     "tdd",
@@ -71,6 +72,7 @@
     "agents": [
       { "name": "dotnet-architect", "summary": "Read-only .NET architecture and review." },
       { "name": "frontend-architect", "summary": "Read-only front-end architecture and review." },
+      { "name": "typescript-architect", "summary": "Read-only TypeScript and Node.js architecture and review." },
       { "name": "csharp-coder", "summary": "Scoped C# and .NET implementation." },
       { "name": "angular-coder", "summary": "Scoped Angular implementation." },
       { "name": "typescript-coder", "summary": "Scoped TypeScript and JavaScript implementation." },

@@ -5,6 +5,7 @@ import { parseFrontmatter } from "@earendil-works/pi-coding-agent";
 export const GUILD_MEMBER_NAMES = [
 	"dotnet-architect",
 	"frontend-architect",
+	"typescript-architect",
 	"csharp-coder",
 	"angular-coder",
 	"typescript-coder",
@@ -24,6 +25,7 @@ const REVIEWER_TOOLS = ["read", "grep", "find", "ls", "bash"] as const;
 export const GUILD_MEMBER_POLICIES: Record<GuildMemberName, { tools: readonly string[]; role: GuildMemberRole }> = {
 	"dotnet-architect": { tools: ARCHITECT_TOOLS, role: "architect" },
 	"frontend-architect": { tools: ARCHITECT_TOOLS, role: "architect" },
+	"typescript-architect": { tools: ARCHITECT_TOOLS, role: "architect" },
 	"csharp-coder": { tools: CODER_TOOLS, role: "coder" },
 	"angular-coder": { tools: CODER_TOOLS, role: "coder" },
 	"typescript-coder": { tools: CODER_TOOLS, role: "coder" },

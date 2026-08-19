@@ -50,6 +50,7 @@ Directly delegate a task to an isolated Guild member. Omit member to choose from
 Members:
   dotnet-architect
   frontend-architect
+  typescript-architect
   csharp-coder
   angular-coder
   typescript-coder
@@ -319,12 +320,13 @@ export function registerGuild(pi: ExtensionAPI, dependencies: GuildDependencies 
 		label: "Guild",
 		description: [
 			"Hand one task over to an isolated Guild member.",
-			"Available members: dotnet-architect, frontend-architect, csharp-coder, angular-coder, typescript-coder, rust-coder, rust-architect, code-reviewer.",
+			"Available members: dotnet-architect, frontend-architect, typescript-architect, csharp-coder, angular-coder, typescript-coder, rust-coder, rust-architect, code-reviewer.",
 			"Architects and the reviewer are read-only. Coders can edit files and run verification commands.",
 		].join(" "),
 		promptSnippet: "Hand focused architecture, implementation, or code review work over to an isolated Guild member",
 		promptGuidelines: [
-			"Use guild_handover when a task clearly belongs to dotnet-architect, frontend-architect, csharp-coder, angular-coder, typescript-coder, rust-coder, rust-architect, or code-reviewer; provide a self-contained task with scope and acceptance criteria.",
+			"Use guild_handover when a task clearly belongs to dotnet-architect, frontend-architect, typescript-architect, csharp-coder, angular-coder, typescript-coder, rust-coder, rust-architect, or code-reviewer; provide a self-contained task with scope and acceptance criteria.",
+			"Use typescript-architect for repository-connected TypeScript or Node.js structure, packages, runtime contracts, refactoring plans, or architectural reviews, including Pi extension architecture when relevant; use typescript-coder for implementation and debugging, and frontend-architect for web UI architecture.",
 			"Use rust-architect for repository-connected Rust structure, contracts, refactoring plans, or architectural reviews; use rust-coder for implementation and debugging.",
 			"Use code-reviewer for repository-connected, language-agnostic review after a coherent code change or when the user explicitly requests review.",
 		],
