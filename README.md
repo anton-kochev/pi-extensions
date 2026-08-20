@@ -14,7 +14,7 @@ A monorepo of independently published Pi extensions, skills, prompts, themes, an
 - [`pithos.plan/`](./pithos.plan) — enforced read-only planning, approved plan creation, a Plan theme, and contextual session naming. [![npm version](https://img.shields.io/npm/v/@pithos-kit/plan.svg)](https://www.npmjs.com/package/@pithos-kit/plan)
 - [`pithos.themes/`](./pithos.themes) — accessible Auric light and dark themes with automatic appearance switching. [![npm version](https://img.shields.io/npm/v/@pithos-kit/themes.svg)](https://www.npmjs.com/package/@pithos-kit/themes)
 - [`pithos.translate/`](./pithos.translate) — faithful manual and display-only automatic assistant translation. [![npm version](https://img.shields.io/npm/v/@pithos-kit/translate.svg)](https://www.npmjs.com/package/@pithos-kit/translate)
-- [`pithos.atlas/`](./pithos.atlas) — name eligible new sessions, explore package capabilities, diagnose compatibility, and manage `.pithos` interactively. [![npm version](https://img.shields.io/npm/v/@pithos-kit/atlas.svg)](https://www.npmjs.com/package/@pithos-kit/atlas)
+- [`pithos.atlas/`](./pithos.atlas) — name sessions, diagnose and configure Pithos, and manage guarded Pi runtime patches. [![npm version](https://img.shields.io/npm/v/@pithos-kit/atlas.svg)](https://www.npmjs.com/package/@pithos-kit/atlas)
 
 ## Install
 
@@ -46,7 +46,7 @@ In `.pithos`, Pi packages live under `pi.extensions`:
 pi:
   version: "0.84.2"
   extensions:
-    "@pithos-kit/atlas": "npm:0.6.0"
+    "@pithos-kit/atlas": "npm:0.7.0"
     "@pithos-kit/guild": "npm:0.3.0"
     "@pithos-kit/plan": "npm:0.3.0"
     "@pithos-kit/squiggle": "npm:0.4.1"
@@ -55,7 +55,7 @@ pi:
 
 Atlas can validate and interactively manage toolchain versions, `pi.version`, and `@pithos-kit/*` entries while preserving third-party configuration. Its changes describe a future rebuilt Pithos environment; they do not replace the active Pi process. Run `/pithos help` after installing it.
 
-`@pithos-kit/skills` is retired. Its SRS prompt was removed and its TDD workflow now ships with Guild. Remove the retired package from global and project settings with `pi remove npm:@pithos-kit/skills` and `pi remove -l npm:@pithos-kit/skills`, use `/pithos config` to remove its `.pithos` pin, and check `pi list` for either that package or an earlier legacy Skills identity. Coordinate Guild and Atlas releases. Guild 0.3.0 owns TDD and Conventional Commit support and must be paired with Atlas 0.6.0, which no longer registers those capabilities; otherwise `/commit`, `create_commit`, or the `conventional-commit`/`tdd` skills can have duplicate command, tool, or skill registration.
+`@pithos-kit/skills` is retired. Its SRS prompt was removed and its TDD workflow now ships with Guild. Remove the retired package from global and project settings with `pi remove npm:@pithos-kit/skills` and `pi remove -l npm:@pithos-kit/skills`, use `/pithos config` to remove its `.pithos` pin, and check `pi list` for either that package or an earlier legacy Skills identity. Coordinate Guild and Atlas releases. Guild 0.3.0 owns TDD and Conventional Commit support and must be paired with Atlas 0.6.0 or later, which no longer registers those capabilities; otherwise `/commit`, `create_commit`, or the `conventional-commit`/`tdd` skills can have duplicate command, tool, or skill registration.
 
 Pi can hide or expose the Guild TDD skill without another extension. Run `pi config` for global settings or `pi config -l` for a project override, toggle the `tdd` skill, then run `/reload` in an active Pi session. Disabling the resource removes its model-visible description and native command after reload. When TDD is enabled, `enableSkillCommands` controls command registration and autocomplete; only disabling the resource makes the skill invisible to the agent. Instructions already expanded into conversation history remain unless you start a new session or branch from before the invocation.
 
@@ -124,4 +124,4 @@ git push --follow-tags
 | `pithos.translate` | `@pithos-kit/translate` | `pithos-kit.translate-v` | `publish-pithos.translate.yml` |
 | `pithos.atlas` | `@pithos-kit/atlas` | `pithos-kit.atlas-v` | `publish-pithos.atlas.yml` |
 
-The workflows publish through npm trusted publishing and OIDC. For the Skills retirement, publish and verify coordinated Guild 0.3.0 and Atlas 0.6.0 releases, update the separate Pithos project to pin both versions, then deprecate Skills and complete the final checks in [`CUTOVER.md`](./CUTOVER.md).
+The workflows publish through npm trusted publishing and OIDC. The completed Skills retirement baseline is Guild 0.3.0 with Atlas 0.6.0 or later; see [`CUTOVER.md`](./CUTOVER.md) for the administrative history.

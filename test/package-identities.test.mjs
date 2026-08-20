@@ -16,7 +16,7 @@ const packages = [
   { directory: "pithos.plan", shortName: "plan", version: "0.3.0", minimumPi: ">=0.83.0" },
   { directory: "pithos.themes", shortName: "themes", version: "0.1.0", minimumPi: ">=0.84.1" },
   { directory: "pithos.translate", shortName: "translate", version: "1.0.0", minimumPi: ">=0.84.0" },
-  { directory: "pithos.atlas", shortName: "atlas", version: "0.6.0", minimumPi: ">=0.83.0" },
+  { directory: "pithos.atlas", shortName: "atlas", version: "0.7.0", minimumPi: ">=0.83.0" },
 ];
 
 const capabilityKinds = ["commands", "tools", "prompts", "skills", "themes", "agents"];
@@ -81,7 +81,13 @@ describe("pithos-kit package identities", () => {
       const packageReadme = readFileSync(resolve(root, directory, "README.md"), "utf8");
       assert.match(packageReadme, /\.pithos/u, `${manifest.name} must document .pithos`);
       assert.match(packageReadme, new RegExp(`"@pithos-kit/${shortName}": "npm:${version.replaceAll(".", "\\.")}"`));
-      if (shortName === "atlas") assert.match(packageReadme, /\/pithos help/u);
+      if (shortName === "atlas") {
+        assert.match(packageReadme, /\/pithos help/u);
+        assert.deepEqual(manifest.bin, {
+          "pithos-atlas-patch": "./scripts/pi-footer-patch.mjs",
+          "pithos-atlas-pi": "./scripts/pi-footer-launcher.mjs",
+        });
+      }
       else if (manifest.pithosKit.commands.length > 0) {
         assert.match(packageReadme, /--help/u, `${manifest.name} must document package-local help`);
       }

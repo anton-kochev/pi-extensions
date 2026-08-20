@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
-import { resolveActivePiVersion } from "../src/active-pi.ts";
+import { resolveActivePiPackage, resolveActivePiVersion } from "../src/active-pi.ts";
 
 describe("active Pi version detection", () => {
 	it("reads the running Pi package instead of Atlas's local development dependency", () => {
@@ -16,6 +16,10 @@ describe("active Pi version detection", () => {
 				version: "0.84.1",
 			}));
 
+			assert.deepEqual(resolveActivePiPackage({
+				entrypoint: join(root, "dist", "cli.js"),
+				fallbackVersion: "0.83.0",
+			}), { root, version: "0.84.1" });
 			assert.equal(resolveActivePiVersion({
 				entrypoint: join(root, "dist", "cli.js"),
 				fallbackVersion: "0.83.0",
@@ -23,5 +27,12 @@ describe("active Pi version detection", () => {
 		} finally {
 			rmSync(root, { recursive: true, force: true });
 		}
+	});
+
+	it("falls back to the supplied version without inventing a package root", () => {
+		assert.deepEqual(resolveActivePiPackage({
+			entrypoint: "/does/not/exist/pi",
+			fallbackVersion: "0.83.0",
+		}), { version: "0.83.0" });
 	});
 });

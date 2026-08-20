@@ -1,12 +1,14 @@
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { VERSION, type ExtensionAPI, type ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
-import { resolveActivePiVersion } from "./active-pi.ts";
+import { resolveActivePiPackage, type ActivePiPackage } from "./active-pi.ts";
 import { loadBundledCatalog } from "./bundled-catalog.ts";
 import type { Catalog, CatalogPackage } from "./catalog.ts";
 import { refreshCatalog, type RefreshedCatalog } from "./catalog-service.ts";
 import { commitConfig, readConfigSnapshot, type ConfigSnapshot } from "./config-transaction.ts";
 import { buildDiagnostics, type DiagnosticsReport } from "./diagnostics.ts";
+import { registerAtlasFooter } from "./footer.ts";
 import { parsePithosConfig, type ManagedPithosState } from "./pithos-config.ts";
 import { isOfflineEnvironment, RegistryClient } from "./registry.ts";
 import { observeRuntime, type ObservedRuntimePackage } from "./runtime.ts";
@@ -27,7 +29,10 @@ Pithos commands:
   /pithos versions         Check published versions (use --refresh to bypass the session cache)
   /pithos doctor           Diagnose Pi, package, runtime, and .pithos compatibility
   /pithos config           Manage toolchain, Pi, and pithos-kit pins interactively
-  /pithos config validate  Validate .pithos without changing it`;
+  /pithos config validate  Validate .pithos without changing it
+  /pithos patch footer status  Inspect the optional built-in-file footer fallback
+  /pithos patch footer apply   Apply the optional built-in-file fallback (restart required)
+  /pithos patch footer remove  Restore Pi's stock built-in footer (restart required)`;
 
 export type AtlasCommand =
 	| { action: "menu" }
@@ -36,7 +41,9 @@ export type AtlasCommand =
 	| { action: "versions"; refresh: boolean }
 	| { action: "doctor"; refresh: boolean }
 	| { action: "config" }
-	| { action: "config-validate" };
+	| { action: "config-validate" }
+	| { action: "patch-menu" }
+	| { action: "patch-footer"; operation: "status" | "apply" | "remove" };
 
 export function parseAtlasCommand(args: string): AtlasCommand {
 	const tokens = args.trim().split(/\s+/u).filter(Boolean);
@@ -48,6 +55,14 @@ export function parseAtlasCommand(args: string): AtlasCommand {
 	}
 	if (tokens.length === 1 && tokens[0] === "config") return { action: "config" };
 	if (tokens.length === 2 && tokens[0] === "config" && tokens[1] === "validate") return { action: "config-validate" };
+	if (
+		tokens.length === 3
+		&& tokens[0] === "patch"
+		&& tokens[1] === "footer"
+		&& (tokens[2] === "status" || tokens[2] === "apply" || tokens[2] === "remove")
+	) {
+		return { action: "patch-footer", operation: tokens[2] };
+	}
 	throw new Error(ATLAS_HELP);
 }
 
@@ -92,6 +107,38 @@ interface ConfigObservation {
 	snapshot: ConfigSnapshot;
 	state: ManagedPithosState;
 }
+
+type FooterPatchOperation = "status" | "apply" | "remove";
+type FooterPatchStatus = "available" | "applied" | "unsupported";
+
+export interface FooterPatchReport {
+	patch: "footer";
+	action: FooterPatchOperation;
+	status: FooterPatchStatus;
+	changed: boolean;
+	packageDir: string;
+	version: string;
+	file: string;
+	sourceDigest: string;
+	restartRequired: boolean;
+}
+
+interface FooterPatchExpectation {
+	version: string;
+	digest: string;
+}
+
+export interface AtlasDependencies {
+	activePiPackage?: ActivePiPackage;
+	runFooterPatch?: (
+		operation: FooterPatchOperation,
+		packageRoot: string,
+		signal?: AbortSignal,
+		expectation?: FooterPatchExpectation,
+	) => Promise<FooterPatchReport>;
+}
+
+const FOOTER_PATCH_SCRIPT = fileURLToPath(new URL("../scripts/pi-footer-patch.mjs", import.meta.url));
 
 function bounded(text: string): string {
 	return text.length <= MAX_OUTPUT_CHARS ? text : `${text.slice(0, MAX_OUTPUT_CHARS)}\n... output truncated`;
@@ -162,6 +209,19 @@ function formatConfig(state: ManagedPithosState, exists: boolean): string {
 	].join("\n"));
 }
 
+function formatFooterPatch(report: FooterPatchReport): string {
+	const label = report.status === "available"
+		? "available (stock footer active)"
+		: report.status === "applied"
+			? "applied"
+			: "unsupported for this Pi source";
+	return [
+		`Pi ${report.version} built-in footer fallback patch: ${label}`,
+		`Target: ${report.file}`,
+		...(report.restartRequired ? ["Restart Pi to use the changed footer."] : []),
+	].join("\n");
+}
+
 function formatDoctor(report: DiagnosticsReport, warnings: string[]): string {
 	const lines = [
 		`Pi active: ${report.activePiVersion}`,
@@ -181,8 +241,9 @@ function formatDoctor(report: DiagnosticsReport, warnings: string[]): string {
 	return bounded(lines.join("\n"));
 }
 
-export function registerAtlas(pi: ExtensionAPI): void {
+export function registerAtlas(pi: ExtensionAPI, dependencies: AtlasDependencies = {}): void {
 	registerSessionNaming(pi);
+	registerAtlasFooter(pi);
 
 	const enforceKebabCaseSessionName = (name: string | undefined): void => {
 		if (!name || KEBAB_CASE_SESSION_NAME_RE.test(name)) return;
@@ -211,7 +272,41 @@ export function registerAtlas(pi: ExtensionAPI): void {
 		},
 	});
 
-	const activePiVersion = resolveActivePiVersion({ entrypoint: process.argv[1], fallbackVersion: VERSION });
+	const activePiPackage = dependencies.activePiPackage
+		?? resolveActivePiPackage({ entrypoint: process.argv[1], fallbackVersion: VERSION });
+	const activePiVersion = activePiPackage.version;
+	const runFooterPatch = dependencies.runFooterPatch ?? (async (
+		operation: FooterPatchOperation,
+		packageRoot: string,
+		signal?: AbortSignal,
+		expectation?: FooterPatchExpectation,
+	) => {
+		const result = await pi.exec(process.execPath, [
+			FOOTER_PATCH_SCRIPT,
+			"footer",
+			operation,
+			"--pi-dir",
+			packageRoot,
+			...(expectation ? [
+				"--expect-version",
+				expectation.version,
+				"--expect-digest",
+				expectation.digest,
+			] : []),
+			"--json",
+		], { signal, timeout: 10_000 });
+		let report: FooterPatchReport | undefined;
+		try {
+			report = JSON.parse(result.stdout.trim()) as FooterPatchReport;
+		} catch {
+			// The structured diagnostic below includes bounded process output.
+		}
+		if (!report || (result.code !== 0 && report.status !== "unsupported")) {
+			const diagnostic = result.stderr.trim() || result.stdout.trim() || `patch process exited with code ${result.code}`;
+			throw new Error(`Atlas footer patch failed: ${bounded(diagnostic)}`);
+		}
+		return report;
+	});
 	const catalog = loadBundledCatalog();
 	const registry = new RegistryClient({ offline: isOfflineEnvironment() });
 
@@ -279,11 +374,12 @@ export function registerAtlas(pi: ExtensionAPI): void {
 				emitText(ctx, ATLAS_HELP);
 				return;
 			}
-			const choice = await ctx.ui.select("Pithos Atlas", ["About", "Doctor", "Configure"]);
+			const choice = await ctx.ui.select("Pithos Atlas", ["About", "Doctor", "Configure", "Fallback Patches"]);
 			const selected: Record<string, AtlasCommand> = {
 				About: { action: "help" },
 				Doctor: { action: "doctor", refresh: false },
 				Configure: { action: "config" },
+				"Fallback Patches": { action: "patch-menu" },
 			};
 			if (choice) await runCommand(selected[choice], ctx);
 			return;
@@ -309,6 +405,76 @@ export function registerAtlas(pi: ExtensionAPI): void {
 		if (command.action === "doctor") {
 			const state = await doctor(ctx.cwd, ctx.signal, command.refresh);
 			emitText(ctx, formatDoctor(state.report, state.warnings), state.warnings.length > 0 ? "warning" : "info");
+			return;
+		}
+		if (command.action === "patch-menu") {
+			if (!activePiPackage.root) {
+				emitText(ctx, "Atlas could not resolve the active Pi package root; patches are unavailable.", "error");
+				return;
+			}
+			const report = await runFooterPatch("status", activePiPackage.root, ctx.signal);
+			const footerLabel = report.status === "available" ? "available" : report.status;
+			const actionLabel = report.status === "available"
+				? "Apply built-in footer fallback"
+				: report.status === "applied"
+					? "Remove built-in footer fallback"
+					: undefined;
+			const options = [`Built-in footer fallback · ${footerLabel}`, ...(actionLabel ? [actionLabel] : []), "Back"];
+			const choice = await ctx.ui.select("Optional Footer Fallback", options);
+			if (choice === options[0]) {
+				emitText(ctx, formatFooterPatch(report), report.status === "unsupported" ? "warning" : "info");
+			} else if (actionLabel && choice === actionLabel) {
+				await runCommand({
+					action: "patch-footer",
+					operation: report.status === "available" ? "apply" : "remove",
+				}, ctx);
+			}
+			return;
+		}
+		if (command.action === "patch-footer") {
+			if (!activePiPackage.root) {
+				emitText(ctx, "Atlas could not resolve the active Pi package root; the footer patch was not run.", "error");
+				return;
+			}
+			if (command.operation === "status") {
+				const report = await runFooterPatch("status", activePiPackage.root, ctx.signal);
+				emitText(ctx, formatFooterPatch(report), report.status === "unsupported" ? "warning" : "info");
+				return;
+			}
+			if (ctx.mode !== "tui" || !ctx.hasUI) {
+				emitText(ctx, "/pithos patch footer apply/remove requires an interactive TUI.", "error");
+				return;
+			}
+			await ctx.waitForIdle();
+			if (planModeState(ctx.sessionManager.getBranch()) !== "inactive") {
+				emitText(ctx, "/pithos patch footer is unavailable while Plan mode is active or indeterminate.", "error");
+				return;
+			}
+			const before = await runFooterPatch("status", activePiPackage.root, ctx.signal);
+			if (before.status === "unsupported") {
+				emitText(ctx, formatFooterPatch(before), "error");
+				return;
+			}
+			const desiredStatus = command.operation === "apply" ? "applied" : "available";
+			if (before.status === desiredStatus) {
+				emitText(ctx, `${formatFooterPatch(before)}\nNo change is needed.`);
+				return;
+			}
+			const verb = command.operation === "apply" ? "Apply" : "Remove";
+			const confirmed = await ctx.ui.confirm(
+				`${verb} Atlas footer patch?`,
+				`${verb} the minimal-footer patch in Pi ${before.version}?\n\nTarget: ${before.file}\n\nThe active Pi process will not change until it is restarted.`,
+			);
+			if (!confirmed) return;
+			if (!(ctx.isIdle?.() ?? true) || planModeState(ctx.sessionManager.getBranch()) !== "inactive") {
+				emitText(ctx, "Atlas safety state changed before footer patching; no change was made.", "error");
+				return;
+			}
+			const report = await runFooterPatch(command.operation, activePiPackage.root, ctx.signal, {
+				version: before.version,
+				digest: before.sourceDigest,
+			});
+			emitText(ctx, formatFooterPatch(report), report.status === "unsupported" ? "error" : "info");
 			return;
 		}
 
@@ -352,9 +518,21 @@ export function registerAtlas(pi: ExtensionAPI): void {
 	};
 
 	pi.registerCommand("pithos", {
-		description: "Explore pithos-kit packages, diagnose versions, and manage .pithos interactively",
+		description: "Explore, diagnose, configure, and manage optional built-in fallback patches for Pithos",
 		getArgumentCompletions(prefix) {
-			const values = ["help", "packages", "versions", "versions --refresh", "doctor", "doctor --refresh", "config", "config validate"];
+			const values = [
+				"help",
+				"packages",
+				"versions",
+				"versions --refresh",
+				"doctor",
+				"doctor --refresh",
+				"config",
+				"config validate",
+				"patch footer status",
+				"patch footer apply",
+				"patch footer remove",
+			];
 			return values.filter((value) => value.startsWith(prefix)).map((value) => ({ value, label: value }));
 		},
 		async handler(args, ctx) {

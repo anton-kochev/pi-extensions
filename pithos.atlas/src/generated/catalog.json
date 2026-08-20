@@ -65,8 +65,8 @@
     },
     {
       "name": "@pithos-kit/atlas",
-      "version": "0.6.0",
-      "description": "Model-generated session names, catalog, diagnostics, version checks, and .pithos configuration for pithos-kit.",
+      "version": "0.7.0",
+      "description": "Session names, catalog, diagnostics, configuration, and guarded Pi runtime patches for pithos-kit.",
       "pi": {
         "extensions": [
           "./extensions"
@@ -74,13 +74,13 @@
       },
       "pithosKit": {
         "displayName": "Atlas",
-        "summary": "Name new sessions, explore packages, check compatibility, and manage .pithos.",
+        "summary": "Name sessions, inspect and configure Pithos, and manage guarded Pi runtime patches.",
         "minimumPi": ">=0.83.0",
         "commands": [
           {
             "name": "pithos",
-            "summary": "Open Atlas or run a catalog, diagnostic, or configuration action.",
-            "usage": "/pithos [help|packages|versions|doctor|config]"
+            "summary": "Open Atlas or run a catalog, diagnostic, configuration, or runtime-patch action.",
+            "usage": "/pithos [help|packages|versions|doctor|config|patch]"
           }
         ],
         "tools": [
@@ -107,6 +107,11 @@
             "kind": "environment",
             "key": "PI_OFFLINE",
             "summary": "Disable registry and session-name model requests when true, yes, or 1."
+          },
+          {
+            "kind": "environment",
+            "key": "PITHOS_ATLAS_PI_PACKAGE_DIR",
+            "summary": "Select the Pi package root for explicit standalone runtime-patch CLI operations."
           }
         ]
       }

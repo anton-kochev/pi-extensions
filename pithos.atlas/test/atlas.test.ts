@@ -11,6 +11,11 @@ describe("Atlas command", () => {
 		assert.deepEqual(parseAtlasCommand("doctor"), { action: "doctor", refresh: false });
 		assert.deepEqual(parseAtlasCommand("config"), { action: "config" });
 		assert.deepEqual(parseAtlasCommand("config validate"), { action: "config-validate" });
+		assert.deepEqual(parseAtlasCommand("patch footer status"), { action: "patch-footer", operation: "status" });
+		assert.deepEqual(parseAtlasCommand("patch footer apply"), { action: "patch-footer", operation: "apply" });
+		assert.deepEqual(parseAtlasCommand("patch footer remove"), { action: "patch-footer", operation: "remove" });
+		assert.throws(() => parseAtlasCommand("patch footer"), /Usage: \/pithos/);
+		assert.throws(() => parseAtlasCommand("patch footer force"), /Usage: \/pithos/);
 		assert.throws(() => parseAtlasCommand("help ask"), /Usage: \/pithos/);
 	});
 });

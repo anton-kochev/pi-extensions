@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/@pithos-kit/atlas)](https://www.npmjs.com/package/@pithos-kit/atlas)
 
-Atlas gives eligible new sessions readable synthetic names and includes an interactive catalog, version checker, compatibility doctor, and `.pithos` configuration manager for pithos-kit. It combines bounded model-assisted session naming and a bundled offline catalog with explicit public npm registry checks and Pi runtime provenance.
+Atlas gives eligible new sessions readable synthetic names and includes a default runtime footer, interactive catalog, version checker, compatibility doctor, `.pithos` configuration manager, and optional guarded Pi fallback patches for pithos-kit. It combines bounded model-assisted session naming and a bundled offline catalog with explicit public npm registry checks, Pi runtime provenance, and reversible environment customization.
 
 ## Install
 
@@ -13,7 +13,7 @@ pi install npm:@pithos-kit/atlas
 Pin an exact version:
 
 ```bash
-pi install npm:@pithos-kit/atlas@0.6.0
+pi install npm:@pithos-kit/atlas@0.7.0
 ```
 
 For local development:
@@ -27,7 +27,7 @@ pi install -l ./pithos.atlas
 ```yaml
 pi:
   extensions:
-    "@pithos-kit/atlas": "npm:0.6.0"
+    "@pithos-kit/atlas": "npm:0.7.0"
 ```
 
 The separate Pithos base image can preinstall Atlas so it remains available to diagnose a project configuration that would otherwise prevent project packages from loading.
@@ -40,7 +40,7 @@ The request runs in the background with thinking disabled by model selection, no
 
 Automatic naming eligibility applies to a fresh startup whose allocated session file does not exist yet, `/new`, and unnamed in-process forks. Session startup alone never generates or assigns a name; Atlas waits for the session's first user message. Atlas preserves the intent of names supplied through `--name`, `/name`, inherited by a fork, or set by another extension, while canonicalizing any nonconforming value to lowercase kebab-case. It leaves persisted legacy unnamed sessions and reloads untouched. Because Pi 0.83 does not expose initial CLI-fork provenance, `--fork` from an old unnamed session may remain unnamed.
 
-Pi persists the name as canonical session metadata and displays it in the native footer, terminal title, and session selector. The name remains until changed manually with `/name` or replaced after a successful approved save by [`@pithos-kit/plan`](https://www.npmjs.com/package/@pithos-kit/plan); while Plan mode is active, its minimal replacement footer retains the current name. Ephemeral `--no-session` runs receive a runtime name but cannot persist beyond the process.
+Pi persists the name as canonical session metadata and displays it in Atlas's runtime footer, the terminal title, and the session selector. The name remains until changed manually with `/name` or replaced after a successful approved save by [`@pithos-kit/plan`](https://www.npmjs.com/package/@pithos-kit/plan); while Plan mode is active, its minimal temporary footer retains the current name. Ephemeral `--no-session` runs receive a runtime name but cannot persist beyond the process.
 
 Atlas also provides the model-facing `rename_session` tool. Its tool guidance limits use to explicit user requests to name or rename the current session. Lowercase kebab-case is mandatory for every session name: Atlas validates tool input and canonicalizes names set through `/name`, `--name`, inheritance, or other extensions. Values with no ASCII letters or digits become `unnamed-session`.
 
@@ -54,19 +54,84 @@ Atlas also provides the model-facing `rename_session` tool. Its tool guidance li
 /pithos doctor [--refresh]
 /pithos config
 /pithos config validate
+/pithos patch footer status
+/pithos patch footer apply
+/pithos patch footer remove
 ```
 
-- `/pithos` opens a focused About, Doctor, and Configure menu in TUI mode and prints help in non-interactive modes.
+- `/pithos` opens a focused About, Doctor, Configure, and Fallback Patches menu in TUI mode and prints help in non-interactive modes.
 - `/pithos help` is the single Atlas help page.
 - `packages` lists package-owned commands, tools, prompts, skills, themes, agents, and configuration from the bundled catalog, then adds runtime command/tool provenance without contacting npm.
 - `versions` explicitly queries public npm registry endpoints, distinguishing bundled and latest versions.
 - `doctor` distinguishes the active Pi process, the Pi version configured for a future Pithos rebuild, configured package pins, runtime-detected packages, bundled versions, latest versions, and versions compatible with the configured Pi.
 - `config validate` reads and validates `.pithos` without changing it.
 - `config` opens the interactive manager described below.
+- `patch footer status` inspects the optional built-in-file fallback without changing it.
+- `patch footer apply` explicitly confirms and installs that fallback; `remove` reverses it. Both require a Pi restart. Normal Atlas TUI sessions do not need the patch.
+
+## Runtime footer (default)
+
+On every TUI `session_start`, Atlas installs a custom fallback footer at runtime. It renders the current cwd, Git branch, session name, provider, model, reasoning level, and every extension status on bounded lines. It reads session and footer data during each render and subscribes to Git branch changes, so branch, name, model, reasoning, and status changes are reflected without restarting Pi.
+
+```text
+/workspace/project (main) • session-name                 (openai-codex) gpt-5.6-sol • high
+Codex · 5h 68% · week 74%
+```
+
+The runtime footer omits cumulative input/output/cache counts, cache-hit rate, estimated cost or subscription marker, context-window percentage, and the auto-compaction marker. The underlying accounting remains available through Pi's `/session`, RPC, and session data.
+
+Atlas wraps the shared `ctx.ui.setFooter` method with lifecycle ownership metadata and restores the prior setter when its session runtime shuts down. A defined custom footer temporarily overrides Atlas, and clearing it with `setFooter(undefined)` restores Atlas. Normal fallback installation is deferred through the `session_start` microtask, so a custom footer installed after Atlas during that same startup is observed by the wrapper and preserved. Persisted active or indeterminate Plan state remains the ordering-independent guard: Atlas does not replace Plan when Plan installed its footer first, and Plan exit still restores the Atlas fallback.
+
+Pi exposes no public getter for the currently installed footer. Consequently, when Plan state is inactive, Atlas cannot detect a non-Plan custom footer that was installed before Atlas's `session_start` handler; the deferred Atlas fallback replaces that pre-Atlas footer. Load that footer after Atlas if it should take precedence.
+
+Because this footer is installed after Pi starts, it needs no source-file mutation, restart, or launcher. It remains the default even when container recreation resets Pi's built-in footer file or the container invokes Pi without Atlas's optional launcher.
+
+## Optional built-in footer file patch and launcher fallback
+
+Atlas also retains the guarded, reversible patch engine for Pi's built-in footer. This is an optional fallback for launch environments that deliberately need the compact footer before Atlas can install its runtime custom footer; it is not the normal Atlas path.
+
+The patched built-in footer uses the same compact presentation:
+
+```text
+/workspace/project (main) • session-name                 (openai-codex) gpt-5.6-sol • high
+Codex · 5h 68% · week 74%
+```
+
+It retains the current directory, Git branch, session name, provider, model, reasoning level, and extension status lines. It hides cumulative input/output/cache counts, cache-hit rate, estimated cost, context-window percentage, and the auto-compaction marker. The underlying accounting remains available through Pi's `/session`, RPC, and session data.
+
+Atlas 0.7.0 recognizes only complete reviewed stock or Atlas-patched footer digests for Pi 0.83.0, 0.84.1, and 0.84.2. Unknown versions plus locally or partially modified Pi sources are reported as unsupported and are never changed. Apply/remove preserve file permissions, bind mutation to the reviewed version and source digest, recheck source before an atomic same-directory replacement, and require an explicit confirmation naming the Pi version and target file. Atlas refuses mutation while Plan mode is active or indeterminate. Restart Pi after either operation.
+
+For Pithos image builds and other explicit non-interactive automation, the published package exposes the same engine as a CLI:
+
+```bash
+pithos-atlas-patch footer status --pi-dir /path/to/@earendil-works/pi-coding-agent
+pithos-atlas-patch footer apply  --pi-dir /path/to/@earendil-works/pi-coding-agent
+pithos-atlas-patch footer remove --pi-dir /path/to/@earendil-works/pi-coding-agent
+```
+
+The standalone CLI requires an explicit target so build automation cannot accidentally patch a nested development dependency. Set the Atlas-specific `PITHOS_ATLAS_PI_PACKAGE_DIR` instead of `--pi-dir` when an environment override is more convenient. Add `--json` for machine-readable output. The CLI performs the explicit operation requested and does not prompt, making the invocation itself the automation approval boundary.
+
+### Optional launcher fallback in ephemeral environments
+
+The default runtime footer above requires no launcher. If an environment explicitly chooses the built-in-file fallback, a patch applied directly under an ephemeral prefix such as `/opt/pi-npm` disappears when that prefix is recreated. Such an environment can install Atlas in persistent storage and start Pi through its packaged `pithos-atlas-pi` launcher instead. On every startup the launcher finds the next `pi` executable on `PATH`, skips symlinks that resolve back to itself, validates the owning `@earendil-works/pi-coding-agent` manifest and `bin.pi` entrypoint, and runs the guarded footer apply CLI before Pi can import its core modules. An already-patched footer is a no-op. An unsupported package, version, or source causes a safe refusal and Pi is not launched.
+
+On Windows, the launcher recognizes npm's global-prefix `node_modules` and project-local `node_modules/.bin` layouts. It uses the presence of `pi.cmd` only to locate the package: it does not read or execute shim contents, and instead launches the validated package-contained JavaScript entrypoint with the current Node executable.
+
+For example, an image or container entrypoint can expose the persistent launcher transparently as `pi` while leaving the recreated Pi installation later on `PATH`:
+
+```bash
+npm install --global --prefix /persistent/atlas --legacy-peer-deps @pithos-kit/atlas@0.7.0
+mkdir -p /persistent/pi-wrapper
+ln -sfn /persistent/atlas/bin/pithos-atlas-pi /persistent/pi-wrapper/pi
+export PATH="/persistent/pi-wrapper:/opt/pi-npm/bin:$PATH"
+exec pi "$@"
+```
+
+The isolated launcher installation uses `--legacy-peer-deps` so npm does not auto-install Atlas's Pi peer under the persistent prefix. Keep the Atlas bin directory itself out of the launcher's search `PATH`; the wrapper symlink already resolves the launcher. The wrapper path must precede the intended real Pi bin directory. The launcher forwards Pi's arguments and standard streams unchanged and propagates its exit code or terminating signal. It produces no patch status output during successful startup; patch diagnostics go to standard error on refusal. `pithos-atlas-pi` may also be invoked directly when replacing the command name is unnecessary.
 
 ## Software-development workflow migration to Guild
 
-Software-development skills and commit workflows now belong to [`@pithos-kit/guild`](https://www.npmjs.com/package/@pithos-kit/guild), so Atlas no longer bundles or advertises TDD or Conventional Commit capabilities. Pair Atlas 0.6.0 with Guild 0.3.0 so exactly one active package owns `/commit`, `create_commit`, `conventional-commit`, and TDD. Loading Guild 0.3.0 beside an older Atlas release causes duplicate command, tool, and skill ownership.
+Software-development skills and commit workflows now belong to [`@pithos-kit/guild`](https://www.npmjs.com/package/@pithos-kit/guild), so Atlas no longer bundles or advertises TDD or Conventional Commit capabilities. Pair Atlas 0.6.0 or later with Guild 0.3.0 so exactly one active package owns `/commit`, `create_commit`, `conventional-commit`, and TDD. Loading Guild 0.3.0 beside an older Atlas release causes duplicate command, tool, and skill ownership.
 
 The earlier `@pithos-kit/skills` package remains retired. Remove it at every scope where it was installed, then remove its future-build pin through `/pithos config`:
 
@@ -111,7 +176,7 @@ Cancellation and pre-commit errors leave `.pithos` unchanged. After a successful
 
 ## Agent tools
 
-Atlas registers the validated `rename_session` tool and the read-only `pithos_info` tool. `pithos_info` supports these actions:
+Atlas registers the validated `rename_session` tool and the read-only `pithos_info` tool. Footer patch application is deliberately not model-callable. `pithos_info` supports these actions:
 
 - `catalog`
 - `versions`

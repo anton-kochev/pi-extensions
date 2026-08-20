@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { describe, it } from "node:test";
 import atlas from "../extensions/index.ts";
 
-function createHarness() {
+function createHarness(dependencies: Record<string, unknown> = {}) {
 	const commands = new Map<string, any>();
 	const tools = new Map<string, any>();
 	const handlers = new Map<string, any[]>();
@@ -20,11 +20,38 @@ function createHarness() {
 		getSessionName() { return sessionNames.at(-1); },
 		getCommands() { return []; },
 		getAllTools() { return []; },
-	} as never);
+	} as never, dependencies as never);
 	return { commands, tools, handlers, messages, sessionNames };
 }
 
 describe("Atlas extension", () => {
+	it("installs the Atlas runtime footer during normal TUI startup", async () => {
+		const { handlers } = createHarness();
+		let footerFactory: unknown;
+		const context = {
+			mode: "tui",
+			cwd: "/workspace/project",
+			modelRegistry: { getAvailable: () => [] },
+			scopedModels: [],
+			model: { provider: "openai-codex", id: "gpt-5.6-sol" },
+			thinkingLevel: "high",
+			sessionManager: {
+				getEntries: () => [],
+				getBranch: () => [],
+				getSessionFile: () => "/existing/session.jsonl",
+			},
+			ui: {
+				setFooter(factory: unknown) { footerFactory = factory; },
+			},
+		};
+
+		for (const handler of handlers.get("session_start") ?? []) {
+			await handler({ reason: "startup" }, context);
+		}
+
+		assert.equal(typeof footerFactory, "function");
+	});
+
 	it("leaves a fresh session unnamed until the user sends its first message", async () => {
 		const { handlers, sessionNames } = createHarness();
 		const ctx = {
@@ -130,7 +157,84 @@ describe("Atlas extension", () => {
 		}
 	});
 
-	it("offers a focused main menu with About, Doctor, and Configure", async () => {
+	it("reports and explicitly applies the distributable footer patch", async () => {
+		const patchCalls: string[] = [];
+		const patchExpectations: unknown[] = [];
+		const sourceDigest = "a".repeat(64);
+		const { commands } = createHarness({
+			activePiPackage: { root: "/opt/pi", version: "0.84.2" },
+			runFooterPatch: async (operation: string, _root: string, _signal: AbortSignal | undefined, expectation: unknown) => {
+				patchCalls.push(operation);
+				patchExpectations.push(expectation);
+				return {
+					patch: "footer",
+					action: operation,
+					status: operation === "apply" ? "applied" : "available",
+					changed: false,
+					packageDir: "/opt/pi",
+					version: "0.84.2",
+					file: "/opt/pi/dist/modes/interactive/components/footer.js",
+					sourceDigest,
+					restartRequired: operation === "apply",
+				};
+			},
+		});
+		const notifications: Array<{ message: string; level?: string }> = [];
+		const confirmations: Array<{ title: string; message: string }> = [];
+		const context = {
+			mode: "tui",
+			hasUI: true,
+			waitForIdle: async () => {},
+			isIdle: () => true,
+			sessionManager: { getBranch: () => [] },
+			ui: {
+				notify: (message: string, level?: string) => notifications.push({ message, level }),
+				confirm: async (title: string, message: string) => {
+					confirmations.push({ title, message });
+					return true;
+				},
+			},
+		};
+
+		await commands.get("pithos").handler("patch footer status", context as never);
+		assert.deepEqual(patchCalls, ["status"]);
+		assert.match(notifications.at(-1)?.message ?? "", /Pi 0\.84\.2 built-in footer fallback patch: available/);
+		assert.equal(confirmations.length, 0);
+
+		await commands.get("pithos").handler("patch footer apply", context as never);
+		assert.deepEqual(patchCalls, ["status", "status", "apply"]);
+		assert.deepEqual(patchExpectations, [undefined, undefined, { version: "0.84.2", digest: sourceDigest }]);
+		assert.match(confirmations[0]?.message ?? "", /\/opt\/pi\/dist\/modes\/interactive\/components\/footer\.js/);
+		assert.match(confirmations[0]?.message ?? "", /Pi 0\.84\.2/);
+		assert.match(notifications.at(-1)?.message ?? "", /Restart Pi/);
+	});
+
+	it("refuses footer mutation while Plan mode is active", async () => {
+		const patchCalls: string[] = [];
+		const { commands } = createHarness({
+			activePiPackage: { root: "/opt/pi", version: "0.84.2" },
+			runFooterPatch: async (operation: string) => {
+				patchCalls.push(operation);
+				throw new Error("should not run");
+			},
+		});
+		const notifications: string[] = [];
+
+		await commands.get("pithos").handler("patch footer remove", {
+			mode: "tui",
+			hasUI: true,
+			waitForIdle: async () => {},
+			sessionManager: {
+				getBranch: () => [{ type: "custom", customType: "plan-theme-state", data: { active: true } }],
+			},
+			ui: { notify: (message: string) => notifications.push(message) },
+		} as never);
+
+		assert.deepEqual(patchCalls, []);
+		assert.match(notifications[0] ?? "", /unavailable while Plan mode is active or indeterminate/);
+	});
+
+	it("offers a focused main menu with About, Doctor, Configure, and fallback patches", async () => {
 		const { commands } = createHarness();
 		const selections: Array<{ title: string; options: string[] }> = [];
 		const notifications: string[] = [];
@@ -146,8 +250,46 @@ describe("Atlas extension", () => {
 			},
 		} as never);
 
-		assert.deepEqual(selections, [{ title: "Pithos Atlas", options: ["About", "Doctor", "Configure"] }]);
+		assert.deepEqual(selections, [{ title: "Pithos Atlas", options: ["About", "Doctor", "Configure", "Fallback Patches"] }]);
 		assert.match(notifications[0] ?? "", /Usage: \/pithos/);
+	});
+
+	it("opens a visible patch menu with the current footer state and available action", async () => {
+		const selections: Array<{ title: string; options: string[] }> = [];
+		const choices = ["Fallback Patches", "Back"];
+		const sourceDigest = "a".repeat(64);
+		const { commands } = createHarness({
+			activePiPackage: { root: "/opt/pi", version: "0.84.2" },
+			runFooterPatch: async () => ({
+				patch: "footer",
+				action: "status",
+				status: "applied",
+				changed: false,
+				packageDir: "/opt/pi",
+				version: "0.84.2",
+				file: "/opt/pi/dist/modes/interactive/components/footer.js",
+				sourceDigest,
+				restartRequired: false,
+			}),
+		});
+
+		await commands.get("pithos").handler("", {
+			mode: "tui",
+			hasUI: true,
+			signal: undefined,
+			ui: {
+				async select(title: string, options: string[]) {
+					selections.push({ title, options });
+					return choices.shift();
+				},
+				notify() {},
+			},
+		} as never);
+
+		assert.deepEqual(selections, [
+			{ title: "Pithos Atlas", options: ["About", "Doctor", "Configure", "Fallback Patches"] },
+			{ title: "Optional Footer Fallback", options: ["Built-in footer fallback · applied", "Remove built-in footer fallback", "Back"] },
+		]);
 	});
 
 	it("refuses configuration outside a trusted TUI before reading or fetching", async () => {
@@ -248,6 +390,18 @@ describe("Atlas extension", () => {
 		assert.match(notifications[0] ?? "", /themes: plan/);
 		assert.match(notifications[0] ?? "", /agents: dotnet-architect/);
 		assert.match(notifications[0] ?? "", /configuration: file \.pi\/aegis\.json/);
+		assert.match(notifications[0] ?? "", /environment PITHOS_ATLAS_PI_PACKAGE_DIR/);
+	});
+
+	it("completes and documents every footer patch action", () => {
+		const { commands } = createHarness();
+		const command = commands.get("pithos");
+
+		assert.deepEqual(
+			command.getArgumentCompletions("patch footer ").map(({ value }: { value: string }) => value),
+			["patch footer status", "patch footer apply", "patch footer remove"],
+		);
+		assert.match(command.description, /optional built-in fallback patches/);
 	});
 
 	it("shows the single Atlas help page", async () => {
@@ -261,6 +415,9 @@ describe("Atlas extension", () => {
 		assert.equal(notifications.length, 1);
 		assert.match(notifications[0], /3–5-word session names/);
 		assert.match(notifications[0], /Usage: \/pithos/);
+		assert.match(notifications[0], /\/pithos patch footer status/);
+		assert.match(notifications[0], /\/pithos patch footer apply/);
+		assert.match(notifications[0], /\/pithos patch footer remove/);
 		assert.doesNotMatch(notifications[0], /\/skill:tdd|TDD guidance/);
 		assert.doesNotMatch(notifications[0], /\/commit|Conventional Commit/);
 		assert.doesNotMatch(notifications[0], /\/pithos help </);

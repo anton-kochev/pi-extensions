@@ -9,14 +9,19 @@ export interface ActivePiVersionOptions {
 	fallbackVersion: string;
 }
 
-export function resolveActivePiVersion(options: ActivePiVersionOptions): string {
-	if (!options.entrypoint) return options.fallbackVersion;
+export interface ActivePiPackage {
+	root?: string;
+	version: string;
+}
+
+export function resolveActivePiPackage(options: ActivePiVersionOptions): ActivePiPackage {
+	if (!options.entrypoint) return { version: options.fallbackVersion };
 
 	let entrypoint: string;
 	try {
 		entrypoint = realpathSync(resolve(options.entrypoint));
 	} catch {
-		return options.fallbackVersion;
+		return { version: options.fallbackVersion };
 	}
 
 	let directory = dirname(entrypoint);
@@ -27,14 +32,18 @@ export function resolveActivePiVersion(options: ActivePiVersionOptions): string 
 				version?: unknown;
 			};
 			if (manifest.name === PI_PACKAGE && typeof manifest.version === "string" && valid(manifest.version)) {
-				return manifest.version;
+				return { root: directory, version: manifest.version };
 			}
 		} catch {
 			// Continue towards the filesystem root until the running Pi package is found.
 		}
 
 		const parent = dirname(directory);
-		if (parent === directory) return options.fallbackVersion;
+		if (parent === directory) return { version: options.fallbackVersion };
 		directory = parent;
 	}
+}
+
+export function resolveActivePiVersion(options: ActivePiVersionOptions): string {
+	return resolveActivePiPackage(options).version;
 }
