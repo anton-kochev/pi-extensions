@@ -1,6 +1,6 @@
 {
   "name": "@pithos-kit/plan",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Enforced read-only planning with optional draft preview, approved plan creation, and contextual session naming for Pi.",
   "keywords": [
     "pi-package",

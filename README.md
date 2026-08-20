@@ -48,7 +48,7 @@ pi:
   extensions:
     "@pithos-kit/atlas": "npm:0.6.0"
     "@pithos-kit/guild": "npm:0.3.0"
-    "@pithos-kit/plan": "npm:0.2.0"
+    "@pithos-kit/plan": "npm:0.3.0"
     "@pithos-kit/squiggle": "npm:0.4.1"
     "@pithos-kit/translate": "npm:1.0.0"
 ```

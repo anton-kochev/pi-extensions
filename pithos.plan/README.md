@@ -21,7 +21,7 @@ pi install -l ./pithos.plan
 ```yaml
 pi:
   extensions:
-    "@pithos-kit/plan": "npm:0.2.0"
+    "@pithos-kit/plan": "npm:0.3.0"
 ```
 
 ## Migrating from `@pithos-kit/skills`
