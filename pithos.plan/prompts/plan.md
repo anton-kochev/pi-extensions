@@ -22,10 +22,10 @@ told you everything it can.
 
 **Rule 2 — Don't implement until there is shared understanding.** Resolve every
 open question and present your understanding of the goal, approach, and scope
-before preparing the plan. The `create_plan` interactive review is the sole final
-approval gate: it shows the exact Markdown draft, approval creates that reviewed
-content and authorizes implementation, while continuing planning means the
-understanding still needs work.
+before preparing the plan. The `create_plan` interactive confirmation is the sole
+final approval gate: the user may preview the exact Markdown draft, create the
+submitted content without preview, or continue planning when the understanding
+still needs work.
 
 ## Planning posture: enforced read-only until plan creation is approved
 
@@ -98,22 +98,22 @@ to Phase 4 instead of asking for a separate conversational confirmation.
 Only after shared understanding is complete, prepare the plan below and call
 `create_plan` immediately with its complete Markdown content. Do not first ask the
 user to reply with approval in chat. The extension exclusively creates the
-generated path supplied in the system prompt under `.pi/plans/`. That call lets
-the user review the exact Markdown draft and target path.
-This interactive confirmation is the sole final approval gate.
+generated path supplied in the system prompt under `.pi/plans/`. That call opens
+the interactive confirmation that is the sole final approval gate.
 **Continue planning** is the safe default:
 
 - **Continue planning** blocks the write and keeps enforced read-only Plan mode
   active. Continue exploring or refining the design; do not immediately repeat
   the write attempt.
-- **Create plan and start implementation** authorizes that reviewed content for
-  one plan-file write, exits Plan mode after it succeeds, and authorizes
-  implementation.
+- **Preview the plan** is optional and opens the exact Markdown draft and target
+  path in a read-only viewer. Leaving the preview returns to the same confirmation
+  without approving or rejecting the draft.
+- **Create plan and start implementation** creates the submitted content without preview when chosen directly, authorizes one plan-file write, exits Plan mode only after it succeeds, and authorizes implementation.
 
 The controlled creator preserves the readable name and advances the timestamp on
-collision; it atomically publishes only the reviewed destination and never
+collision; it atomically publishes only the confirmed destination and never
 overwrites an existing plan or adds a numeric suffix. A collision that changes the
-destination requires renewed review.
+destination requires renewed confirmation.
 The `# Plan:` title must concisely name the feature, bug, or outcome so it can become the contextual session name after a successful exit. Avoid generic
 titles such as `Implementation plan` or `Changes`. Keep the plan tight and
 skimmable:
@@ -150,8 +150,8 @@ skimmable:
 <Anything still assumed rather than confirmed.>
 ```
 
-The exact-draft interactive approval is the final transition gate. Do not ask
-for another approval after creation succeeds.
+The interactive confirmation is the final transition gate. Do not ask for
+another approval after creation succeeds.
 
 ### Phase 5 — Implement
 

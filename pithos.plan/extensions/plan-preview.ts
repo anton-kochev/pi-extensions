@@ -1,15 +1,14 @@
 import { DynamicBorder, type Theme } from "@earendil-works/pi-coding-agent";
 import {
+	Key,
 	Markdown,
-	SelectList,
 	Text,
 	TruncatedText,
+	matchesKey,
+	truncateToWidth,
 	type Component,
 	type KeybindingsManager,
-	type SelectItem,
 } from "@earendil-works/pi-tui";
-
-export type PlanPreviewDecision = "continue" | "create";
 
 type PlanPreviewTheme = Pick<Theme, "bold" | "fg" | "italic" | "strikethrough" | "underline">;
 
@@ -40,7 +39,7 @@ function createMarkdownTheme(theme: PlanPreviewTheme) {
 	};
 }
 
-type PlanPreviewKeybindings = Pick<KeybindingsManager, "matches">;
+type PlanPreviewKeybindings = Pick<KeybindingsManager, "getKeys" | "matches">;
 
 export type PlanPreviewOptions = {
 	content: string;
@@ -48,78 +47,124 @@ export type PlanPreviewOptions = {
 	terminalRows: () => number;
 	theme: PlanPreviewTheme;
 	keybindings: PlanPreviewKeybindings;
-	onDecision: (decision: PlanPreviewDecision) => void;
+	onClose: () => void;
 	onRender: () => void;
 };
 
-const ACTIONS: SelectItem[] = [
-	{ value: "continue", label: "Continue planning" },
-	{ value: "create", label: "Create plan and start implementation" },
-];
-
-const CHROME_ROWS = 9;
+const CHROME_ROWS = 7;
+const KEY_LABELS: Record<string, string> = {
+	up: "↑",
+	down: "↓",
+	pageUp: "PgUp",
+	pageDown: "PgDn",
+	enter: "Enter",
+	return: "Return",
+	escape: "Esc",
+};
 
 export class PlanPreview implements Component {
+	private readonly safeContent: string;
 	private readonly markdown: Markdown;
-	private readonly actions: SelectList;
 	private readonly topBorder: DynamicBorder;
 	private readonly sectionBorder: DynamicBorder;
 	private readonly bottomBorder: DynamicBorder;
-	private readonly title: TruncatedText;
-	private readonly path: TruncatedText;
+	private title: TruncatedText;
+	private path: TruncatedText;
 	private readonly status: Text;
-	private readonly help: TruncatedText;
+	private help: TruncatedText;
 	private readonly options: PlanPreviewOptions;
-	private selectedIndex = 0;
 	private scrollOffset = 0;
 	private viewportRows = 1;
-	private reviewAvailable = true;
+	private maxOffset = 0;
 
 	constructor(options: PlanPreviewOptions) {
 		this.options = options;
 		const { theme } = options;
 		const borderColor = (text: string) => theme.fg("borderAccent", text);
-		this.markdown = new Markdown(makeDraftTerminalSafe(options.content), 1, 0, createMarkdownTheme(theme));
+		this.safeContent = makeDraftTerminalSafe(options.content);
+		this.markdown = new Markdown(this.safeContent, 1, 0, createMarkdownTheme(theme));
 		this.topBorder = new DynamicBorder(borderColor);
 		this.sectionBorder = new DynamicBorder((text: string) => theme.fg("borderMuted", text));
 		this.bottomBorder = new DynamicBorder(borderColor);
-		this.title = new TruncatedText(theme.fg("accent", theme.bold("Review plan draft")), 1, 0);
-		this.path = new TruncatedText(theme.fg("muted", `Target: ${options.planPath}`), 1, 0);
+		this.title = new TruncatedText("", 1, 0);
+		this.path = new TruncatedText("", 1, 0);
 		this.status = new Text("", 1, 0);
+		this.help = new TruncatedText("", 1, 0);
+		this.refreshThemedText();
+	}
+
+	private keyLabel(
+		action:
+			| "tui.select.up"
+			| "tui.select.down"
+			| "tui.select.pageUp"
+			| "tui.select.pageDown"
+			| "tui.select.confirm"
+			| "tui.select.cancel",
+	): string {
+		const key = String(this.options.keybindings.getKeys(action)[0] ?? "");
+		return KEY_LABELS[key] ?? key;
+	}
+
+	private refreshThemedText(): void {
+		const { theme } = this.options;
+		const confirm = this.keyLabel("tui.select.confirm");
+		const cancel = this.keyLabel("tui.select.cancel");
+		const up = this.keyLabel("tui.select.up");
+		const down = this.keyLabel("tui.select.down");
+		const pageUp = this.keyLabel("tui.select.pageUp");
+		const pageDown = this.keyLabel("tui.select.pageDown");
+		this.title = new TruncatedText(theme.fg("accent", theme.bold("Review plan draft")), 1, 0);
+		this.path = new TruncatedText(theme.fg("muted", `Target: ${this.options.planPath}`), 1, 0);
 		this.help = new TruncatedText(
-			theme.fg("dim", "PgUp/PgDn or Space/b review • ↑↓ choose • Enter select • Esc continue"),
+			theme.fg("dim", `${confirm}/${cancel}: confirmation • ${up}/${down} line • ${pageUp}/${pageDown} page • Home/End bounds`),
 			1,
 			0,
 		);
-		this.actions = new SelectList(ACTIONS, ACTIONS.length, {
-			selectedPrefix: (text) => theme.fg("accent", text),
-			selectedText: (text) => theme.fg("accent", text),
-			description: (text) => theme.fg("muted", text),
-			scrollInfo: (text) => theme.fg("dim", text),
-			noMatch: (text) => theme.fg("warning", text),
-		});
-		this.actions.setSelectedIndex(this.selectedIndex);
+	}
+
+	private fit(lines: string[], width: number, availableRows: number): string[] {
+		return lines
+			.slice(0, availableRows)
+			.map((line) => truncateToWidth(line, Math.max(0, width), ""));
 	}
 
 	render(width: number): string[] {
-		const terminalRows = Math.max(1, Math.floor(this.options.terminalRows()));
-		const markdownLines = this.markdown.render(width);
+		const availableRows = Math.max(1, Math.floor(this.options.terminalRows()) - 1);
+		const markdownLines = width < 3
+			? this.safeContent.split("\n").map((line) => truncateToWidth(line, Math.max(0, width), ""))
+			: this.markdown.render(width);
 
-		if (terminalRows < 4) {
-			this.reviewAvailable = false;
-			this.status.setText(this.options.theme.fg("warning", "Terminal too short to review; Enter or Esc continues planning"));
-			return [...this.status.render(width), ...this.path.render(width), ...this.actions.render(width)].slice(0, terminalRows);
+		if (availableRows < 4) {
+			const confirm = this.keyLabel("tui.select.confirm");
+			const cancel = this.keyLabel("tui.select.cancel");
+			this.status.setText(
+				this.options.theme.fg(
+					"warning",
+					`${confirm}/${cancel}: confirmation; terminal too short for preview`,
+				),
+			);
+			return this.fit(
+				[...this.status.render(width), ...this.path.render(width), ...this.help.render(width)],
+				width,
+				availableRows,
+			);
 		}
 
-		this.reviewAvailable = true;
-		const compact = terminalRows < CHROME_ROWS + 1;
-		this.viewportRows = compact ? terminalRows - 3 : terminalRows - CHROME_ROWS;
-		const maxOffset = Math.max(0, markdownLines.length - this.viewportRows);
-		this.scrollOffset = Math.min(this.scrollOffset, maxOffset);
+		const compact = availableRows < CHROME_ROWS + 1;
+		this.viewportRows = compact ? availableRows - 2 : availableRows - CHROME_ROWS;
+		this.maxOffset = Math.max(0, markdownLines.length - this.viewportRows);
+		this.scrollOffset = Math.min(this.scrollOffset, this.maxOffset);
 		const visibleDraft = markdownLines.slice(this.scrollOffset, this.scrollOffset + this.viewportRows);
 		while (visibleDraft.length < this.viewportRows) visibleDraft.push("");
 
-		if (compact) return [...this.path.render(width), ...visibleDraft, ...this.actions.render(width)];
+		if (compact) {
+			return this.fit(
+				[...this.path.render(width), ...visibleDraft, ...this.help.render(width)],
+				width,
+				availableRows,
+			);
+		}
 
 		const firstVisible = markdownLines.length === 0 ? 0 : this.scrollOffset + 1;
 		const lastVisible = Math.min(markdownLines.length, this.scrollOffset + this.viewportRows);
@@ -127,40 +172,38 @@ export class PlanPreview implements Component {
 			this.options.theme.fg("dim", `Draft lines ${firstVisible}–${lastVisible} of ${markdownLines.length}`),
 		);
 
-		return [
-			...this.topBorder.render(width),
-			...this.title.render(width),
-			...this.path.render(width),
-			...this.sectionBorder.render(width),
-			...visibleDraft,
-			...this.status.render(width),
-			...this.actions.render(width),
-			...this.help.render(width),
-			...this.bottomBorder.render(width),
-		];
+		return this.fit(
+			[
+				...this.topBorder.render(width),
+				...this.title.render(width),
+				...this.path.render(width),
+				...this.sectionBorder.render(width),
+				...visibleDraft,
+				...this.status.render(width),
+				...this.help.render(width),
+				...this.bottomBorder.render(width),
+			],
+			width,
+			availableRows,
+		);
 	}
 
 	handleInput(data: string): void {
-		const { keybindings, onDecision, onRender } = this.options;
-		if (keybindings.matches(data, "tui.select.cancel")) {
-			onDecision("continue");
-			return;
-		}
-		if (keybindings.matches(data, "tui.select.confirm")) {
-			onDecision(
-				this.reviewAvailable && ACTIONS[this.selectedIndex]?.value === "create" ? "create" : "continue",
-			);
+		const { keybindings, onClose, onRender } = this.options;
+		if (
+			keybindings.matches(data, "tui.select.cancel") ||
+			keybindings.matches(data, "tui.select.confirm")
+		) {
+			onClose();
 			return;
 		}
 		if (keybindings.matches(data, "tui.select.up")) {
-			this.selectedIndex = Math.max(0, this.selectedIndex - 1);
-			this.actions.setSelectedIndex(this.selectedIndex);
+			this.scrollOffset = Math.max(0, this.scrollOffset - 1);
 			onRender();
 			return;
 		}
 		if (keybindings.matches(data, "tui.select.down")) {
-			this.selectedIndex = Math.min(ACTIONS.length - 1, this.selectedIndex + 1);
-			this.actions.setSelectedIndex(this.selectedIndex);
+			this.scrollOffset = Math.min(this.maxOffset, this.scrollOffset + 1);
 			onRender();
 			return;
 		}
@@ -170,20 +213,27 @@ export class PlanPreview implements Component {
 			return;
 		}
 		if (keybindings.matches(data, "tui.select.pageDown") || data === " ") {
-			this.scrollOffset += this.viewportRows;
+			this.scrollOffset = Math.min(this.maxOffset, this.scrollOffset + this.viewportRows);
+			onRender();
+			return;
+		}
+		if (matchesKey(data, Key.home)) {
+			this.scrollOffset = 0;
+			onRender();
+			return;
+		}
+		if (matchesKey(data, Key.end)) {
+			this.scrollOffset = this.maxOffset;
 			onRender();
 		}
 	}
 
 	invalidate(): void {
 		this.markdown.invalidate();
-		this.actions.invalidate();
 		this.topBorder.invalidate();
 		this.sectionBorder.invalidate();
 		this.bottomBorder.invalidate();
-		this.title.invalidate();
-		this.path.invalidate();
 		this.status.invalidate();
-		this.help.invalidate();
+		this.refreshThemedText();
 	}
 }

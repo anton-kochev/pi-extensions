@@ -1,5 +1,6 @@
 import type { ExtensionUIContext } from "@earendil-works/pi-coding-agent";
-import { PlanPreview, type PlanPreviewDecision } from "./plan-preview.ts";
+import { PlanConfirmation, type PlanConfirmationDecision } from "./plan-confirmation.ts";
+import { PlanPreview } from "./plan-preview.ts";
 
 export type PlanCreationUI = {
 	confirm: ExtensionUIContext["confirm"];
@@ -28,6 +29,40 @@ function buildRpcReviewMessage(planPath: string, content: string): string {
 	].join("\n");
 }
 
+async function showPlanConfirmation(
+	custom: NonNullable<PlanCreationUI["custom"]>,
+	planPath: string,
+): Promise<PlanConfirmationDecision> {
+	return custom<PlanConfirmationDecision>((tui, theme, keybindings, done) =>
+		new PlanConfirmation({
+			planPath,
+			terminalRows: () => tui.terminal.rows,
+			theme,
+			keybindings,
+			onDecision: done,
+			onRender: () => tui.requestRender(),
+		}),
+	);
+}
+
+async function showPlanPreview(
+	custom: NonNullable<PlanCreationUI["custom"]>,
+	planPath: string,
+	content: string,
+): Promise<void> {
+	await custom<void>((tui, theme, keybindings, done) =>
+		new PlanPreview({
+			content,
+			planPath,
+			terminalRows: () => tui.terminal.rows,
+			theme,
+			keybindings,
+			onClose: () => done(undefined),
+			onRender: () => tui.requestRender(),
+		}),
+	);
+}
+
 export async function confirmPlanCreation(
 	context: PlanCreationContext,
 	planPath: string,
@@ -36,18 +71,14 @@ export async function confirmPlanCreation(
 	if (!context.hasUI) return { action: "continue" };
 
 	if (context.mode === "tui" && context.ui.custom) {
-		const result = await context.ui.custom<PlanPreviewDecision>((tui, theme, keybindings, done) =>
-			new PlanPreview({
-				content,
-				planPath,
-				terminalRows: () => tui.terminal.rows,
-				theme,
-				keybindings,
-				onDecision: done,
-				onRender: () => tui.requestRender(),
-			}),
-		);
-		return result === "create" ? { action: "create" } : { action: "continue" };
+		while (true) {
+			const decision = await showPlanConfirmation(context.ui.custom, planPath);
+			if (decision === "preview") {
+				await showPlanPreview(context.ui.custom, planPath, content);
+				continue;
+			}
+			return decision === "create" ? { action: "create" } : { action: "continue" };
+		}
 	}
 
 	if (context.mode === "rpc") {
@@ -61,6 +92,6 @@ export async function confirmPlanCreation(
 export function handleActivePlanCommand(planPath: string): ActivePlanCommandResult {
 	return {
 		action: "transform",
-		text: `Finalize the current plan and call create_plan with its complete Markdown content for \`${planPath}\`. Pi will show the exact draft for approval before creating it. Once creation succeeds, implement the saved plan.`,
+		text: `Finalize the current plan and call create_plan with its complete Markdown content for \`${planPath}\`. Pi will open an interactive confirmation with an optional preview before creating it. Once creation succeeds, implement the saved plan.`,
 	};
 }

@@ -39,7 +39,7 @@ const PLAN_STATUS_MESSAGE_TYPE = "plan-mode-status";
 const PLAN_COMMAND_HELP = `Usage: /plan [task | exit | cancel | --help]
 
 Arguments:
-  no argument  Finalize the active plan and open exact-draft review.
+  no argument  Finalize the active plan and open interactive confirmation.
   task         Enter enforced read-only Plan mode for the given task.
   exit         Exit active Plan mode without creating a plan.
   cancel       Alias for exit.

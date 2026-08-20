@@ -10,15 +10,32 @@ const theme = {
 	fg: (_color: string, text: string) => text,
 };
 
-const keybindings = {
-	matches: (data: string, action: string) =>
-		(action === "tui.select.confirm" && data === "enter") ||
-		(action === "tui.select.cancel" && data === "escape") ||
-		(action === "tui.select.up" && data === "up") ||
-		(action === "tui.select.down" && data === "down") ||
-		(action === "tui.select.pageUp" && data === "pageUp") ||
-		(action === "tui.select.pageDown" && data === "pageDown"),
+const defaultKeys: Record<string, string[]> = {
+	"tui.select.confirm": ["enter"],
+	"tui.select.cancel": ["escape", "ctrl+c"],
+	"tui.select.up": ["up"],
+	"tui.select.down": ["down"],
+	"tui.select.pageUp": ["pageUp"],
+	"tui.select.pageDown": ["pageDown"],
 };
+
+const keybindings = {
+	matches: (data: string, action: string) => defaultKeys[action]?.includes(data) ?? false,
+	getKeys: (action: string) => defaultKeys[action] ?? [],
+};
+
+function instantiate(factory: any) {
+	let selected: unknown;
+	const component = factory(
+		{ terminal: { rows: 20 }, requestRender() {} },
+		theme,
+		keybindings,
+		(value: unknown) => {
+			selected = value;
+		},
+	);
+	return { component, selected: () => selected };
+}
 
 describe("confirmPlanCreation", () => {
 	it("includes the exact draft in RPC approval", async () => {
@@ -40,7 +57,7 @@ describe("confirmPlanCreation", () => {
 		assert.equal(decision.action, "create");
 		assert.equal(dialogs.length, 1);
 		assert.match(dialogs[0]?.[0] ?? "", /review plan draft/i);
-		assert.match(dialogs[0]?.[1] ?? "", /Target: `.pi\/plans\/example.md`/);
+		assert.match(dialogs[0]?.[1] ?? "", /Target: `\.pi\/plans\/example\.md`/);
 		assert.match(dialogs[0]?.[1] ?? "", /# Plan: Preview drafts\n\nExact RPC draft\./);
 	});
 
@@ -58,32 +75,104 @@ describe("confirmPlanCreation", () => {
 		assert.deepEqual(decision, { action: "continue" });
 	});
 
-	it("uses the safe default in the TUI reviewer", async () => {
+	it("uses Continue planning as the safe TUI default", async () => {
 		const decision = await confirmPlanCreation(
 			{
 				mode: "tui",
 				hasUI: true,
 				ui: {
 					confirm: async () => {
-						throw new Error("TUI review must not use the plain confirmation");
+						throw new Error("TUI confirmation must use the compact chooser");
 					},
 					custom: async (factory: any) => {
-						let selected: string | undefined;
-						const component = factory(
-							{ terminal: { rows: 20 }, requestRender() {} },
-							theme,
-							keybindings,
-							(value: string) => {
-								selected = value;
-							},
-						);
+						const { component, selected } = instantiate(factory);
 						component.handleInput("enter");
-						return selected;
+						return selected();
 					},
 				},
 			},
 			".pi/plans/example.md",
-			"# Plan: Safe review",
+			"# Plan: Safe confirmation",
+		);
+
+		assert.deepEqual(decision, { action: "continue" });
+	});
+
+	it("creates directly without opening the preview", async () => {
+		let customCalls = 0;
+		const decision = await confirmPlanCreation(
+			{
+				mode: "tui",
+				hasUI: true,
+				ui: {
+					confirm: async () => false,
+					custom: async (factory: any) => {
+						customCalls += 1;
+						const { component, selected } = instantiate(factory);
+						component.render(80);
+						component.handleInput("down");
+						component.handleInput("down");
+						component.handleInput("enter");
+						return selected();
+					},
+				},
+			},
+			".pi/plans/example.md",
+			"# Plan: Direct creation",
+		);
+
+		assert.deepEqual(decision, { action: "create" });
+		assert.equal(customCalls, 1);
+	});
+
+	it("returns from a review-only preview to the identical confirmation choices", async () => {
+		const screens: string[] = [];
+		let customCalls = 0;
+		const decision = await confirmPlanCreation(
+			{
+				mode: "tui",
+				hasUI: true,
+				ui: {
+					confirm: async () => false,
+					custom: async (factory: any) => {
+						const { component, selected } = instantiate(factory);
+						const output = component.render(80).join("\n");
+						screens.push(output);
+						customCalls += 1;
+						if (customCalls === 1) {
+							component.handleInput("down");
+							component.handleInput("enter");
+						} else if (customCalls === 2) {
+							assert.match(output, /Plan: Review then create/);
+							assert.doesNotMatch(output, /Create plan and start implementation/);
+							component.handleInput("enter");
+						} else {
+							component.handleInput("down");
+							component.handleInput("down");
+							component.handleInput("enter");
+						}
+						return selected();
+					},
+				},
+			},
+			".pi/plans/example.md",
+			"# Plan: Review then create",
+		);
+
+		assert.deepEqual(decision, { action: "create" });
+		assert.equal(customCalls, 3);
+		assert.equal(screens[0], screens[2]);
+	});
+
+	it("continues safely when interactive UI is unavailable", async () => {
+		const decision = await confirmPlanCreation(
+			{
+				mode: "print",
+				hasUI: false,
+				ui: { confirm: async () => true },
+			},
+			".pi/plans/example.md",
+			"# Plan: No UI",
 		);
 
 		assert.deepEqual(decision, { action: "continue" });
@@ -96,7 +185,8 @@ describe("handleActivePlanCommand", () => {
 
 		assert.equal(result.action, "transform");
 		assert.match(result.text, /call create_plan/i);
-		assert.match(result.text, /show the exact draft for approval/i);
+		assert.match(result.text, /interactive confirmation/i);
+		assert.match(result.text, /optional preview/i);
 		assert.match(result.text, /`.pi\/plans\/example.md`/);
 	});
 });

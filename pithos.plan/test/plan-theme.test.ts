@@ -76,14 +76,17 @@ function createHarness(
 		underline: (text: string) => text,
 		fg: (_color: string, text: string) => text,
 	};
+	const previewKeys: Record<string, string[]> = {
+		"tui.select.confirm": ["enter"],
+		"tui.select.cancel": ["escape", "ctrl+c"],
+		"tui.select.up": ["up"],
+		"tui.select.down": ["down"],
+		"tui.select.pageUp": ["pageUp"],
+		"tui.select.pageDown": ["pageDown"],
+	};
 	const previewKeybindings = {
-		matches: (data: string, action: string) =>
-			(action === "tui.select.confirm" && data === "enter") ||
-			(action === "tui.select.cancel" && data === "escape") ||
-			(action === "tui.select.up" && data === "up") ||
-			(action === "tui.select.down" && data === "down") ||
-			(action === "tui.select.pageUp" && data === "pageUp") ||
-			(action === "tui.select.pageDown" && data === "pageDown"),
+		matches: (data: string, action: string) => previewKeys[action]?.includes(data) ?? false,
+		getKeys: (action: string) => previewKeys[action] ?? [],
 	};
 	const ctx = {
 		cwd: options.cwd ?? "/tmp/pi-plan-theme-test-project",
@@ -119,11 +122,19 @@ function createHarness(
 						selected = value;
 					},
 				);
+				const rendered = component.render(80).join("\n");
+				if (!rendered.includes("Preview the plan")) {
+					component.handleInput("enter");
+					return selected;
+				}
 				const approved = await (options.confirm ?? (async () => false))(
-					"Review plan draft",
-					component.render(80).join("\n"),
+					"Confirm plan creation",
+					rendered,
 				);
-				if (approved) component.handleInput("down");
+				if (approved) {
+					component.handleInput("down");
+					component.handleInput("down");
+				}
 				component.handleInput("enter");
 				return selected;
 			},
@@ -320,7 +331,7 @@ describe("plan mode enforcement", () => {
 		assert.deepEqual(harness.getActiveTools(), ["read", "grep", "find", "ls", "create_plan"]);
 	});
 
-	it("revokes legacy blanket save authorization and reviews the restored draft", async () => {
+	it("revokes legacy blanket save authorization and confirms the restored draft", async () => {
 		let confirmations = 0;
 		const harness = createHarness({
 			confirm: async () => {
@@ -356,7 +367,7 @@ describe("plan mode enforcement", () => {
 		assert.equal(harness.getActiveTools().includes("create_plan"), true);
 	});
 
-	it("restores prior tools and exact-draft authorization with an active Plan session", async () => {
+	it("restores prior tools and content-bound authorization with an active Plan session", async () => {
 		let confirmations = 0;
 		const content = "# Restored plan";
 		const approvedContentDigest = createHash("sha256").update(content).digest("hex");
@@ -395,7 +406,7 @@ describe("plan mode enforcement", () => {
 		assert.deepEqual(harness.getActiveTools(), ["read", "bash"]);
 	});
 
-	it("blocks restored exact-draft approval when interactive UI is unavailable", async () => {
+	it("blocks restored content-bound approval when interactive UI is unavailable", async () => {
 		let confirmations = 0;
 		const content = "# Restored plan";
 		const approvedContentDigest = createHash("sha256").update(content).digest("hex");
@@ -516,7 +527,7 @@ describe("plan mode enforcement", () => {
 		assert.deepEqual(harness.sessionNames, ["protect-project-mutations"]);
 	});
 
-	it("resolves a known collision before exact-path review", async () => {
+	it("resolves a known collision before exact-path confirmation", async () => {
 		const cwd = await mkdtemp(join(tmpdir(), "pi-plan-theme-"));
 		try {
 			const dialogs: string[] = [];
@@ -551,7 +562,7 @@ describe("plan mode enforcement", () => {
 		}
 	});
 
-	it("revokes approval when the reviewed destination collides before publication", async () => {
+	it("revokes approval when the confirmed destination collides before publication", async () => {
 		const cwd = await mkdtemp(join(tmpdir(), "pi-plan-theme-"));
 		try {
 			let confirmations = 0;
@@ -614,7 +625,7 @@ describe("plan mode enforcement", () => {
 		assert.equal(harness.entries.at(-1)?.data.active, true);
 	});
 
-	it("re-running the Plan command defers its only approval to exact-draft review", async () => {
+	it("re-running the Plan command defers its only approval to interactive confirmation", async () => {
 		let confirmations = 0;
 		const harness = createHarness({
 			confirm: async () => {
@@ -787,7 +798,7 @@ describe("plan mode enforcement", () => {
 		assert.deepEqual(harness.sessionNames, []);
 	});
 
-	it("requires another review when a failed write is retried with changed content", async () => {
+	it("requires another confirmation when a failed write is retried with changed content", async () => {
 		let confirmations = 0;
 		const decisions = [true, false];
 		const harness = createHarness({

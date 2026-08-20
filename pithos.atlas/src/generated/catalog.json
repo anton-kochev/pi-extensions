@@ -322,7 +322,7 @@
     {
       "name": "@pithos-kit/plan",
       "version": "0.2.0",
-      "description": "Enforced read-only planning with approved plan creation and contextual session naming for Pi.",
+      "description": "Enforced read-only planning with optional draft preview, approved plan creation, and contextual session naming for Pi.",
       "pi": {
         "extensions": [
           "./extensions/plan-theme.ts"
@@ -336,7 +336,7 @@
       },
       "pithosKit": {
         "displayName": "Plan",
-        "summary": "Provide enforced read-only planning, exact-draft approval, a Plan theme, and contextual session naming.",
+        "summary": "Provide enforced read-only planning, optional draft preview, approved plan creation, a Plan theme, and contextual session naming.",
         "minimumPi": ">=0.83.0",
         "commands": [
           {

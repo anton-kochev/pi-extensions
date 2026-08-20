@@ -16,10 +16,11 @@ describe("Plan prompt approval workflow", () => {
 		assert.match(planPrompt, /avoid generic\s+titles/i);
 	});
 
-	it("uses an exact-draft review as the sole final approval gate", () => {
-		assert.match(planPrompt, /interactive confirmation is the sole final\s+approval gate/i);
+	it("uses one interactive gate with optional preview and a safe default", () => {
+		assert.match(planPrompt, /interactive confirmation is the sole\s+final approval gate/i);
 		assert.match(planPrompt, /call\s+`create_plan` immediately/i);
-		assert.match(planPrompt, /review the exact Markdown draft/i);
+		assert.match(planPrompt, /Preview the plan.*optional/i);
+		assert.match(planPrompt, /Create plan and start implementation.*without preview/i);
 		assert.match(planPrompt, /Continue planning.*default/i);
 	});
 
