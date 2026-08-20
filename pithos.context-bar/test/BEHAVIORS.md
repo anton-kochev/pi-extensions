@@ -20,11 +20,19 @@
 - [x] Handle zero/narrow widths, zero/full/overflow usage, and tiny segments safely.
 - [x] Format a status legend with counts, model/window, and estimation basis.
 
+## Codex usage
+- [x] Parse defensively bounded ChatGPT usage responses into five-hour and weekly used percentages and reset metadata, including weekly-only defaults and model-specific additional limits.
+- [x] Format complete limits as `Codex · 5h 68% · week 74%`, omit windows the plan does not expose, and add a stale suffix only after a failed refresh with retained data.
+- [x] Resolve only `openai-codex` OAuth auth, extract the account id from its JWT, and query the fixed HTTPS usage endpoint without redirects, secret logging, or live-network tests.
+- [x] Deduplicate and throttle automatic refreshes for one minute while allowing an explicit forced refresh.
+- [x] Bound OAuth resolution and requests with cancellation, scope cached values to the authenticated account, poll for otherwise-unobservable logout/login changes, and discard obsolete results after account changes.
+
 ## Extension
 - [x] Register the above-editor widget only in TUI mode and start enabled.
-- [x] Toggle with `/context-bar`, and support `on`, `off`, and `status`.
+- [x] Toggle with `/context-bar`, and support `on`, `off`, `status`, and `refresh`.
+- [x] Suggest every canonical `/context-bar` argument with descriptions and prefix filtering.
 - [x] Persist and restore enabled state from the active session branch.
-- [x] Refresh on prompt/context/model/compaction/session lifecycle changes and clean up on shutdown.
+- [x] Refresh context and Codex usage at their relevant session/model/settled lifecycle boundaries and clean up both on disable, provider switch, offline mode, and shutdown.
 
 ## Package
 - [x] Publish with the expected npm identity, manifest, files, documentation, local settings entry, and release workflow.

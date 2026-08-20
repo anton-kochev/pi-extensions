@@ -114,7 +114,7 @@
     {
       "name": "@pithos-kit/context-bar",
       "version": "0.1.1",
-      "description": "A thin, stacked context-window composition bar for Pi.",
+      "description": "A context-window composition bar with ChatGPT Codex subscription usage for Pi.",
       "pi": {
         "extensions": [
           "./extensions"
@@ -122,13 +122,13 @@
       },
       "pithosKit": {
         "displayName": "Context Bar",
-        "summary": "Show a theme-aware estimate of context-window composition above the editor.",
+        "summary": "Show context-window composition above the editor and ChatGPT Codex usage in the footer.",
         "minimumPi": ">=0.84.1",
         "commands": [
           {
             "name": "context-bar",
-            "summary": "Toggle or inspect the context composition bar.",
-            "usage": "/context-bar [on|off|status|--help]"
+            "summary": "Toggle or inspect context composition and Codex subscription usage.",
+            "usage": "/context-bar [on|off|status|refresh|--help]"
           }
         ],
         "tools": [],
@@ -136,7 +136,13 @@
         "skills": [],
         "themes": [],
         "agents": [],
-        "configuration": []
+        "configuration": [
+          {
+            "kind": "environment",
+            "key": "PI_OFFLINE",
+            "summary": "Disable ChatGPT Codex usage requests when true, yes, or 1."
+          }
+        ]
       }
     },
     {

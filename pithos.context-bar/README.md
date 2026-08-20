@@ -1,6 +1,6 @@
 # context-bar
 
-A thin, stacked context-window composition bar for [pi](https://github.com/earendil-works/pi-mono), rendered directly above the editor.
+A thin, stacked context-window composition bar for [pi](https://github.com/earendil-works/pi-mono), rendered directly above the editor, with live ChatGPT Codex subscription usage in Pi's footer.
 
 ```text
 ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀────────────────────────42%
@@ -34,15 +34,30 @@ pi:
 
 | Command | Action |
 |---|---|
-| `/context-bar` | Toggle the bar |
+| `/context-bar` | Toggle the bar and Codex usage status |
 | `/context-bar on` | Enable it |
 | `/context-bar off` | Disable it |
-| `/context-bar status` | Show the legend, estimated counts, model/window, and estimation basis |
-| `/context-bar --help` | Show command usage without changing bar state |
+| `/context-bar status` | Show the legend, estimated counts, model/window, estimation basis, and latest Codex usage details |
+| `/context-bar refresh` | Bypass the one-minute cache and refresh Codex usage immediately |
+| `/context-bar --help` | Show command usage without changing state |
 
-`-h` is also accepted.
+`-h` is also accepted. Typing `/context-bar ` shows the canonical arguments with descriptions; suggestions filter as you continue typing.
 
 New sessions start enabled. Explicit changes are stored as non-context entries on the active session branch, so they survive reload, resume, and fork without creating project or global configuration.
+
+## Codex usage
+
+When the active model uses the OAuth-authenticated `openai-codex` provider, Context Bar adds a native Pi footer status line:
+
+```text
+Codex · 5h 68% · week 74%
+```
+
+Both percentages are the **used** amount, not the remaining amount. The primary and secondary ChatGPT rolling windows are labeled `5h` and `week`. If the active plan exposes only a weekly window, Context Bar omits `5h` and converts the reported weekly value to used percentage without substituting an unrelated model-specific limit. Context Bar refreshes usage when an enabled TUI session starts on Codex, when the model changes to Codex, and after a Codex agent run settles. A lightweight 15-second in-memory auth check also detects logout and account changes that Pi does not expose as lifecycle events. Usage-endpoint attempts remain limited to once per minute; `/context-bar refresh` forces an immediate attempt without sending a model request.
+
+`/context-bar status` includes the plan, relative reset times, data age, and any sanitized refresh error. If a refresh fails after a successful result for the same OAuth account, the footer keeps the prior percentages with `· stale`; a timeout clears percentages because account identity cannot be revalidated within the deadline. Cached usage is scoped to the current ChatGPT account and cleared when authentication disappears or the account identity cannot be revalidated; an account change discards obsolete in-flight results. Switching away from Codex, turning Context Bar off, entering offline mode, or shutting down also clears the footer status and cancels or ignores obsolete work.
+
+Usage lookup requires ChatGPT Plus/Pro OAuth login through Pi. API-key OpenAI models and other providers are not queried.
 
 ## Segments
 
@@ -71,6 +86,8 @@ Pi exposes aggregate context usage, but not exact additive token counts by sourc
 - Startup, model-switch, and post-compaction states use a complete local estimate until correlated provider usage is available.
 
 `/context-bar status` identifies the current basis as `provider-backed total` or `local estimate`. The extension persists only the enabled/disabled boolean. While enabled, it reads Pi's in-memory prompt, context, and schema objects to recompute the bar; it clears its references when disabled or shut down and never writes or logs those inputs or provider payloads.
+
+For Codex usage, the extension resolves Pi's current OAuth credential in memory and sends it only to the fixed HTTPS ChatGPT endpoint `https://chatgpt.com/backend-api/wham/usage`, with redirects disabled, a five-second end-to-end timeout covering authentication and the request, and a bounded response. Tokens and usage responses are never logged or persisted. `PI_OFFLINE=1` (also `true` or `yes`) disables these requests. The endpoint and response schema are provider-specific; if OpenAI changes them, Context Bar reports unavailable or stale data rather than guessing.
 
 Tiny categories may occupy less than one terminal cell and disappear from the passive bar rather than being visually exaggerated. They remain visible in `/context-bar status`.
 

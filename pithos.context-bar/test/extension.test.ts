@@ -1,21 +1,64 @@
 import assert from "node:assert/strict";
+import { resolve } from "node:path";
 import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 import contextBar from "../src/context-bar.ts";
+
+const CONTEXT_BAR_EXTENSION_PATH = resolve(
+  fileURLToPath(new URL("..", import.meta.url)),
+  "extensions/index.ts",
+);
 
 type Handler = (event: any, context: any) => unknown;
 
-function createHarness(branch: any[] = []) {
+type HarnessOptions = {
+  model?: any;
+  providerAuth?: any;
+  getProviderAuth?: () => Promise<any>;
+  isUsingOAuth?: () => boolean;
+  fetch?: typeof globalThis.fetch;
+  now?: () => number;
+  offline?: boolean;
+  codexUsageTimeoutMs?: number;
+  codexUsageAuthPollMs?: number;
+  commandInvocationNames?: string[];
+  foreignCommandInvocationNames?: string[];
+};
+
+function codexToken(accountId = "account-123"): string {
+  const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString("base64url");
+  return `${encode({ alg: "none" })}.${encode({ "https://api.openai.com/auth": { chatgpt_account_id: accountId } })}.signature`;
+}
+
+function codexUsageResponse(primary = 68, secondary = 74): Response {
+  return new Response(JSON.stringify({
+    plan_type: "plus",
+    rate_limit: {
+      primary_window: { used_percent: primary, reset_at: 2_000_000_000 },
+      secondary_window: { used_percent: secondary, reset_at: 2_000_100_000 },
+    },
+  }), { status: 200 });
+}
+
+function createHarness(branch: any[] = [], options: HarnessOptions = {}) {
   const handlers = new Map<string, Handler[]>();
-  const commands = new Map<string, { handler: Handler; description?: string }>();
+  const commands = new Map<string, {
+    handler: Handler;
+    description?: string;
+    getArgumentCompletions?: (prefix: string) => Array<{ value: string; label: string; description?: string }> | null;
+  }>();
   const entries: Array<{ type: string; data: unknown }> = [];
   const widgets: Array<{ key: string; content: unknown; options: unknown }> = [];
   const editorFactories: unknown[] = [];
   let editorFactory: unknown;
   const notifications: Array<{ message: string; type: string | undefined }> = [];
+  const statuses: Array<{ key: string; text: string | undefined }> = [];
+  const autocompleteWrappers: Array<(current: any) => any> = [];
   const runtime = {
     systemPrompt: "",
     usage: { tokens: null as number | null, contextWindow: 100, percent: null as number | null },
     usageReads: 0,
+    model: options.model ?? { provider: "openai", id: "gpt-test", contextWindow: 100 },
   };
   const pi = {
     on: (event: string, handler: Handler) => {
@@ -23,17 +66,40 @@ function createHarness(branch: any[] = []) {
       registered.push(handler);
       handlers.set(event, registered);
     },
-    registerCommand: (name: string, options: { handler: Handler; description?: string }) => {
+    registerCommand: (name: string, options: {
+      handler: Handler;
+      description?: string;
+      getArgumentCompletions?: (prefix: string) => Array<{ value: string; label: string; description?: string }> | null;
+    }) => {
       commands.set(name, options);
     },
     appendEntry: (type: string, data: unknown) => entries.push({ type, data }),
     getActiveTools: () => [],
     getAllTools: () => [],
+    getCommands: () => [
+      ...(options.commandInvocationNames ?? [...commands.keys()]).map((name) => ({
+        name,
+        source: "extension",
+        sourceInfo: { path: CONTEXT_BAR_EXTENSION_PATH },
+      })),
+      ...(options.foreignCommandInvocationNames ?? []).map((name) => ({
+        name,
+        source: "extension",
+        sourceInfo: { path: "/tmp/another-extension/index.ts" },
+      })),
+    ],
   };
-  contextBar(pi as never);
+  contextBar(pi as never, {
+    fetch: options.fetch,
+    now: options.now,
+    isOffline: () => options.offline ?? false,
+    codexUsageTimeoutMs: options.codexUsageTimeoutMs,
+    codexUsageAuthPollMs: options.codexUsageAuthPollMs,
+  });
 
   const context = {
     mode: "tui",
+    cwd: "/workspace/pi-extensions",
     hasUI: true,
     ui: {
       setWidget: (key: string, content: unknown, options: unknown) => {
@@ -45,9 +111,15 @@ function createHarness(branch: any[] = []) {
       },
       getEditorComponent: () => editorFactory,
       notify: (message: string, type?: string) => notifications.push({ message, type }),
+      setStatus: (key: string, text: string | undefined) => statuses.push({ key, text }),
+      addAutocompleteProvider: (wrapper: (current: any) => any) => autocompleteWrappers.push(wrapper),
       theme: { fg: (_color: string, text: string) => text },
     },
-    model: { provider: "openai", id: "gpt-test", contextWindow: 100 },
+    get model() { return runtime.model; },
+    modelRegistry: {
+      isUsingOAuth: options.isUsingOAuth ?? (() => options.providerAuth?.source === "OAuth"),
+      getProviderAuth: options.getProviderAuth ?? (async () => options.providerAuth),
+    },
     sessionManager: {
       getBranch: () => branch,
       buildContextEntries: () => [],
@@ -60,12 +132,25 @@ function createHarness(branch: any[] = []) {
     },
   };
 
-  return { handlers, commands, entries, widgets, editorFactories, notifications, runtime, context };
+  return { handlers, commands, entries, widgets, editorFactories, notifications, statuses, autocompleteWrappers, runtime, context };
 }
 
 async function emit(harness: ReturnType<typeof createHarness>, event: string, payload: object = {}) {
   for (const handler of harness.handlers.get(event) ?? []) {
     await handler({ type: event, ...payload }, harness.context);
+  }
+}
+
+async function flushBackground(): Promise<void> {
+  await new Promise((resolve) => setImmediate(resolve));
+  await new Promise((resolve) => setImmediate(resolve));
+}
+
+async function waitFor(predicate: () => boolean, timeoutMs = 200): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (!predicate()) {
+    if (Date.now() >= deadline) assert.fail("condition was not met before timeout");
+    await new Promise((resolve) => setTimeout(resolve, 2));
   }
 }
 
@@ -104,6 +189,27 @@ describe("context-bar extension", () => {
     });
   });
 
+  it("starts Codex usage refresh when explicitly enabled", async () => {
+    let fetches = 0;
+    const harness = createHarness([
+      { type: "custom", customType: "context-bar-enabled", data: { enabled: false } },
+    ], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { auth: { apiKey: codexToken() }, source: "OAuth" },
+      fetch: async () => {
+        fetches++;
+        return codexUsageResponse();
+      },
+    });
+    await emit(harness, "session_start", { reason: "startup" });
+    assert.equal(fetches, 0);
+
+    await harness.commands.get("context-bar")!.handler("on", harness.context);
+
+    assert.equal(fetches, 1);
+    assert.equal(harness.statuses.at(-1)?.text, "Codex · 5h 68% · week 74%");
+  });
+
   it("supports idempotent explicit on and off arguments", async () => {
     const harness = createHarness();
     await emit(harness, "session_start", { reason: "startup" });
@@ -134,6 +240,626 @@ describe("context-bar extension", () => {
     assert.equal(harness.widgets.length, widgetCount);
     assert.match(harness.notifications.at(-1)?.message ?? "", /context-bar is on/);
     assert.match(harness.notifications.at(-1)?.message ?? "", /Approximate composition:/);
+  });
+
+  it("does not block lifecycle completion on automatic Codex usage requests", async () => {
+    for (const event of ["session_start", "model_select", "agent_settled"]) {
+      const harness = createHarness([], {
+        model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+        providerAuth: { auth: { apiKey: codexToken() }, source: "OAuth" },
+        fetch: async () => new Promise<Response>(() => {}),
+      });
+      const handler = harness.handlers.get(event)![0]!;
+      const completion = Promise.resolve(handler({ type: event, reason: "startup" }, harness.context))
+        .then(() => "settled");
+      const outcome = await Promise.race([
+        completion,
+        new Promise<"pending">((resolve) => setImmediate(() => resolve("pending"))),
+      ]);
+      assert.equal(outcome, "settled", `${event} should not await account usage`);
+    }
+  });
+
+  it("shows both Codex used percentages for an OAuth-authenticated Codex model", async () => {
+    let fetches = 0;
+    const harness = createHarness([], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { auth: { apiKey: codexToken() }, source: "OAuth" },
+      fetch: async () => {
+        fetches++;
+        return codexUsageResponse();
+      },
+      now: () => 1_900_000_000_000,
+    });
+
+    await emit(harness, "session_start", { reason: "startup" });
+    await flushBackground();
+
+    assert.equal(fetches, 1);
+    assert.deepEqual(harness.statuses.at(-1), {
+      key: "context-bar-codex-usage",
+      text: "Codex · 5h 68% · week 74%",
+    });
+  });
+
+  it("throttles automatic Codex usage checks for one minute and lets refresh bypass the cache", async () => {
+    let currentTime = 1_900_000_000_000;
+    let fetches = 0;
+    const harness = createHarness([], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { auth: { apiKey: codexToken() }, source: "OAuth" },
+      fetch: async () => codexUsageResponse(++fetches === 1 ? 10 : 20, 30),
+      now: () => currentTime,
+    });
+
+    await emit(harness, "session_start", { reason: "startup" });
+    await flushBackground();
+    currentTime += 30_000;
+    await emit(harness, "agent_settled");
+    await flushBackground();
+    assert.equal(fetches, 1);
+
+    await harness.commands.get("context-bar")!.handler("refresh", harness.context);
+    assert.equal(fetches, 2);
+    assert.equal(harness.statuses.at(-1)?.text, "Codex · 5h 20% · week 30%");
+
+    currentTime += 60_000;
+    await emit(harness, "agent_settled");
+    await flushBackground();
+    assert.equal(fetches, 3);
+  });
+
+  it("invalidates cached usage when the OAuth account changes within the throttle window", async () => {
+    let currentAuth = { auth: { apiKey: codexToken("account-a") }, source: "OAuth" };
+    let fetches = 0;
+    const harness = createHarness([], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { source: "OAuth" },
+      getProviderAuth: async () => currentAuth,
+      fetch: async (_input, init) => {
+        fetches++;
+        const accountId = new Headers(init?.headers).get("chatgpt-account-id");
+        return accountId === "account-a" ? codexUsageResponse(12, 34) : codexUsageResponse(56, 78);
+      },
+    });
+
+    await emit(harness, "session_start", { reason: "startup" });
+    await flushBackground();
+    assert.equal(harness.statuses.at(-1)?.text, "Codex · 5h 12% · week 34%");
+
+    currentAuth = { auth: { apiKey: codexToken("account-b") }, source: "OAuth" };
+    await emit(harness, "agent_settled");
+    await flushBackground();
+
+    assert.equal(fetches, 2);
+    assert.equal(harness.statuses.at(-1)?.text, "Codex · 5h 56% · week 78%");
+  });
+
+  it("discards an in-flight response when the OAuth account changes", async () => {
+    let currentAuth = { auth: { apiKey: codexToken("account-a") }, source: "OAuth" };
+    let resolveFirst!: (response: Response) => void;
+    const firstResponse = new Promise<Response>((resolve) => { resolveFirst = resolve; });
+    let fetches = 0;
+    const harness = createHarness([], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { source: "OAuth" },
+      getProviderAuth: async () => currentAuth,
+      fetch: async () => ++fetches === 1 ? firstResponse : codexUsageResponse(56, 78),
+    });
+
+    await emit(harness, "session_start", { reason: "startup" });
+    await flushBackground();
+    currentAuth = { auth: { apiKey: codexToken("account-b") }, source: "OAuth" };
+    resolveFirst(codexUsageResponse(12, 34));
+    await flushBackground();
+
+    assert.equal(fetches, 2);
+    assert.equal(harness.statuses.at(-1)?.text, "Codex · 5h 56% · week 78%");
+    assert.equal(harness.statuses.some(({ text }) => text === "Codex · 5h 12% · week 34%"), false);
+  });
+
+  it("does not restore stale usage when an in-flight refresh fails after an account change", async () => {
+    let currentAuth = { auth: { apiKey: codexToken("account-a") }, source: "OAuth" };
+    let rejectSecond!: (error: Error) => void;
+    const secondResponse = new Promise<Response>((_resolve, reject) => { rejectSecond = reject; });
+    let fetches = 0;
+    const harness = createHarness([], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { source: "OAuth" },
+      getProviderAuth: async () => currentAuth,
+      fetch: async () => {
+        fetches++;
+        if (fetches === 1) return codexUsageResponse(12, 34);
+        if (fetches === 2) return secondResponse;
+        return codexUsageResponse(56, 78);
+      },
+    });
+
+    await emit(harness, "session_start", { reason: "startup" });
+    await flushBackground();
+    const statusCount = harness.statuses.length;
+    const refresh = harness.commands.get("context-bar")!.handler("refresh", harness.context);
+    await flushBackground();
+    currentAuth = { auth: { apiKey: codexToken("account-b") }, source: "OAuth" };
+    rejectSecond(new Error("temporary failure"));
+    await refresh;
+
+    assert.equal(fetches, 3);
+    assert.equal(harness.statuses.at(-1)?.text, "Codex · 5h 56% · week 78%");
+    assert.equal(
+      harness.statuses.slice(statusCount).some(({ text }) => text === "Codex · 5h 12% · week 34% · stale"),
+      false,
+    );
+  });
+
+  it("does not retain stale usage when a refresh times out after an account change", async () => {
+    let currentAuth = { auth: { apiKey: codexToken("account-a") }, source: "OAuth" };
+    let fetches = 0;
+    const harness = createHarness([], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { source: "OAuth" },
+      getProviderAuth: async () => currentAuth,
+      fetch: async () => ++fetches === 1 ? codexUsageResponse(12, 34) : new Promise<Response>(() => {}),
+      codexUsageTimeoutMs: 5,
+    });
+
+    await emit(harness, "session_start", { reason: "startup" });
+    await flushBackground();
+    const statusCount = harness.statuses.length;
+    const refresh = harness.commands.get("context-bar")!.handler("refresh", harness.context);
+    await new Promise((resolve) => setImmediate(resolve));
+    currentAuth = { auth: { apiKey: codexToken("account-b") }, source: "OAuth" };
+    await refresh;
+
+    assert.equal(fetches, 2);
+    assert.equal(harness.statuses.at(-1)?.text, "Codex · usage unavailable");
+    assert.equal(
+      harness.statuses.slice(statusCount).some(({ text }) => text?.includes("5h 12%") ?? false),
+      false,
+    );
+  });
+
+  it("does not automatically retry a timed-out endpoint before one minute", async () => {
+    let currentTime = 1_000_000;
+    let fetches = 0;
+    const harness = createHarness([], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { auth: { apiKey: codexToken() }, source: "OAuth" },
+      fetch: async () => ++fetches === 1 ? new Promise<Response>(() => {}) : codexUsageResponse(),
+      now: () => currentTime,
+      codexUsageTimeoutMs: 5,
+    });
+
+    await emit(harness, "session_start", { reason: "startup" });
+    await waitFor(() => harness.statuses.at(-1)?.text === "Codex · usage unavailable");
+    assert.equal(fetches, 1);
+
+    currentTime += 30_000;
+    await emit(harness, "agent_settled");
+    await flushBackground();
+    assert.equal(fetches, 1);
+
+    currentTime += 31_000;
+    await emit(harness, "agent_settled");
+    await waitFor(() => fetches === 2);
+    assert.equal(harness.statuses.at(-1)?.text, "Codex · 5h 68% · week 74%");
+    await emit(harness, "session_shutdown");
+  });
+
+  it("clears cached usage when OAuth authentication disappears", async () => {
+    let currentAuth: any = { auth: { apiKey: codexToken() }, source: "OAuth" };
+    const harness = createHarness([], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { source: "OAuth" },
+      getProviderAuth: async () => currentAuth,
+      fetch: async () => codexUsageResponse(),
+    });
+
+    await emit(harness, "session_start", { reason: "startup" });
+    await flushBackground();
+    assert.equal(harness.statuses.at(-1)?.text, "Codex · 5h 68% · week 74%");
+
+    currentAuth = undefined;
+    await emit(harness, "agent_settled");
+    await flushBackground();
+
+    assert.deepEqual(harness.statuses.at(-1), { key: "context-bar-codex-usage", text: undefined });
+  });
+
+  it("clears cached usage when account identity cannot be revalidated", async () => {
+    let rejectAuth = false;
+    const harness = createHarness([], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { source: "OAuth" },
+      getProviderAuth: async () => {
+        if (rejectAuth) throw new Error("credential storage unavailable");
+        return { auth: { apiKey: codexToken("account-a") }, source: "OAuth" };
+      },
+      fetch: async () => codexUsageResponse(12, 34),
+    });
+
+    await emit(harness, "session_start", { reason: "startup" });
+    await flushBackground();
+    rejectAuth = true;
+    await emit(harness, "agent_settled");
+    await flushBackground();
+
+    assert.equal(harness.statuses.at(-1)?.text, "Codex · usage unavailable");
+    assert.notEqual(harness.statuses.at(-1)?.text, "Codex · 5h 12% · week 34% · stale");
+  });
+
+  it("does not erase endpoint throttling when an auth check transiently fails", async () => {
+    let currentTime = 1_000_000;
+    let rejectAuth = false;
+    let fetches = 0;
+    const harness = createHarness([], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { source: "OAuth" },
+      getProviderAuth: async () => {
+        if (rejectAuth) throw new Error("credential storage unavailable");
+        return { auth: { apiKey: codexToken() }, source: "OAuth" };
+      },
+      fetch: async () => {
+        fetches++;
+        return codexUsageResponse();
+      },
+      now: () => currentTime,
+    });
+
+    await emit(harness, "session_start", { reason: "startup" });
+    await flushBackground();
+    assert.equal(fetches, 1);
+
+    currentTime += 30_000;
+    rejectAuth = true;
+    await emit(harness, "agent_settled");
+    await flushBackground();
+    rejectAuth = false;
+
+    currentTime += 15_000;
+    await emit(harness, "agent_settled");
+    await flushBackground();
+    assert.equal(fetches, 1);
+
+    currentTime += 16_000;
+    await emit(harness, "agent_settled");
+    await flushBackground();
+    assert.equal(fetches, 2);
+  });
+
+  it("preserves a forced refresh while joining an automatic auth check", async () => {
+    let currentTime = 1_000_000;
+    let authGate: Promise<any> | undefined;
+    let resolveAuth!: (auth: any) => void;
+    let fetches = 0;
+    const auth = { auth: { apiKey: codexToken() }, source: "OAuth" };
+    const harness = createHarness([], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { source: "OAuth" },
+      getProviderAuth: async () => authGate ?? auth,
+      fetch: async () => {
+        fetches++;
+        return codexUsageResponse();
+      },
+      now: () => currentTime,
+    });
+
+    await emit(harness, "session_start", { reason: "startup" });
+    await flushBackground();
+    assert.equal(fetches, 1);
+
+    currentTime += 30_000;
+    authGate = new Promise((resolve) => { resolveAuth = resolve; });
+    await emit(harness, "agent_settled");
+    await new Promise((resolve) => setImmediate(resolve));
+    const forced = harness.commands.get("context-bar")!.handler("refresh", harness.context);
+    resolveAuth(auth);
+    await forced;
+
+    assert.equal(fetches, 2);
+    assert.equal(harness.notifications.at(-1)?.message, "Codex usage refreshed");
+  });
+
+  it("clears cached usage when commands observe that OAuth was removed", async () => {
+    let usingOAuth = true;
+    const harness = createHarness([], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { auth: { apiKey: codexToken() }, source: "OAuth" },
+      isUsingOAuth: () => usingOAuth,
+      fetch: async () => codexUsageResponse(),
+    });
+
+    await emit(harness, "session_start", { reason: "startup" });
+    await flushBackground();
+    usingOAuth = false;
+    await harness.commands.get("context-bar")!.handler("refresh", harness.context);
+    assert.deepEqual(harness.statuses.at(-1), { key: "context-bar-codex-usage", text: undefined });
+
+    await harness.commands.get("context-bar")!.handler("status", harness.context);
+    assert.doesNotMatch(harness.notifications.at(-1)?.message ?? "", /Codex usage ·|5h 68%/);
+  });
+
+  it("does not let pending account revalidation restore usage after OAuth is removed", async () => {
+    for (const action of ["refresh", "status"]) {
+      let usingOAuth = true;
+      let authCalls = 0;
+      let releaseFinalAuth!: (auth: any) => void;
+      const finalAuth = new Promise<any>((resolve) => { releaseFinalAuth = resolve; });
+      const auth = { auth: { apiKey: codexToken() }, source: "OAuth" };
+      const harness = createHarness([], {
+        model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+        providerAuth: auth,
+        isUsingOAuth: () => usingOAuth,
+        getProviderAuth: async () => ++authCalls === 2 ? finalAuth : auth,
+        fetch: async () => codexUsageResponse(),
+      });
+
+      await emit(harness, "session_start", { reason: "startup" });
+      await flushBackground();
+      assert.equal(authCalls, 2);
+      usingOAuth = false;
+      await harness.commands.get("context-bar")!.handler(action, harness.context);
+      releaseFinalAuth(auth);
+      await flushBackground();
+
+      assert.deepEqual(
+        harness.statuses.at(-1),
+        { key: "context-bar-codex-usage", text: undefined },
+        `${action} should keep obsolete work cleared`,
+      );
+    }
+  });
+
+  it("clears cached usage when commands observe offline mode", async () => {
+    const options: HarnessOptions = {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { auth: { apiKey: codexToken() }, source: "OAuth" },
+      fetch: async () => codexUsageResponse(),
+      offline: false,
+    };
+    const harness = createHarness([], options);
+
+    await emit(harness, "session_start", { reason: "startup" });
+    await flushBackground();
+    options.offline = true;
+    await harness.commands.get("context-bar")!.handler("refresh", harness.context);
+    assert.deepEqual(harness.statuses.at(-1), { key: "context-bar-codex-usage", text: undefined });
+
+    await harness.commands.get("context-bar")!.handler("status", harness.context);
+    assert.doesNotMatch(harness.notifications.at(-1)?.message ?? "", /Codex usage ·|5h 68%/);
+  });
+
+  it("observes logout and account login changes without a Context Bar command", async () => {
+    let usingOAuth = true;
+    let currentAuth = { auth: { apiKey: codexToken("account-a") }, source: "OAuth" };
+    const harness = createHarness([], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { source: "OAuth" },
+      isUsingOAuth: () => usingOAuth,
+      getProviderAuth: async () => currentAuth,
+      fetch: async (_input, init) => {
+        const accountId = new Headers(init?.headers).get("chatgpt-account-id");
+        return accountId === "account-a" ? codexUsageResponse(12, 34) : codexUsageResponse(56, 78);
+      },
+      codexUsageAuthPollMs: 5,
+    });
+
+    await emit(harness, "session_start", { reason: "startup" });
+    await waitFor(() => harness.statuses.at(-1)?.text === "Codex · 5h 12% · week 34%");
+
+    usingOAuth = false;
+    await waitFor(() => harness.statuses.at(-1)?.text === undefined);
+
+    currentAuth = { auth: { apiKey: codexToken("account-b") }, source: "OAuth" };
+    usingOAuth = true;
+    await waitFor(() => harness.statuses.at(-1)?.text === "Codex · 5h 56% · week 78%");
+    await emit(harness, "session_shutdown");
+  });
+
+  it("deduplicates concurrent Codex usage refreshes", async () => {
+    let fetches = 0;
+    let resolveResponse!: (response: Response) => void;
+    const response = new Promise<Response>((resolve) => { resolveResponse = resolve; });
+    const harness = createHarness([], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { auth: { apiKey: codexToken() }, source: "OAuth" },
+      fetch: async () => {
+        fetches++;
+        return response;
+      },
+    });
+
+    const startup = emit(harness, "session_start", { reason: "startup" });
+    const settled = emit(harness, "agent_settled");
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(fetches, 1);
+
+    resolveResponse(codexUsageResponse());
+    await Promise.all([startup, settled]);
+    await flushBackground();
+    assert.equal(harness.statuses.at(-1)?.text, "Codex · 5h 68% · week 74%");
+  });
+
+  it("retains successful Codex usage as stale when a forced refresh fails", async () => {
+    let shouldFail = false;
+    const harness = createHarness([], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { auth: { apiKey: codexToken() }, source: "OAuth" },
+      fetch: async () => shouldFail
+        ? new Response("upstream secret", { status: 503 })
+        : codexUsageResponse(),
+      now: () => 1_900_000_000_000,
+    });
+    await emit(harness, "session_start", { reason: "startup" });
+    await flushBackground();
+
+    shouldFail = true;
+    await harness.commands.get("context-bar")!.handler("refresh", harness.context);
+
+    assert.equal(harness.statuses.at(-1)?.text, "Codex · 5h 68% · week 74% · stale");
+    assert.equal(harness.notifications.at(-1)?.type, "warning");
+    assert.match(harness.notifications.at(-1)?.message ?? "", /HTTP 503/);
+    assert.doesNotMatch(harness.notifications.at(-1)?.message ?? "", /upstream secret/);
+
+    await harness.commands.get("context-bar")!.handler("status", harness.context);
+    assert.match(harness.notifications.at(-1)?.message ?? "", /Last refresh failed:.*HTTP 503/);
+  });
+
+  it("includes Codex plan, reset, and freshness details in context-bar status", async () => {
+    const now = 1_900_000_000_000;
+    const harness = createHarness([], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { auth: { apiKey: codexToken() }, source: "OAuth" },
+      fetch: async () => new Response(JSON.stringify({
+        plan_type: "pro",
+        rate_limit: {
+          primary_window: { used_percent: 12, reset_at: now / 1000 + 3_600 },
+          secondary_window: { used_percent: 34, reset_at: now / 1000 + 172_800 },
+        },
+      })),
+      now: () => now,
+    });
+    await emit(harness, "session_start", { reason: "startup" });
+    await flushBackground();
+
+    await harness.commands.get("context-bar")!.handler("status", harness.context);
+
+    const status = harness.notifications.at(-1)?.message ?? "";
+    assert.match(status, /Approximate composition:/);
+    assert.match(status, /Codex usage · Pro plan/);
+    assert.match(status, /5h: 12% used · resets in 1h/);
+    assert.match(status, /week: 34% used · resets in 2d/);
+    assert.match(status, /Updated 0m ago/);
+  });
+
+  it("starts a replacement refresh when switching away from and back to Codex", async () => {
+    let resolveFirst!: (response: Response) => void;
+    const firstResponse = new Promise<Response>((resolve) => { resolveFirst = resolve; });
+    let fetches = 0;
+    const harness = createHarness([], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { auth: { apiKey: codexToken() }, source: "OAuth" },
+      fetch: async () => ++fetches === 1 ? firstResponse : codexUsageResponse(21, 43),
+    });
+
+    await emit(harness, "session_start", { reason: "startup" });
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(fetches, 1);
+
+    harness.runtime.model = { provider: "openai", id: "gpt-test", contextWindow: 100 };
+    await emit(harness, "model_select");
+    harness.runtime.model = { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 };
+    await emit(harness, "model_select");
+    await new Promise((resolve) => setImmediate(resolve));
+
+    assert.equal(fetches, 2);
+    assert.equal(harness.statuses.at(-1)?.text, "Codex · 5h 21% · week 43%");
+    resolveFirst(codexUsageResponse());
+  });
+
+  it("ignores an in-flight Codex result after switching providers", async () => {
+    let resolveResponse!: (response: Response) => void;
+    const response = new Promise<Response>((resolve) => { resolveResponse = resolve; });
+    const harness = createHarness([], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { auth: { apiKey: codexToken() }, source: "OAuth" },
+      fetch: async () => response,
+    });
+
+    const startup = emit(harness, "session_start", { reason: "startup" });
+    await new Promise((resolve) => setImmediate(resolve));
+    harness.runtime.model = { provider: "openai", id: "gpt-test", contextWindow: 100 };
+    await emit(harness, "model_select");
+    resolveResponse(codexUsageResponse());
+    await startup;
+
+    assert.deepEqual(harness.statuses.at(-1), { key: "context-bar-codex-usage", text: undefined });
+  });
+
+  it("replaces pending OAuth resolution after disable and re-enable", async () => {
+    let authCalls = 0;
+    const harness = createHarness([], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { source: "OAuth" },
+      getProviderAuth: async () => {
+        authCalls++;
+        if (authCalls === 1) return new Promise(() => {});
+        return { auth: { apiKey: codexToken() }, source: "OAuth" };
+      },
+      fetch: async () => codexUsageResponse(),
+    });
+
+    await emit(harness, "session_start", { reason: "startup" });
+    await flushBackground();
+    await harness.commands.get("context-bar")!.handler("off", harness.context);
+    await harness.commands.get("context-bar")!.handler("on", harness.context);
+
+    assert.ok(authCalls >= 2);
+    assert.equal(harness.statuses.at(-1)?.text, "Codex · 5h 68% · week 74%");
+  });
+
+  it("ignores late OAuth resolution after shutdown", async () => {
+    let resolveAuth!: (auth: any) => void;
+    const auth = new Promise<any>((resolve) => { resolveAuth = resolve; });
+    const harness = createHarness([], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { source: "OAuth" },
+      getProviderAuth: async () => auth,
+      fetch: async () => codexUsageResponse(),
+    });
+
+    await emit(harness, "session_start", { reason: "startup" });
+    await flushBackground();
+    await emit(harness, "session_shutdown");
+    resolveAuth({ auth: { apiKey: codexToken() }, source: "OAuth" });
+    await flushBackground();
+
+    assert.deepEqual(harness.statuses.at(-1), { key: "context-bar-codex-usage", text: undefined });
+  });
+
+  it("clears Codex usage when switching providers, disabling, or shutting down", async () => {
+    let fetches = 0;
+    const harness = createHarness([], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { auth: { apiKey: codexToken() }, source: "OAuth" },
+      fetch: async () => {
+        fetches++;
+        return codexUsageResponse();
+      },
+    });
+    await emit(harness, "session_start", { reason: "startup" });
+    await flushBackground();
+
+    harness.runtime.model = { provider: "openai", id: "gpt-test", contextWindow: 100 };
+    await emit(harness, "model_select");
+    assert.deepEqual(harness.statuses.at(-1), { key: "context-bar-codex-usage", text: undefined });
+
+    harness.runtime.model = { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 };
+    await harness.commands.get("context-bar")!.handler("off", harness.context);
+    await emit(harness, "agent_settled");
+    assert.equal(fetches, 1);
+    assert.equal(harness.statuses.at(-1)?.text, undefined);
+
+    await emit(harness, "session_shutdown", { reason: "quit" });
+    assert.equal(harness.statuses.at(-1)?.text, undefined);
+  });
+
+  it("does not query Codex usage in offline mode", async () => {
+    let fetches = 0;
+    const harness = createHarness([], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { auth: { apiKey: codexToken() }, source: "OAuth" },
+      fetch: async () => {
+        fetches++;
+        return codexUsageResponse();
+      },
+      offline: true,
+    });
+
+    await emit(harness, "session_start", { reason: "startup" });
+
+    assert.equal(fetches, 0);
+    assert.equal(harness.statuses.at(-1)?.text, undefined);
   });
 
   it("restores the latest enabled state from the active session branch", async () => {
@@ -237,6 +963,108 @@ describe("context-bar extension", () => {
     assert.equal(harness.editorFactories.at(-1), undefined);
   });
 
+  it("shows argument suggestions when Tab forces completion after the command", async () => {
+    const harness = createHarness();
+    await emit(harness, "session_start", { reason: "startup" });
+    assert.equal(harness.autocompleteWrappers.length, 1);
+
+    let delegated = 0;
+    const base = {
+      getSuggestions: async () => { delegated++; return null; },
+      applyCompletion: () => ({ lines: [], cursorLine: 0, cursorCol: 0 }),
+      shouldTriggerFileCompletion: () => true,
+    };
+    const provider = harness.autocompleteWrappers[0]!(base);
+    const suggestions = await provider.getSuggestions(
+      ["/context-bar "],
+      0,
+      "/context-bar ".length,
+      { force: true, signal: new AbortController().signal },
+    );
+
+    assert.deepEqual(suggestions?.items.map(({ value }: { value: string }) => value), [
+      "on", "off", "status", "refresh", "--help",
+    ]);
+    assert.equal(suggestions?.prefix, "");
+    assert.equal(delegated, 0);
+    assert.equal(provider.shouldTriggerFileCompletion(["/context-bar "], 0, 13), true);
+
+    const filtered = await provider.getSuggestions(
+      ["/context-bar re"],
+      0,
+      "/context-bar re".length,
+      { force: true, signal: new AbortController().signal },
+    );
+    assert.deepEqual(filtered?.items.map(({ value }: { value: string }) => value), ["refresh"]);
+
+    const completed = await provider.getSuggestions(
+      ["/context-bar status "],
+      0,
+      "/context-bar status ".length,
+      { force: true, signal: new AbortController().signal },
+    );
+    assert.equal(completed, null);
+
+    await provider.getSuggestions(["ordinary text"], 0, 13, {
+      force: true,
+      signal: new AbortController().signal,
+    });
+    assert.equal(delegated, 1);
+    await emit(harness, "session_shutdown");
+  });
+
+  it("supports Pi's resolved command suffix when duplicate commands are loaded", async () => {
+    const harness = createHarness([], {
+      commandInvocationNames: ["context-bar:1"],
+      foreignCommandInvocationNames: ["context-bar:2"],
+    });
+    await emit(harness, "session_start", { reason: "startup" });
+    const base = {
+      getSuggestions: async () => null,
+      applyCompletion: () => ({ lines: [], cursorLine: 0, cursorCol: 0 }),
+      shouldTriggerFileCompletion: () => true,
+    };
+    const provider = harness.autocompleteWrappers[0]!(base);
+    const command = "/context-bar:1 ";
+    const suggestions = await provider.getSuggestions(
+      [command],
+      0,
+      command.length,
+      { force: true, signal: new AbortController().signal },
+    );
+
+    assert.deepEqual(suggestions?.items.map(({ value }: { value: string }) => value), [
+      "on", "off", "status", "refresh", "--help",
+    ]);
+
+    let delegated = 0;
+    const delegatingProvider = harness.autocompleteWrappers[0]!({
+      ...base,
+      getSuggestions: async () => { delegated++; return null; },
+    });
+    const foreignCommand = "/context-bar:2 ";
+    await delegatingProvider.getSuggestions(
+      [foreignCommand],
+      0,
+      foreignCommand.length,
+      { force: true, signal: new AbortController().signal },
+    );
+    assert.equal(delegated, 1);
+    await emit(harness, "session_shutdown");
+  });
+
+  it("suggests and describes every canonical command argument", () => {
+    const command = createHarness().commands.get("context-bar")!;
+    const completions = command.getArgumentCompletions!;
+
+    assert.deepEqual(completions("")?.map(({ value }) => value), ["on", "off", "status", "refresh", "--help"]);
+    assert.ok(completions("")?.every(({ description }) => typeof description === "string" && description.length > 0));
+    assert.deepEqual(completions("o")?.map(({ value }) => value), ["on", "off"]);
+    assert.deepEqual(completions("re")?.map(({ value }) => value), ["refresh"]);
+    assert.equal(completions("missing"), null);
+    assert.equal(completions("status "), null);
+  });
+
   it("shows package-local help for --help and -h without toggling the bar", async () => {
     for (const alias of ["--help", "-h"]) {
       const harness = createHarness();
@@ -246,11 +1074,37 @@ describe("context-bar extension", () => {
 
       assert.equal(harness.notifications.length, 1);
       assert.equal(harness.notifications[0]?.type, "info");
-      assert.match(harness.notifications[0]?.message ?? "", /Usage: \/context-bar \[on\|off\|status\]/);
+      assert.match(harness.notifications[0]?.message ?? "", /Usage: \/context-bar \[on\|off\|status\|refresh\]/);
       assert.match(harness.notifications[0]?.message ?? "", /--help, -h/);
       assert.equal(harness.entries.length, 0);
       assert.equal(harness.widgets.length, 0);
     }
+  });
+
+  it("never displays secret-bearing OAuth resolution errors", async () => {
+    const secret = "access_token=oauth-secret-value";
+    const harness = createHarness([], {
+      model: { provider: "openai-codex", id: "gpt-5.4", contextWindow: 100 },
+      providerAuth: { source: "OAuth" },
+      getProviderAuth: async () => { throw new Error(`OAuth refresh failed: ${secret}`); },
+    });
+
+    await harness.commands.get("context-bar")!.handler("refresh", harness.context);
+    assert.equal(harness.notifications.at(-1)?.type, "warning");
+    assert.match(harness.notifications.at(-1)?.message ?? "", /refresh failed/i);
+    assert.doesNotMatch(harness.notifications.at(-1)?.message ?? "", new RegExp(secret));
+
+    await harness.commands.get("context-bar")!.handler("status", harness.context);
+    assert.doesNotMatch(harness.notifications.at(-1)?.message ?? "", new RegExp(secret));
+  });
+
+  it("explains when a forced refresh cannot run", async () => {
+    const harness = createHarness();
+
+    await harness.commands.get("context-bar")!.handler("refresh", harness.context);
+
+    assert.equal(harness.notifications.at(-1)?.type, "warning");
+    assert.match(harness.notifications.at(-1)?.message ?? "", /active OAuth-authenticated Codex model/i);
   });
 
   it("reports command usage for unsupported arguments", async () => {
